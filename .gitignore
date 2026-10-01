@@ -1,0 +1,25 @@
+# Exclude all except project folders
+*
+!.gitignore
+!h2o-landing/
+!h2o-manager/
+!h2o-landing/**
+!h2o-manager/**
+
+# Node
+node_modules/
+.next/
+.vercel/
+
+# Env files (never push secrets)
+.env
+.env.local
+.env*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
