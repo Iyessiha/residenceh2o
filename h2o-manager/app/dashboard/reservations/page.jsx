@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { formatDate, formatFCFA, STATUT_COLORS, STATUT_LABELS } from '@/lib/utils'
+import { formatDate, formatFCFA, STATUT_COLORS, STATUT_LABELS, emptyToNull } from '@/lib/utils'
 
 const STATUTS = ['tous', 'en_attente', 'confirme', 'en_sejour', 'cloture', 'annule']
 const DUPLEXES = ['D-1', 'D-2', 'D-3']
@@ -32,7 +32,7 @@ export default function Reservations() {
   async function save() {
     setSaving(true)
     const payload = { ...form, nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null, montant_total: form.montant_total ? parseInt(form.montant_total) : null }
-    const { error } = await supabase.from('reservations').insert([payload])
+    const { error } = await supabase.from('reservations').insert([emptyToNull(payload)])
     if (!error) { setShowForm(false); setForm(EMPTY); load() }
     setSaving(false)
   }

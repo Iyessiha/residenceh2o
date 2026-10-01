@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { DUPLEX_STATUT_COLORS } from '@/lib/utils'
+import { DUPLEX_STATUT_COLORS, emptyToNull } from '@/lib/utils'
 
 const STATUT_LABELS = { disponible: 'Disponible', occupe: 'Occupé', maintenance: 'Maintenance' }
 const EMPTY = { nom: '', code: '', capacite: 2, surface_m2: '', description: '', tarif_nuit: '', statut: 'disponible' }
@@ -26,7 +26,7 @@ export default function Duplexes() {
   async function save() {
     setSaving(true)
     const payload = { ...form, capacite: parseInt(form.capacite) || 2, tarif_nuit: form.tarif_nuit ? parseInt(form.tarif_nuit) : null, surface_m2: form.surface_m2 ? parseInt(form.surface_m2) : null }
-    await supabase.from('duplexes').insert([payload])
+    await supabase.from('duplexes').insert([emptyToNull(payload)])
     setShowForm(false); setForm(EMPTY); load()
     setSaving(false)
   }

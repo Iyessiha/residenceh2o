@@ -34,3 +34,8 @@ export const DUPLEX_STATUT_COLORS = {
   occupe: 'bg-blue-100 text-blue-800',
   maintenance: 'bg-orange-100 text-orange-800',
 }
+
+// Postgres refuse '' pour les colonnes date/time/FK : on envoie null à la place
+export function emptyToNull(obj) {
+  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, v === '' ? null : v]))
+}

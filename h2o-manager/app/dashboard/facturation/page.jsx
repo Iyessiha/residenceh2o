@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { formatDate, formatFCFA } from '@/lib/utils'
+import { formatDate, formatFCFA, emptyToNull } from '@/lib/utils'
 
 const STATUTS = { brouillon: 'Brouillon', envoye: 'Envoyé', paye: 'Payé', partiel: 'Partiel', impaye: 'Impayé' }
 const STATUT_COLORS = { brouillon: 'bg-gray-100 text-gray-600', envoye: 'bg-blue-100 text-blue-700', paye: 'bg-green-100 text-green-800', partiel: 'bg-yellow-100 text-yellow-800', impaye: 'bg-red-100 text-red-700' }
@@ -30,8 +30,8 @@ export default function Facturation() {
   async function save() {
     setSaving(true)
     const numero = form.numero || `FAC-${Date.now().toString().slice(-6)}`
-    const payload = { ...form, numero, montant_total: form.montant_total ? parseInt(form.montant_total) : null, montant_paye: form.montant_paye ? parseInt(form.montant_paye) : 0 }
-    await supabase.from('factures').insert([payload])
+    const payload = { ...form, numero, montant_total: parseInt(form.montant_total) || 0, montant_paye: form.montant_paye ? parseInt(form.montant_paye) : 0 }
+    await supabase.from('factures').insert([emptyToNull(payload)])
     setShowForm(false); setForm(EMPTY); load()
     setSaving(false)
   }

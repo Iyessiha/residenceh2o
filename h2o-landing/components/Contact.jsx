@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/supabase-config'
 
 export default function Contact() {
   const [form, setForm] = useState({
@@ -16,11 +17,6 @@ export default function Contact() {
   })
   const [status, setStatus] = useState(null) // null | 'loading' | 'success' | 'error'
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
-
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
@@ -29,6 +25,7 @@ export default function Contact() {
     e.preventDefault()
     setStatus('loading')
     try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       const { error } = await supabase.from('reservations').insert([{
         nom_client: form.nom,
         telephone: form.telephone,

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { formatDate } from '@/lib/utils'
+import { formatDate, emptyToNull } from '@/lib/utils'
 
 const SEGMENTS = ['tous', 'particulier', 'entreprise', 'evenement']
 const SEG_LABELS = { tous: 'Tous', particulier: 'Particuliers', entreprise: 'Entreprises', evenement: 'Événements' }
@@ -31,7 +31,7 @@ export default function Clients() {
 
   async function save() {
     setSaving(true)
-    await supabase.from('clients').insert([form])
+    await supabase.from('clients').insert([emptyToNull(form)])
     setShowForm(false); setForm(EMPTY); load()
     setSaving(false)
   }

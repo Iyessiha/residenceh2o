@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { formatDate, formatFCFA } from '@/lib/utils'
+import { formatDate, formatFCFA, emptyToNull } from '@/lib/utils'
 
 const TYPES = ['mariage', 'anniversaire', 'bapteme', 'seminaire', 'fete_privee', 'autre']
 const TYPE_LABELS = { mariage: '💍 Mariage', anniversaire: '🎂 Anniversaire', bapteme: '🍼 Baptême', seminaire: '💼 Séminaire', fete_privee: '🎉 Fête privée', autre: '🎪 Autre' }
@@ -31,7 +31,7 @@ export default function Evenements() {
   async function save() {
     setSaving(true)
     const payload = { ...form, nb_invites: form.nb_invites ? parseInt(form.nb_invites) : null, montant_devis: form.montant_devis ? parseInt(form.montant_devis) : null, acompte: form.acompte ? parseInt(form.acompte) : null }
-    await supabase.from('evenements').insert([payload])
+    await supabase.from('evenements').insert([emptyToNull(payload)])
     setShowForm(false); setForm(EMPTY); load()
     setSaving(false)
   }
