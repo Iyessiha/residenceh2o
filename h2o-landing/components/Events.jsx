@@ -27,7 +27,7 @@ export default function Events() {
 
             <ul className="space-y-3 mb-8">
               {[
-                'Espace modulable jusqu'à 200 personnes',
+                "Espace modulable jusqu'à 200 personnes",
                 'Vue directe sur le lac et le pontoon',
                 'Cuisine traiteur disponible',
                 'Sono, éclairage, et décoration sur mesure',
