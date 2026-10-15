@@ -15,6 +15,7 @@ export default function Facturation() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(null) // id de la facture en cours de téléchargement
 
   useEffect(() => { load() }, [filterStatut])
 
@@ -27,10 +28,25 @@ export default function Facturation() {
     setLoading(false)
   }
 
+  async function openNewForm() {
+    // Récupère le prochain numéro séquentiel avant d'ouvrir le formulaire
+    try {
+      const res = await fetch('/api/factures/next-numero')
+      const json = await res.json()
+      setForm({ ...EMPTY, numero: json.numero || '' })
+    } catch {
+      setForm(EMPTY)
+    }
+    setShowForm(true)
+  }
+
   async function save() {
     setSaving(true)
-    const numero = form.numero || `FAC-${Date.now().toString().slice(-6)}`
-    const payload = { ...form, numero, montant_total: form.montant_total ? parseInt(form.montant_total) : null, montant_paye: form.montant_paye ? parseInt(form.montant_paye) : 0 }
+    const payload = {
+      ...form,
+      montant_total: form.montant_total ? parseInt(form.montant_total) : null,
+      montant_paye: form.montant_paye ? parseInt(form.montant_paye) : 0,
+    }
     await supabase.from('factures').insert([payload])
     setShowForm(false); setForm(EMPTY); load()
     setSaving(false)
@@ -41,24 +57,45 @@ export default function Facturation() {
     load()
   }
 
+  async function downloadPDF(facture) {
+    setPdfLoading(facture.id)
+    try {
+      const res = await fetch(`/api/factures/${facture.id}/pdf`)
+      if (!res.ok) throw new Error('Erreur serveur')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${facture.numero}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      alert('Impossible de générer le PDF : ' + err.message)
+    } finally {
+      setPdfLoading(null)
+    }
+  }
+
   const totalPaye = factures.filter(f => f.statut === 'paye').reduce((s, f) => s + (f.montant_total || 0), 0)
   const totalImpaye = factures.filter(f => ['impaye', 'partiel', 'envoye'].includes(f.statut)).reduce((s, f) => s + ((f.montant_total || 0) - (f.montant_paye || 0)), 0)
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Facturation & Paiements</h1>
-        <button onClick={() => { setForm(EMPTY); setShowForm(true) }} className="btn-primary">+ Nouvelle facture</button>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Facturation & Paiements</h1>
+        <button onClick={openNewForm} className="btn-primary">+ Nouvelle facture</button>
       </div>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="card p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Encaissé ce mois</p>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Encaissé ce mois</p>
           <p className="text-2xl font-bold text-green-600">{formatFCFA(totalPaye)}</p>
         </div>
         <div className="card p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Impayés en attente</p>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Impayés en attente</p>
           <p className="text-2xl font-bold text-red-600">{formatFCFA(totalImpaye)}</p>
         </div>
       </div>
@@ -67,7 +104,8 @@ export default function Facturation() {
       <div className="flex flex-wrap gap-2 mb-4">
         {['tous', ...Object.keys(STATUTS)].map(s => (
           <button key={s} onClick={() => setFilterStatut(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${filterStatut === s ? 'bg-teal-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${filterStatut === s ? 'text-white' : 'border hover:opacity-80'}`}
+            style={filterStatut === s ? { backgroundColor: 'var(--primary)' } : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
             {s === 'tous' ? 'Toutes' : STATUTS[s]}
           </button>
         ))}
@@ -76,7 +114,7 @@ export default function Facturation() {
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead style={{ backgroundColor: 'var(--bg-2)' }}>
               <tr>
                 <th className="table-th">N°</th>
                 <th className="table-th">Client</th>
@@ -85,33 +123,54 @@ export default function Facturation() {
                 <th className="table-th">Payé</th>
                 <th className="table-th">Échéance</th>
                 <th className="table-th">Statut</th>
-                <th className="table-th"></th>
+                <th className="table-th">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {loading ? (
-                <tr><td colSpan={8} className="table-td text-center text-gray-400 py-10">Chargement...</td></tr>
+                <tr><td colSpan={8} className="table-td text-center py-10" style={{ color: 'var(--text-3)' }}>Chargement...</td></tr>
               ) : factures.length === 0 ? (
-                <tr><td colSpan={8} className="table-td text-center text-gray-400 py-10">Aucune facture</td></tr>
+                <tr><td colSpan={8} className="table-td text-center py-10" style={{ color: 'var(--text-3)' }}>Aucune facture</td></tr>
               ) : factures.map(f => (
-                <tr key={f.id} className="hover:bg-gray-50/50">
-                  <td className="table-td font-mono text-xs">{f.numero}</td>
+                <tr key={f.id} className="border-t" style={{ borderColor: 'var(--border-2)' }}>
+                  <td className="table-td font-mono text-xs" style={{ color: 'var(--text-2)' }}>{f.numero}</td>
                   <td className="table-td">
-                    <p className="font-medium">{f.nom_client}</p>
-                    <p className="text-xs text-gray-400">{f.telephone}</p>
+                    <p className="font-medium" style={{ color: 'var(--text)' }}>{f.nom_client}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-3)' }}>{f.telephone}</p>
                   </td>
-                  <td className="table-td text-gray-500 text-xs">{f.type_prestation}</td>
-                  <td className="table-td font-semibold">{formatFCFA(f.montant_total)}</td>
+                  <td className="table-td text-xs" style={{ color: 'var(--text-3)' }}>{f.type_prestation}</td>
+                  <td className="table-td font-semibold" style={{ color: 'var(--text)' }}>{formatFCFA(f.montant_total)}</td>
                   <td className="table-td text-green-600">{formatFCFA(f.montant_paye)}</td>
-                  <td className="table-td text-gray-400">{formatDate(f.date_echeance)}</td>
+                  <td className="table-td" style={{ color: 'var(--text-3)' }}>{formatDate(f.date_echeance)}</td>
                   <td className="table-td">
                     <span className={`badge ${STATUT_COLORS[f.statut]}`}>{STATUTS[f.statut]}</span>
                   </td>
                   <td className="table-td">
-                    <select value={f.statut} onChange={e => updateStatut(f.id, e.target.value)}
-                      className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-teal-500">
-                      {Object.entries(STATUTS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <select value={f.statut} onChange={e => updateStatut(f.id, e.target.value)}
+                        className="text-xs border rounded px-2 py-1 focus:outline-none"
+                        style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
+                        {Object.entries(STATUTS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                      <button
+                        onClick={() => downloadPDF(f)}
+                        disabled={pdfLoading === f.id}
+                        title="Télécharger PDF"
+                        className="flex items-center justify-center w-7 h-7 rounded transition-opacity hover:opacity-70 disabled:opacity-40"
+                        style={{ backgroundColor: 'var(--primary-lt)', color: 'var(--primary)' }}
+                        aria-label={`Télécharger PDF de ${f.numero}`}
+                      >
+                        {pdfLoading === f.id ? (
+                          <span className="text-xs animate-spin">⟳</span>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -122,18 +181,22 @@ export default function Facturation() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg)' }}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold">Nouvelle facture</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 text-xl">×</button>
+              <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>Nouvelle facture</h2>
+              <button onClick={() => setShowForm(false)} className="text-xl" style={{ color: 'var(--text-3)' }}>×</button>
             </div>
             <div className="space-y-3">
-              <div><label className="label">N° facture (auto si vide)</label><input className="input" value={form.numero} onChange={e => setForm(p => ({...p, numero: e.target.value}))} placeholder="FAC-001" /></div>
+              <div>
+                <label className="label">N° facture</label>
+                <input className="input" value={form.numero} onChange={e => setForm(p => ({...p, numero: e.target.value}))} placeholder="FAC-2026-001" />
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="label">Client *</label><input className="input" value={form.nom_client} onChange={e => setForm(p => ({...p, nom_client: e.target.value}))} /></div>
                 <div><label className="label">Téléphone</label><input className="input" value={form.telephone} onChange={e => setForm(p => ({...p, telephone: e.target.value}))} /></div>
               </div>
-              <div><label className="label">Type de prestation</label>
+              <div>
+                <label className="label">Type de prestation</label>
                 <select className="input" value={form.type_prestation} onChange={e => setForm(p => ({...p, type_prestation: e.target.value}))}>
                   <option value="sejour">Séjour duplex</option>
                   <option value="evenement">Événement / Pergola</option>
@@ -148,7 +211,8 @@ export default function Facturation() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="label">Échéance</label><input className="input" type="date" value={form.date_echeance} onChange={e => setForm(p => ({...p, date_echeance: e.target.value}))} /></div>
-                <div><label className="label">Statut</label>
+                <div>
+                  <label className="label">Statut</label>
                   <select className="input" value={form.statut} onChange={e => setForm(p => ({...p, statut: e.target.value}))}>
                     {Object.entries(STATUTS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>

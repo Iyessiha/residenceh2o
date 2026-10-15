@@ -5,14 +5,16 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
 const NAV = [
-  { href: '/dashboard', icon: '📊', label: 'Tableau de bord' },
+  { href: '/dashboard',              icon: '📊', label: 'Tableau de bord' },
   { href: '/dashboard/reservations', icon: '📅', label: 'Réservations' },
-  { href: '/dashboard/duplexes', icon: '🏠', label: 'Duplexes' },
-  { href: '/dashboard/clients', icon: '👥', label: 'Clients' },
-  { href: '/dashboard/evenements', icon: '🎪', label: 'Événements' },
-  { href: '/dashboard/facturation', icon: '🧾', label: 'Facturation' },
-  { href: '/dashboard/rapports', icon: '📈', label: 'Rapports' },
-  { href: '/dashboard/parametres', icon: '⚙️', label: 'Paramètres' },
+  { href: '/dashboard/duplexes',     icon: '🏠', label: 'Duplexes' },
+  { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
+  { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
+  { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant' },
+  { href: '/dashboard/boutique',     icon: '🛍️', label: 'Boutique' },
+  { href: '/dashboard/facturation',  icon: '🧾', label: 'Facturation' },
+  { href: '/dashboard/rapports',     icon: '📈', label: 'Rapports' },
+  { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
 ]
 
 export default function DashboardLayout({ children }) {

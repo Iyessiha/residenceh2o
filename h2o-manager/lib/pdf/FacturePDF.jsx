@@ -1,0 +1,215 @@
+/**
+ * Template PDF facture — Résidences H2O
+ * Utilisé UNIQUEMENT côté serveur (API route) — ne jamais importer dans un Client Component.
+ */
+import {
+  Document, Page, View, Text, StyleSheet, Font,
+} from '@react-pdf/renderer'
+
+// Police : Helvetica (intégrée dans toutes les implémentations PDF)
+// Pour un rendu cohérent sans dépendance réseau sur le serveur.
+Font.register({
+  family: 'Helvetica',
+  fonts: [
+    { src: 'Helvetica' },
+    { src: 'Helvetica-Bold', fontWeight: 700 },
+  ],
+})
+
+const C = {
+  primary:  '#E8513A',
+  dark:     '#1A0A04',
+  text:     '#222222',
+  text2:    '#484848',
+  text3:    '#767676',
+  border:   '#DDDDDD',
+  bg2:      '#F7F7F7',
+  success:  '#008A05',
+  white:    '#FFFFFF',
+}
+
+const s = StyleSheet.create({
+  page:      { fontFamily: 'Helvetica', fontSize: 10, color: C.text, padding: 40, backgroundColor: C.white },
+  // En-tête
+  header:    { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 28 },
+  logo:      { fontSize: 18, fontWeight: 700, color: C.dark },
+  logoSub:   { fontSize: 9, color: C.text3, marginTop: 2 },
+  gradient:  { width: 80, height: 4, backgroundColor: C.primary, borderRadius: 2, marginTop: 4 },
+  badge:     { backgroundColor: C.primary, color: C.white, fontSize: 11, fontWeight: 700,
+               paddingHorizontal: 12, paddingVertical: 5, borderRadius: 4 },
+  // Section info
+  infoRow:   { flexDirection: 'row', gap: 24, marginBottom: 20 },
+  infoBlock: { flex: 1 },
+  infoLabel: { fontSize: 7, fontWeight: 700, color: C.text3, textTransform: 'uppercase',
+               letterSpacing: 1, marginBottom: 4 },
+  infoVal:   { fontSize: 10, color: C.text },
+  infoValBold: { fontSize: 10, fontWeight: 700, color: C.text },
+  // Ligne de séparation
+  divider:   { borderBottomWidth: 1, borderBottomColor: C.border, marginVertical: 16 },
+  // Table
+  tableHead: { flexDirection: 'row', backgroundColor: C.bg2, paddingVertical: 6,
+               paddingHorizontal: 10, borderRadius: 4, marginBottom: 2 },
+  tableTh:   { fontSize: 8, fontWeight: 700, color: C.text3, textTransform: 'uppercase', letterSpacing: 0.8 },
+  tableRow:  { flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 10,
+               borderBottomWidth: 1, borderBottomColor: C.border },
+  tableTd:   { fontSize: 10, color: C.text },
+  col1:      { flex: 3 },
+  col2:      { flex: 1, textAlign: 'center' },
+  col3:      { flex: 1, textAlign: 'right' },
+  // Totaux
+  totaux:    { marginTop: 12, alignItems: 'flex-end' },
+  totRow:    { flexDirection: 'row', justifyContent: 'space-between', width: 220,
+               paddingVertical: 3 },
+  totLabel:  { fontSize: 10, color: C.text2 },
+  totVal:    { fontSize: 10, color: C.text },
+  totSolde:  { flexDirection: 'row', justifyContent: 'space-between', width: 220,
+               paddingVertical: 5, borderTopWidth: 2, borderTopColor: C.primary, marginTop: 4 },
+  totBold:   { fontSize: 11, fontWeight: 700, color: C.text },
+  totBoldVal:{ fontSize: 11, fontWeight: 700, color: C.primary },
+  soldePaye: { fontSize: 11, fontWeight: 700, color: C.success },
+  // Statut badge
+  statutBox: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 3,
+               alignSelf: 'flex-end', marginTop: 2 },
+  // Pied de page
+  footer:    { position: 'absolute', bottom: 30, left: 40, right: 40 },
+  footerLine:{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8 },
+  footerTxt: { fontSize: 8, color: C.text3, textAlign: 'center', lineHeight: 1.5 },
+})
+
+function fcfa(n) {
+  if (!n && n !== 0) return '—'
+  return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA'
+}
+function fdate(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+}
+
+const STATUT_LABELS = {
+  brouillon: 'Brouillon', envoye: 'Envoyé', paye: 'Payé',
+  partiel: 'Paiement partiel', impaye: 'Impayé',
+}
+const STATUT_COLORS = {
+  brouillon: { border: '#CCCCCC', text: '#767676' },
+  envoye:    { border: '#3B82F6', text: '#3B82F6' },
+  paye:      { border: '#008A05', text: '#008A05' },
+  partiel:   { border: '#D4A843', text: '#D4A843' },
+  impaye:    { border: '#E8513A', text: '#E8513A' },
+}
+
+export function FacturePDF({ facture }) {
+  const sc = STATUT_COLORS[facture.statut] || STATUT_COLORS.brouillon
+  const solde = (facture.montant_total || 0) - (facture.montant_paye || 0)
+
+  return (
+    <Document
+      title={`Facture ${facture.numero} — Les Résidences H2O`}
+      author="Les Résidences H2O"
+      subject="Facture de prestation"
+      creator="H2O Manager — MonWe Infinity LLC"
+    >
+      <Page size="A4" style={s.page}>
+
+        {/* ── En-tête ─────────────────────────────────────── */}
+        <View style={s.header}>
+          <View>
+            <Text style={s.logo}>Les Résidences H₂O</Text>
+            <Text style={s.logoSub}>Route de Grand-Bassam, Modeste Beach · Côte d'Ivoire</Text>
+            <Text style={s.logoSub}>contact@residencesh2o.com · +225 07 XX XX XX XX</Text>
+            <View style={s.gradient} />
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={s.badge}>FACTURE</Text>
+            <Text style={{ fontSize: 13, fontWeight: 700, color: C.text, marginTop: 8 }}>
+              {facture.numero}
+            </Text>
+            <View style={[s.statutBox, { borderColor: sc.border }]}>
+              <Text style={{ fontSize: 8, fontWeight: 700, color: sc.text }}>
+                {STATUT_LABELS[facture.statut] || facture.statut}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={s.divider} />
+
+        {/* ── Infos facture + client ────────────────────────── */}
+        <View style={s.infoRow}>
+          <View style={s.infoBlock}>
+            <Text style={s.infoLabel}>Facturé à</Text>
+            <Text style={s.infoValBold}>{facture.nom_client}</Text>
+            {facture.telephone ? <Text style={s.infoVal}>{facture.telephone}</Text> : null}
+            {facture.email_client ? <Text style={s.infoVal}>{facture.email_client}</Text> : null}
+          </View>
+          <View style={s.infoBlock}>
+            <Text style={s.infoLabel}>Détails</Text>
+            <Text style={s.infoVal}>Date d'émission : {fdate(facture.created_at)}</Text>
+            {facture.date_echeance
+              ? <Text style={s.infoVal}>Échéance : {fdate(facture.date_echeance)}</Text>
+              : null}
+            <Text style={s.infoVal}>Réf. : {facture.numero}</Text>
+          </View>
+          <View style={s.infoBlock}>
+            <Text style={s.infoLabel}>Émis par</Text>
+            <Text style={s.infoValBold}>Les Résidences H₂O</Text>
+            <Text style={s.infoVal}>Modeste Beach, Grand-Bassam</Text>
+            <Text style={s.infoVal}>RCCM · N° IFU à compléter</Text>
+          </View>
+        </View>
+
+        <View style={s.divider} />
+
+        {/* ── Tableau prestations ───────────────────────────── */}
+        <View style={s.tableHead}>
+          <Text style={[s.tableTh, s.col1]}>Description</Text>
+          <Text style={[s.tableTh, s.col2]}>Type</Text>
+          <Text style={[s.tableTh, s.col3]}>Montant</Text>
+        </View>
+
+        <View style={s.tableRow}>
+          <Text style={[s.tableTd, s.col1]}>
+            {facture.description || `Prestation — ${facture.type_prestation}`}
+          </Text>
+          <Text style={[s.tableTd, s.col2]}>{facture.type_prestation}</Text>
+          <Text style={[s.tableTd, s.col3]}>{fcfa(facture.montant_total)}</Text>
+        </View>
+
+        {/* ── Totaux ───────────────────────────────────────── */}
+        <View style={s.totaux}>
+          <View style={s.totRow}>
+            <Text style={s.totLabel}>Sous-total</Text>
+            <Text style={s.totVal}>{fcfa(facture.montant_total)}</Text>
+          </View>
+          <View style={s.totRow}>
+            <Text style={s.totLabel}>Acompte / déjà payé</Text>
+            <Text style={[s.totVal, { color: C.success }]}>− {fcfa(facture.montant_paye)}</Text>
+          </View>
+          <View style={s.totSolde}>
+            <Text style={s.totBold}>
+              {solde <= 0 ? 'Solde (payé intégralement)' : 'Solde restant dû'}
+            </Text>
+            <Text style={solde <= 0 ? s.soldePaye : s.totBoldVal}>
+              {fcfa(Math.max(solde, 0))}
+            </Text>
+          </View>
+        </View>
+
+        {/* ── Pied de page ─────────────────────────────────── */}
+        <View style={s.footer}>
+          <View style={s.footerLine}>
+            <Text style={s.footerTxt}>
+              Les Résidences H₂O — Route de Grand-Bassam, Modeste Beach, Côte d'Ivoire
+            </Text>
+            <Text style={s.footerTxt}>
+              Cette facture a été générée automatiquement par H2O Manager · MonWe Infinity LLC
+            </Text>
+            <Text style={s.footerTxt}>
+              Toute reproduction ou modification non autorisée est interdite.
+            </Text>
+          </View>
+        </View>
+
+      </Page>
+    </Document>
+  )
+}
