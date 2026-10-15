@@ -1,56 +1,77 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 export default function Nav() {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-teal-950/95 backdrop-blur-sm border-b border-white/10">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-        <Link href="/" className="font-serif text-white text-xl font-bold tracking-wide">
-          Les Résidences H2O
+    <nav
+      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+        scrolled
+          ? 'bg-[#1A0A04]/98 backdrop-blur-md shadow-lg border-b border-white/10'
+          : 'bg-transparent'
+      }`}
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16 sm:h-18">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 min-w-0">
+          <span className="text-white font-bold text-lg tracking-tight leading-tight">
+            Les Résidences <span style={{ color: 'var(--primary)' }}>H₂O</span>
+          </span>
         </Link>
 
-        {/* Desktop */}
-        <div className="hidden md:flex items-center gap-8 text-sm text-white/80">
-          <Link href="#sejours" className="hover:text-white transition-colors">Séjours</Link>
-          <Link href="#evenements" className="hover:text-white transition-colors">Événements</Link>
-          <Link href="#galerie" className="hover:text-white transition-colors">Galerie</Link>
-          <Link href="#contact" className="hover:text-white transition-colors">Contact</Link>
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-7 text-sm text-white/80 font-medium">
+          <Link href="#sejours"     className="hover:text-white transition-colors">Séjours</Link>
+          <Link href="#evenements"  className="hover:text-white transition-colors">Événements</Link>
+          <Link href="#galerie"     className="hover:text-white transition-colors">Galerie</Link>
+          <Link href="#contact"     className="hover:text-white transition-colors">Contact</Link>
           <Link
             href="#contact"
-            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg font-semibold transition-colors"
+            className="text-white font-semibold px-5 py-2 rounded-lg transition-colors duration-200 min-h-[44px] flex items-center"
+            style={{ backgroundColor: 'var(--primary)' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--primary-dk)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--primary)'}
           >
             Réserver
           </Link>
         </div>
 
-        {/* Mobile toggle */}
+        {/* Mobile toggle — cible tactile ≥ 44px */}
         <button
-          className="md:hidden text-white p-2"
+          className="md:hidden text-white p-2.5 min-w-[44px] min-h-[44px] flex flex-col justify-center items-center gap-1.5"
           onClick={() => setOpen(!open)}
-          aria-label="Menu"
+          aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
+          aria-expanded={open}
         >
-          <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all ${open ? 'rotate-45 translate-y-2' : ''}`} />
-          <div className={`w-6 h-0.5 bg-white mb-1.5 transition-all ${open ? 'opacity-0' : ''}`} />
-          <div className={`w-6 h-0.5 bg-white transition-all ${open ? '-rotate-45 -translate-y-2' : ''}`} />
+          <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${open ? 'rotate-45 translate-y-2' : ''}`} />
+          <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${open ? 'opacity-0' : ''}`} />
+          <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${open ? '-rotate-45 -translate-y-2' : ''}`} />
         </button>
       </div>
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden bg-teal-950 border-t border-white/10 px-4 py-4 flex flex-col gap-4 text-white">
-          <Link href="#sejours" onClick={() => setOpen(false)}>Séjours</Link>
-          <Link href="#evenements" onClick={() => setOpen(false)}>Événements</Link>
-          <Link href="#galerie" onClick={() => setOpen(false)}>Galerie</Link>
-          <Link href="#contact" onClick={() => setOpen(false)}>Contact</Link>
+        <div className="md:hidden bg-[#1A0A04] border-t border-white/10 px-4 py-5 flex flex-col gap-4 text-white">
+          <Link href="#sejours"    onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Séjours</Link>
+          <Link href="#evenements" onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Événements</Link>
+          <Link href="#galerie"    onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Galerie</Link>
+          <Link href="#contact"    onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Contact</Link>
           <Link
             href="#contact"
             onClick={() => setOpen(false)}
-            className="bg-orange-500 text-white px-5 py-2 rounded-lg font-semibold text-center"
+            className="text-white font-semibold px-5 py-3 rounded-lg text-center min-h-[44px] flex items-center justify-center"
+            style={{ backgroundColor: 'var(--primary)' }}
           >
-            Réserver
+            Réserver maintenant
           </Link>
         </div>
       )}
