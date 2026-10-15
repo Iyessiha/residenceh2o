@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { DUPLEX_STATUT_COLORS, formatFCFA } from '@/lib/utils'
+import { QRCodeSVG } from 'qrcode.react'
 
 const STATUT_LABELS = { disponible: 'Disponible', occupe: 'Occupé', maintenance: 'Maintenance' }
 const EMPTY = { nom: '', code: '', capacite: 2, surface_m2: '', description: '', tarif_nuit: '', statut: 'disponible' }
@@ -16,6 +17,7 @@ export default function Duplexes() {
   const [saving, setSaving]         = useState(false)
   const [deleteId, setDeleteId]     = useState(null)
   const [deleting, setDeleting]     = useState(false)
+  const [qrDuplex, setQrDuplex]     = useState(null) // duplex pour lequel afficher le QR
 
   useEffect(() => { load() }, [])
 
@@ -120,11 +122,19 @@ export default function Duplexes() {
                   Modifier
                 </button>
                 <button
+                  onClick={() => setQrDuplex(d)}
+                  className="text-xs font-semibold py-1.5 px-3 rounded-lg border transition-opacity hover:opacity-70"
+                  style={{ borderColor: 'var(--border)', color: 'var(--primary)', backgroundColor: 'var(--bg)' }}
+                  title="Voir le QR Code invité"
+                >
+                  QR
+                </button>
+                <button
                   onClick={() => setDeleteId(d.id)}
                   className="text-xs font-semibold py-1.5 px-3 rounded-lg border transition-opacity hover:opacity-70"
                   style={{ borderColor: '#FCA5A5', color: '#DC2626', backgroundColor: '#FEF2F2' }}
                 >
-                  Suppr.
+                  ×
                 </button>
               </div>
             </div>
@@ -195,6 +205,61 @@ export default function Duplexes() {
           </div>
         </div>
       )}
+
+      {/* Modal QR Code invité */}
+      {qrDuplex && (() => {
+        const guestUrl = typeof window !== 'undefined'
+          ? `${window.location.origin}/guest/${qrDuplex.id}`
+          : `/guest/${qrDuplex.id}`
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="rounded-2xl p-6 w-full max-w-sm shadow-xl text-center" style={{ backgroundColor: 'var(--bg)' }}>
+              <h2 className="text-lg font-bold mb-1" style={{ color: 'var(--text)' }}>
+                QR Code — {qrDuplex.nom}
+              </h2>
+              <p className="text-sm mb-5" style={{ color: 'var(--text-3)' }}>
+                À imprimer et coller dans le duplex {qrDuplex.code}
+              </p>
+
+              {/* QR Code */}
+              <div className="flex justify-center mb-4">
+                <div className="p-4 bg-white rounded-2xl shadow-inner inline-block">
+                  <QRCodeSVG
+                    value={guestUrl}
+                    size={220}
+                    level="M"
+                    includeMargin={false}
+                    fgColor="#1A0A04"
+                  />
+                </div>
+              </div>
+
+              {/* Label sous le QR */}
+              <div className="mb-5">
+                <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>
+                  Les Résidences H₂O — {qrDuplex.nom}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+                  Scannez pour commander ou demander de l'aide
+                </p>
+                <p className="text-xs font-mono mt-2 break-all px-2" style={{ color: 'var(--text-3)' }}>
+                  {guestUrl}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setQrDuplex(null)} className="btn-secondary flex-1">Fermer</button>
+                <button
+                  onClick={() => window.print()}
+                  className="btn-primary flex-1"
+                >
+                  Imprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Confirmation suppression */}
       {deleteId && (

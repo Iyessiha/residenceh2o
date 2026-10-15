@@ -12,6 +12,7 @@ const NAV = [
   { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
   { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant' },
   { href: '/dashboard/boutique',     icon: '🛍️', label: 'Boutique' },
+  { href: '/dashboard/assistance',   icon: '🔔', label: 'Assistance' },
   { href: '/dashboard/facturation',  icon: '🧾', label: 'Facturation' },
   { href: '/dashboard/rapports',     icon: '📈', label: 'Rapports' },
   { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
