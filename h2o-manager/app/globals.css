@@ -2,17 +2,139 @@
 @tailwind components;
 @tailwind utilities;
 
-body { @apply bg-gray-50 text-gray-900; }
+/* ── Tokens de design ──────────────────────────────────── */
+:root {
+  --primary:    #E8513A;
+  --primary-dk: #C7391E;
+  --primary-lt: #F7E8E4;
+  --bg:         #FFFFFF;
+  --bg-2:       #F7F7F7;
+  --text:       #222222;
+  --text-2:     #484848;
+  --text-3:     #767676;
+  --border:     #DDDDDD;
+  --border-2:   #EBEBEB;
+  --success:    #008A05;
+  --gold:       #D4A843;
+}
+
+/* Mode sombre automatique */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:       #111111;
+    --bg-2:     #1C1C1E;
+    --text:     #F0F0F0;
+    --text-2:   #A8A8A8;
+    --text-3:   #6E6E6E;
+    --border:   #2C2C2E;
+    --border-2: #1C1C1E;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg:       #111111;
+  --bg-2:     #1C1C1E;
+  --text:     #F0F0F0;
+  --text-2:   #A8A8A8;
+  --text-3:   #6E6E6E;
+  --border:   #2C2C2E;
+  --border-2: #1C1C1E;
+}
+
+body {
+  background-color: var(--bg-2);
+  color: var(--text);
+  font-family: var(--font-jakarta), sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
 
 @layer components {
-  .card { @apply bg-white rounded-xl border border-gray-100 shadow-sm; }
-  .btn { @apply px-4 py-2 rounded-lg font-medium text-sm transition-colors; }
-  .btn-primary { @apply btn bg-teal-600 hover:bg-teal-700 text-white; }
-  .btn-secondary { @apply btn bg-gray-100 hover:bg-gray-200 text-gray-700; }
+  .card {
+    background-color: var(--bg);
+    border: 1px solid var(--border-2);
+    @apply rounded-xl shadow-sm;
+  }
+  @media (prefers-color-scheme: dark) {
+    .card { border-color: var(--border); }
+  }
+
+  .btn  { @apply px-4 py-2 rounded-lg font-medium text-sm transition-colors; }
+
+  .btn-primary {
+    @apply btn text-white;
+    background-color: var(--primary);
+  }
+  .btn-primary:hover { background-color: var(--primary-dk); }
+
+  .btn-secondary {
+    @apply btn text-[#484848];
+    background-color: var(--bg-2);
+  }
+  .btn-secondary:hover { filter: brightness(0.95); }
+
   .btn-danger { @apply btn bg-red-100 hover:bg-red-200 text-red-700; }
-  .input { @apply w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent; }
-  .label { @apply block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1; }
+
+  .input {
+    @apply w-full rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2;
+    border: 1px solid var(--border);
+    background-color: var(--bg);
+    color: var(--text);
+    --tw-ring-color: var(--primary);
+    border-radius: var(--radius-el, 8px);
+  }
+  .input:focus { border-color: var(--primary); }
+
+  .label {
+    @apply block text-xs font-semibold uppercase tracking-wide mb-1;
+    color: var(--text-3);
+  }
+
   .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; }
-  .table-th { @apply px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide; }
-  .table-td { @apply px-4 py-3 text-sm text-gray-700; }
+
+  .table-th {
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide;
+    color: var(--text-3);
+  }
+  .table-td {
+    @apply px-4 py-3 text-sm;
+    color: var(--text-2);
+  }
 }
+
+/* Racine pour radius */
+:root {
+  --radius-card: 12px;
+  --radius-el:   8px;
+}
+
+/* ── Overrides dark mode automatiques (évite de modifier chaque composant) ─ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+  :root:not([data-theme="light"]) .text-gray-900,
+  :root:not([data-theme="light"]) .text-gray-800 { color: var(--text) !important; }
+  :root:not([data-theme="light"]) .text-gray-700,
+  :root:not([data-theme="light"]) .text-gray-600 { color: var(--text-2) !important; }
+  :root:not([data-theme="light"]) .text-gray-500,
+  :root:not([data-theme="light"]) .text-gray-400 { color: var(--text-3) !important; }
+  :root:not([data-theme="light"]) .bg-gray-50    { background-color: var(--bg-2) !important; }
+  :root:not([data-theme="light"]) .bg-white      { background-color: var(--bg)   !important; }
+  :root:not([data-theme="light"]) .border-gray-100,
+  :root:not([data-theme="light"]) .border-gray-50 { border-color: var(--border-2) !important; }
+  :root:not([data-theme="light"]) .border-gray-200 { border-color: var(--border) !important; }
+  :root:not([data-theme="light"]) .divide-gray-50 > * + * { border-color: var(--border-2) !important; }
+  :root:not([data-theme="light"]) .hover\:bg-gray-50\/50:hover { background-color: color-mix(in srgb, var(--bg-2) 50%, transparent) !important; }
+}
+
+:root[data-theme="dark"] .text-gray-900,
+:root[data-theme="dark"] .text-gray-800 { color: var(--text) !important; }
+:root[data-theme="dark"] .text-gray-700,
+:root[data-theme="dark"] .text-gray-600 { color: var(--text-2) !important; }
+:root[data-theme="dark"] .text-gray-500,
+:root[data-theme="dark"] .text-gray-400 { color: var(--text-3) !important; }
+:root[data-theme="dark"] .bg-gray-50    { background-color: var(--bg-2) !important; }
+:root[data-theme="dark"] .bg-white      { background-color: var(--bg)   !important; }
+:root[data-theme="dark"] .border-gray-100,
+:root[data-theme="dark"] .border-gray-50 { border-color: var(--border-2) !important; }
+:root[data-theme="dark"] .border-gray-200 { border-color: var(--border) !important; }

@@ -10,9 +10,9 @@ const AMENITIES = [
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen bg-teal-950 flex flex-col justify-center overflow-hidden">
-      {/* Background texture overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-950 via-teal-900 to-teal-800 opacity-90" />
+    <section className="relative min-h-screen bg-[#1A0A04] flex flex-col justify-center overflow-hidden">
+      {/* Dégradé signature H2O */}
+      <div className="absolute inset-0 gradient-sig opacity-95" />
 
       {/* Decorative circles */}
       <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-teal-600/10 blur-3xl" />
@@ -56,14 +56,12 @@ export default function Hero() {
           ))}
         </div>
 
-        {/* SEO keywords (visually subtle) */}
-        <div className="mt-12 flex flex-wrap justify-center gap-2">
-          {['hôtel Modeste Beach', 'resort Grand-Bassam', 'duplex piscine Côte d\'Ivoire', 'résidence meublée Bassam'].map(kw => (
-            <span key={kw} className="text-xs text-white/30 bg-white/5 px-3 py-1 rounded-full">
-              {kw}
-            </span>
-          ))}
-        </div>
+        {/* SEO keywords — invisibles visuellement, indexés par les moteurs */}
+        <p className="sr-only">
+          hôtel Modeste Beach · resort Grand-Bassam · duplex piscine Côte d'Ivoire ·
+          résidence meublée Bassam · villa piscine privée Abidjan · location vacances lagune ·
+          salle mariage Grand-Bassam
+        </p>
       </div>
 
       {/* Wave divider */}

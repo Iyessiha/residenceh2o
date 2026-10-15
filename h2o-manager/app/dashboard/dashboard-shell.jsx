@@ -34,7 +34,7 @@ export default function DashboardLayout({ children }) {
         <div className="flex items-center gap-2">
           <span className="text-xl">🏊</span>
           <div>
-            <p className="text-white text-sm font-bold leading-tight">H2O Manager</p>
+            <p className="text-white text-sm font-bold leading-tight tracking-wide">H2O Manager</p>
             <p className="text-white/40 text-xs">Résidences H2O</p>
           </div>
         </div>
@@ -95,7 +95,7 @@ export default function DashboardLayout({ children }) {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <header className="bg-white border-b border-gray-100 px-4 sm:px-6 h-14 flex items-center justify-between flex-shrink-0">
+        <header className="border-b px-4 sm:px-6 h-14 flex items-center justify-between flex-shrink-0" style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border-2)' }}>
           <button
             className="md:hidden p-1.5 text-gray-500 hover:text-gray-900"
             onClick={() => setSidebarOpen(true)}
@@ -109,7 +109,7 @@ export default function DashboardLayout({ children }) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ backgroundColor: 'var(--bg-2)', color: 'var(--text)' }}>
           {children}
         </main>
       </div>

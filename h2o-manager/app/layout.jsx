@@ -1,7 +1,12 @@
-import { Inter } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+  display: 'swap',
+})
 
 export const metadata = {
   title: 'H2O Manager — Résidences H2O',
@@ -10,8 +15,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="fr">
-      <body className={inter.className}>{children}</body>
+    <html lang="fr" className={jakarta.variable}>
+      <body className={jakarta.className}>{children}</body>
     </html>
   )
 }

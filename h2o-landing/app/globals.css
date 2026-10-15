@@ -2,10 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Tokens de design ──────────────────────────────────── */
 :root {
-  --teal-dark: #0d3535;
-  --cream: #f5f0e8;
-  --orange: #e07b39;
+  --primary:    #E8513A;
+  --primary-dk: #C7391E;
+  --primary-lt: #F7E8E4;
+  --bg:         #FFFFFF;
+  --bg-2:       #F7F7F7;
+  --text:       #222222;
+  --text-2:     #484848;
+  --text-3:     #767676;
+  --border:     #DDDDDD;
+  --border-2:   #EBEBEB;
+  --success:    #008A05;
+  --gold:       #D4A843;
+  --radius-card: 12px;
+  --radius-el:   8px;
+}
+
+/* Mode sombre automatique (OS) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:       #111111;
+    --bg-2:     #1C1C1E;
+    --text:     #F0F0F0;
+    --text-2:   #A8A8A8;
+    --text-3:   #6E6E6E;
+    --border:   #2C2C2E;
+    --border-2: #1C1C1E;
+  }
+}
+
+/* Mode sombre forcé */
+:root[data-theme="dark"] {
+  --bg:       #111111;
+  --bg-2:     #1C1C1E;
+  --text:     #F0F0F0;
+  --text-2:   #A8A8A8;
+  --text-3:   #6E6E6E;
+  --border:   #2C2C2E;
+  --border-2: #1C1C1E;
 }
 
 html {
@@ -13,18 +49,36 @@ html {
 }
 
 body {
-  background-color: var(--cream);
-  color: #1a1a1a;
+  background-color: var(--bg-2);
+  color: var(--text);
+  font-family: var(--font-jakarta), sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200;
+    @apply font-semibold px-6 py-3 rounded-lg transition-colors duration-200 text-white;
+    background-color: var(--primary);
   }
+  .btn-primary:hover {
+    background-color: var(--primary-dk);
+  }
+
   .btn-outline {
-    @apply border-2 border-white text-white hover:bg-white hover:text-teal-900 font-semibold px-6 py-3 rounded-lg transition-colors duration-200;
+    @apply border-2 border-white text-white font-semibold px-6 py-3 rounded-lg transition-colors duration-200;
   }
+  .btn-outline:hover {
+    background-color: white;
+    color: #1A0A04;
+  }
+
   .section-label {
-    @apply text-xs font-bold tracking-widest uppercase text-teal-600;
+    @apply text-xs font-bold tracking-widest uppercase;
+    color: var(--primary);
+  }
+
+  /* Dégradé signature H2O — en-têtes sombres */
+  .gradient-sig {
+    background: linear-gradient(135deg, #1A0A04 0%, #3A1408 60%, #E8513A 100%);
   }
 }
