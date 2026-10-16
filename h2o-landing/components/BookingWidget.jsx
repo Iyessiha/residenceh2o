@@ -2,13 +2,20 @@
 import { useState, useEffect } from 'react'
 
 const DUPLEXES_TARIFS = {
-  '':    { label: '— Choisir un duplex —', prix: 0 },
-  'D-1': { label: 'Duplex Lac (D-1)',      prix: 120000 },
-  'D-2': { label: 'Duplex Jardin (D-2)',   prix: 150000 },
-  'D-3': { label: 'Duplex Premium (D-3)',  prix: 220000 },
+  '':    { label: '— Choisir un duplex —' },
+  'D-1': { label: 'Duplex Lac (D-1)' },
+  'D-2': { label: 'Duplex Jardin (D-2)' },
+  'D-3': { label: 'Duplex Premium (D-3)' },
 }
 
-const FRAIS_SERVICE_RATE = 0.08 // 8 %
+const TARIF_WEEKEND = 400000  // ven / sam / dim
+const TARIF_SEMAINE = 350000  // lun–jeu
+
+function isWeekend(dateStr) {
+  if (!dateStr) return false
+  const d = new Date(dateStr).getDay() // 0=dim, 5=ven, 6=sam
+  return d === 0 || d === 5 || d === 6
+}
 
 function formatFCFA(n) {
   return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA'
@@ -35,14 +42,14 @@ export default function BookingWidget() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const tarif  = DUPLEXES_TARIFS[duplex]?.prix || 120000
+  // Tarif selon le jour d'arrivée (weekend = ven/sam/dim)
+  const tarif  = isWeekend(arrivee) ? TARIF_WEEKEND : TARIF_SEMAINE
   const nuits  = diffNuits(arrivee, depart)
+  const minNuits = nuits > 0 && nuits < 2
   const base   = tarif * nuits
-  const frais  = Math.round(base * FRAIS_SERVICE_RATE)
-  const total  = base + frais
+  const total  = base
 
-  const labelPrix = duplex ? DUPLEXES_TARIFS[duplex].label : 'À partir de'
-  const prixAff   = duplex ? formatFCFA(tarif) : formatFCFA(120000)
+  const prixAff = formatFCFA(TARIF_SEMAINE)
 
   function goReserver() {
     // Scroll vers le formulaire contact avec les données pré-remplies
@@ -61,10 +68,8 @@ export default function BookingWidget() {
           </span>
           <span className="text-sm" style={{ color: 'var(--text-3)' }}> / nuit</span>
         </div>
-        <div className="flex items-center gap-1 mt-0.5 text-sm" style={{ color: 'var(--text-3)' }}>
-          <span style={{ color: 'var(--gold)' }}>★★★★★</span>
-          <span className="font-medium" style={{ color: 'var(--text)' }}>5,0</span>
-          <span>· Coup de cœur voyageurs</span>
+        <div className="flex items-center gap-1 mt-0.5 text-xs" style={{ color: 'var(--text-3)' }}>
+          <span>Week-end : {formatFCFA(TARIF_WEEKEND)} · Min. 2 nuits</span>
         </div>
       </div>
 
@@ -137,31 +142,40 @@ export default function BookingWidget() {
         </div>
       </div>
 
+      {/* Alerte minimum 2 nuits */}
+      {minNuits && (
+        <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+          Minimum 2 nuits requis pour toute réservation.
+        </p>
+      )}
+
       {/* Bouton réserver */}
       <button
         onClick={goReserver}
-        className="w-full text-white font-semibold py-3.5 rounded-xl transition-colors duration-200 min-h-[44px]"
+        disabled={minNuits}
+        className="w-full text-white font-semibold py-3.5 rounded-xl transition-colors duration-200 min-h-[44px] disabled:opacity-50"
         style={{ background: 'linear-gradient(135deg, #1A0A04 0%, #3A1408 50%, #E8513A 100%)' }}
-        onMouseEnter={e => e.currentTarget.style.opacity = '0.92'}
-        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        onMouseEnter={e => e.currentTarget.style.opacity = minNuits ? '0.5' : '0.92'}
+        onMouseLeave={e => e.currentTarget.style.opacity = minNuits ? '0.5' : '1'}
       >
         Réserver
       </button>
       <p className="text-center text-xs" style={{ color: 'var(--text-3)' }}>Aucun débit maintenant</p>
 
-      {/* Détail du calcul — visible si dates sélectionnées */}
-      {nuits > 0 && (
+      {/* Détail du calcul — visible si dates sélectionnées et min 2 nuits */}
+      {nuits >= 2 && (
         <div className="border-t pt-4 space-y-2 text-sm" style={{ borderColor: 'var(--border-2)' }}>
           <div className="flex justify-between" style={{ color: 'var(--text-2)' }}>
             <span>{formatFCFA(tarif)} × {nuits} nuit{nuits > 1 ? 's' : ''}</span>
             <span>{formatFCFA(base)}</span>
           </div>
-          <div className="flex justify-between" style={{ color: 'var(--text-2)' }}>
-            <span>Frais de service (8 %)</span>
-            <span>{formatFCFA(frais)}</span>
-          </div>
+          {isWeekend(arrivee) && (
+            <div className="flex justify-between text-xs" style={{ color: 'var(--text-3)' }}>
+              <span>Tarif week-end appliqué</span>
+            </div>
+          )}
           <div className="flex justify-between font-bold border-t pt-2" style={{ borderColor: 'var(--border-2)', color: 'var(--text)' }}>
-            <span>Total</span>
+            <span>Total estimé</span>
             <span>{formatFCFA(total)}</span>
           </div>
         </div>
@@ -191,7 +205,7 @@ export default function BookingWidget() {
           className="text-white font-semibold px-8 py-3.5 rounded-full shadow-xl min-h-[44px] whitespace-nowrap"
           style={{ background: 'linear-gradient(135deg, #1A0A04 0%, #3A1408 50%, #E8513A 100%)' }}
         >
-          Réserver — dès {formatFCFA(120000)} / nuit
+          Réserver — dès {formatFCFA(TARIF_SEMAINE)} / nuit
         </button>
       </div>
 
