@@ -18,15 +18,18 @@ export default function FAQClient({ items }) {
               onClick={() => toggleAccordion(idx)}
               className="w-full px-6 py-4 flex items-center justify-between bg-white hover:bg-gray-50 transition-colors"
             >
-              <span className="text-lg font-semibold text-gray-900 text-left">{item.question}</span>
-              <span className={`text-blue-600 text-2xl transition-transform ${activeIndex === idx ? 'rotate-45' : ''}`}>
+              <span className="text-lg font-semibold text-left" style={{ color: 'var(--text)' }}>{item.question}</span>
+              <span
+                className={`text-2xl transition-transform ${activeIndex === idx ? 'rotate-45' : ''}`}
+                style={{ color: 'var(--primary)' }}
+              >
                 +
               </span>
             </button>
 
             {activeIndex === idx && (
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <p className="text-gray-700 leading-relaxed">{item.answer}</p>
+                <p className="leading-relaxed" style={{ color: 'var(--text-2)' }}>{item.answer}</p>
               </div>
             )}
           </div>

@@ -42,12 +42,17 @@ const faqItems = [
 
 export default function FAQPage() {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen" style={{ backgroundColor: 'var(--bg)' }}>
       {/* Hero */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16 md:py-24">
+      <div
+        className="text-white py-16 md:py-24"
+        style={{
+          backgroundImage: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dk) 100%)',
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Questions Fréquentes</h1>
-          <p className="text-xl text-blue-100">Trouvez les réponses à vos questions</p>
+          <p className="text-xl" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Trouvez les réponses à vos questions</p>
         </div>
       </div>
 
@@ -56,10 +61,14 @@ export default function FAQPage() {
 
       {/* Contact CTA */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-blue-600 text-white rounded-lg p-8 text-center">
+        <div className="text-white rounded-lg p-8 text-center" style={{ backgroundColor: 'var(--primary)' }}>
           <h2 className="text-2xl font-bold mb-4">Vous n\'avez pas trouvé la réponse?</h2>
           <p className="mb-6">Contactez-nous directement, notre équipe est là pour vous aider</p>
-          <a href="tel:+1234567890" className="inline-block px-8 py-3 bg-white text-blue-600 font-bold rounded-lg hover:bg-gray-100 transition-colors">
+          <a
+            href="tel:+1234567890"
+            className="inline-block px-8 py-3 bg-white font-bold rounded-lg hover:bg-gray-100 transition-colors"
+            style={{ color: 'var(--primary)' }}
+          >
             Nous Appeler
           </a>
         </div>
