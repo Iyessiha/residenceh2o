@@ -30,12 +30,14 @@ export default function Nav() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-7 text-sm text-white/80 font-medium">
-          <Link href="#sejours"     className="hover:text-white transition-colors">Séjours</Link>
-          <Link href="#evenements"  className="hover:text-white transition-colors">Événements</Link>
-          <Link href="#galerie"     className="hover:text-white transition-colors">Galerie</Link>
-          <Link href="#contact"     className="hover:text-white transition-colors">Contact</Link>
+          <Link href="/rooms"     className="hover:text-white transition-colors">Chambres</Link>
+          <Link href="/services"  className="hover:text-white transition-colors">Services</Link>
+          <Link href="/about"     className="hover:text-white transition-colors">À Propos</Link>
+          <Link href="/blog"      className="hover:text-white transition-colors">Blog</Link>
+          <Link href="/faq"       className="hover:text-white transition-colors">FAQ</Link>
+          <Link href="/gallery"   className="hover:text-white transition-colors">Galerie</Link>
           <Link
-            href="#contact"
+            href="/reservation"
             className="text-white font-semibold px-5 py-2 rounded-lg transition-colors duration-200 min-h-[44px] flex items-center"
             style={{ backgroundColor: 'var(--primary)' }}
             onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--primary-dk)'}
@@ -61,12 +63,14 @@ export default function Nav() {
       {/* Mobile menu */}
       {open && (
         <div className="md:hidden bg-[#1A0A04] border-t border-white/10 px-4 py-5 flex flex-col gap-4 text-white">
-          <Link href="#sejours"    onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Séjours</Link>
-          <Link href="#evenements" onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Événements</Link>
-          <Link href="#galerie"    onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Galerie</Link>
-          <Link href="#contact"    onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Contact</Link>
+          <Link href="/rooms"    onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Chambres</Link>
+          <Link href="/services" onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Services</Link>
+          <Link href="/about"    onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">À Propos</Link>
+          <Link href="/blog"     onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Blog</Link>
+          <Link href="/faq"      onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">FAQ</Link>
+          <Link href="/gallery"  onClick={() => setOpen(false)} className="py-1 text-white/90 hover:text-white">Galerie</Link>
           <Link
-            href="#contact"
+            href="/reservation"
             onClick={() => setOpen(false)}
             className="text-white font-semibold px-5 py-3 rounded-lg text-center min-h-[44px] flex items-center justify-center"
             style={{ backgroundColor: 'var(--primary)' }}
