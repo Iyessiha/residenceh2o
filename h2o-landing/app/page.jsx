@@ -3,7 +3,7 @@ import Hero from '@/components/Hero'
 import HostBadge from '@/components/HostBadge'
 import Duplexes from '@/components/Duplexes'
 import Events from '@/components/Events'
-import Gallery from '@/components/Gallery'
+import FeaturedGallery from '@/components/FeaturedGallery'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
 import BookingWidget from '@/components/BookingWidget'
@@ -18,7 +18,7 @@ export default function Home() {
         <HostBadge />
         <Duplexes />
         <Events />
-        <Gallery />
+        <FeaturedGallery />
         <Contact />
       </main>
       <Footer />
