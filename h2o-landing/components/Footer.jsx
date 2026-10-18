@@ -1,8 +1,8 @@
 export default function Footer() {
   return (
-    <footer className="bg-teal-950 text-white/60 py-10">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="grid sm:grid-cols-3 gap-8 mb-8">
+    <footer className="bg-teal-950 text-white/60 py-8 sm:py-12 lg:py-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 mb-8">
           <div>
             <p className="font-serif text-white text-lg font-bold mb-2">Les Résidences H2O</p>
             <p className="text-sm">Route de Grand-Bassam<br />Modeste Beach, Côte d'Ivoire</p>

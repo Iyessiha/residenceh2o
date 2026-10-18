@@ -55,13 +55,13 @@ export default function Contact() {
   }
 
   return (
-    <section id="contact" className="py-20 bg-cream">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="grid lg:grid-cols-2 gap-12">
+    <section id="contact" className="py-12 sm:py-16 lg:py-20 bg-cream">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12">
           {/* Left: info */}
           <div>
             <span className="section-label">Contact & Réservation</span>
-            <h2 className="font-serif text-4xl font-bold text-teal-900 mt-3 mb-6">
+            <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-teal-900 mt-3 mb-6">
               Planifiez votre séjour
             </h2>
             <p className="text-gray-600 mb-8">
@@ -94,7 +94,7 @@ export default function Contact() {
           </div>
 
           {/* Right: form */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm">
             {status === 'success' ? (
               <div className="text-center py-8">
                 <span className="text-5xl">✅</span>
@@ -114,16 +114,16 @@ export default function Contact() {
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de demande</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Type de demande</label>
                   <select name="type" value={form.type} onChange={handleChange}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                     <option value="sejour">Séjour en duplex</option>
                     <option value="evenement">Événement / Pergola</option>
                     <option value="renseignement">Simple renseignement</option>
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
                     <input required name="nom" value={form.nom} onChange={handleChange}
