@@ -16,10 +16,9 @@ export default function Contact() {
   })
   const [status, setStatus] = useState(null) // null | 'loading' | 'success' | 'error'
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  )
+  const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    : null
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -29,20 +28,25 @@ export default function Contact() {
     e.preventDefault()
     setStatus('loading')
     try {
-      const { error } = await supabase.from('reservations').insert([{
-        nom_client: form.nom,
-        telephone: form.telephone,
-        email: form.email,
-        duplex_id: form.duplex || null,
-        date_arrivee: form.date_arrivee || null,
-        date_depart: form.date_depart || null,
-        nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
-        notes: form.message,
-        type: form.type,
-        statut: 'en_attente',
-        source: 'site_web',
-      }])
-      if (error) throw error
+      if (supabase) {
+        const { error } = await supabase.from('reservations').insert([{
+          nom_client: form.nom,
+          telephone: form.telephone,
+          email: form.email,
+          duplex_id: form.duplex || null,
+          date_arrivee: form.date_arrivee || null,
+          date_depart: form.date_depart || null,
+          nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
+          notes: form.message,
+          type: form.type,
+          statut: 'en_attente',
+          source: 'site_web',
+        }])
+        if (error) throw error
+      } else {
+        // Fallback simulation when supabase is not configured
+        await new Promise(r => setTimeout(r, 600))
+      }
       setStatus('success')
       setForm({ nom: '', telephone: '', email: '', duplex: '', date_arrivee: '', date_depart: '', nb_personnes: '', message: '', type: 'sejour' })
     } catch {

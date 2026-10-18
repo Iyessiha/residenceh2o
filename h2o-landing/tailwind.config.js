@@ -32,8 +32,8 @@ module.exports = {
         sand:  '#F7F7F7',
       },
       fontFamily: {
-        sans:  ['var(--font-jakarta)', 'sans-serif'],
-        serif: ['var(--font-jakarta)', 'sans-serif'],
+        sans:  ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        serif: ['Playfair Display', 'Cormorant Garamond', 'Georgia', 'serif'],
       },
     },
   },
