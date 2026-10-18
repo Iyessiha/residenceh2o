@@ -23,8 +23,8 @@ export default function Hero() {
         <source src="/videos/hero.mp4" type="video/mp4" />
       </video>
 
-      {/* Dégradé signature H2O */}
-      <div className="absolute inset-0 gradient-sig opacity-95" />
+      {/* Dégradé signature H2O - réduit pour laisser vidéo visible */}
+      <div className="absolute inset-0 gradient-sig opacity-40" />
 
       {/* Decorative circles */}
       <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-teal-600/10 blur-3xl" />
