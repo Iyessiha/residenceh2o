@@ -1,91 +1,141 @@
+import Image from 'next/image'
 import Link from 'next/link'
+import { Users, Maximize2, Waves, Sparkles, Check, ArrowRight } from 'lucide-react'
 
 const DUPLEXES = [
   {
     id: 'D-1',
     name: 'Duplex Lac',
-    tagline: 'Vue panoramique sur le lac',
-    features: ['Piscine privée 20m²', 'Pontoon privé', 'Chambre king size', 'Cuisine équipée', 'Terrasse vue lac'],
+    tagline: 'Vue panoramique sur la lagune & pontoon privé',
+    image: '/images/gallery/IMG_2869.jpg',
+    features: ['Piscine privée 20m²', 'Pontoon privé', 'Chambre king size', 'Cuisine équipée', 'Terrasse vue lagune'],
     capacity: '2–4 personnes',
     surface: '80 m²',
-    price: 'À partir de 120 000 FCFA / nuit',
-    badge: 'Vue Lac',
-    badgeColor: 'bg-teal-600',
+    price: '120 000 FCFA',
+    period: '/ nuit',
+    badge: 'Vue Lagune',
+    badgeClass: 'bg-teal-500/90 text-white',
   },
   {
     id: 'D-2',
     name: 'Duplex Jardin',
-    tagline: 'Intimité et verdure',
-    features: ['Piscine privée 15m²', 'Jardin privatif', '2 chambres', 'Cuisine équipée', 'Salon séjour'],
+    tagline: 'Intimité, verdure et sérénité tropicale',
+    image: '/images/gallery/IMG_2873.jpg',
+    features: ['Piscine privée 15m²', 'Jardin privatif paysager', '2 chambres avec dressing', 'Cuisine & bar équipés', 'Salon lounge'],
     capacity: '4–6 personnes',
     surface: '100 m²',
-    price: 'À partir de 150 000 FCFA / nuit',
-    badge: 'Familial',
-    badgeColor: 'bg-green-700',
+    price: '150 000 FCFA',
+    period: '/ nuit',
+    badge: 'Idéal Famille',
+    badgeClass: 'bg-emerald-600/90 text-white',
   },
   {
     id: 'D-3',
-    name: 'Duplex Premium',
-    tagline: 'Le summum du luxe privé',
-    features: ['Grande piscine privée 30m²', 'Pontoon & jacuzzi', '3 chambres', 'Cuisine & BBQ', 'Vue 360°'],
+    name: 'Duplex Signature',
+    tagline: 'Le summum du luxe privé avec jacuzzi et rooftop',
+    image: '/images/gallery/IMG_2875.jpg',
+    features: ['Grande piscine privée 30m²', 'Pontoon & jacuzzi chauffé', '3 suites parentales', 'Espace BBQ & rooftop', 'Vue lagune 360°'],
     capacity: '6–8 personnes',
     surface: '140 m²',
-    price: 'À partir de 220 000 FCFA / nuit',
-    badge: 'Premium',
-    badgeColor: 'bg-orange-500',
+    price: '220 000 FCFA',
+    period: '/ nuit',
+    badge: 'Prestige VIP',
+    badgeClass: 'bg-amber-500/95 text-slate-900 font-bold',
   },
 ]
 
 export default function Duplexes() {
   return (
-    <section id="sejours" className="py-20 bg-cream">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-14">
-          <span className="section-label">Nos duplexes</span>
-          <h2 className="font-serif text-4xl font-bold text-teal-900 mt-3 mb-4">
-            Un cadre d'exception pour chaque séjour
+    <section id="sejours" className="py-24 bg-[#FAF8F5] text-slate-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <span className="text-xs font-bold tracking-[0.2em] uppercase text-teal-600 bg-teal-50 px-3 py-1.5 rounded-full border border-teal-200/60 inline-block mb-3">
+            Hébergements d'exception
+          </span>
+          <h2 className="font-serif text-3xl sm:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
+            Chaque duplex a sa propre piscine privée
           </h2>
-          <p className="text-gray-600 max-w-xl mx-auto">
-            Chaque duplex dispose de sa propre piscine privée. Pas de voisins de piscine,
-            pas de bruit — juste vous et le lac.
+          <p className="text-slate-600 text-base sm:text-lg">
+            Aucun voisin de bassin, aucun compromis. Une intimité totale conçue pour les couples, familles et séjours de prestige.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        {/* Duplex Grid */}
+        <div className="grid md:grid-cols-3 gap-8">
           {DUPLEXES.map((d) => (
-            <div key={d.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-              {/* Photo placeholder */}
-              <div className="bg-gradient-to-br from-teal-800 to-teal-600 h-48 flex items-center justify-center relative">
-                <span className="text-5xl">🏊</span>
-                <span className={`absolute top-3 right-3 ${d.badgeColor} text-white text-xs font-bold px-3 py-1 rounded-full`}>
+            <div
+              key={d.id}
+              className="bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col group hover:-translate-y-1.5"
+            >
+              {/* Photo HD */}
+              <div className="relative h-64 w-full overflow-hidden bg-slate-100">
+                <Image
+                  src={d.image}
+                  alt={d.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+
+                <span className={`absolute top-4 left-4 backdrop-blur-md text-xs px-3 py-1.5 rounded-full shadow-md font-semibold ${d.badgeClass}`}>
                   {d.badge}
                 </span>
-                <span className="absolute bottom-3 left-3 bg-black/40 text-white text-xs px-2 py-1 rounded">
+
+                <span className="absolute bottom-3 left-4 bg-white/20 backdrop-blur-md text-white border border-white/30 text-xs px-2.5 py-0.5 rounded-full font-mono">
                   {d.id}
                 </span>
               </div>
 
-              <div className="p-5">
-                <h3 className="font-serif text-xl font-bold text-teal-900 mb-1">{d.name}</h3>
-                <p className="text-gray-500 text-sm mb-4">{d.tagline}</p>
+              {/* Body */}
+              <div className="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="font-serif text-2xl font-bold text-slate-900 group-hover:text-teal-600 transition-colors mb-1.5">
+                    {d.name}
+                  </h3>
+                  <p className="text-slate-500 text-sm mb-5 leading-relaxed">{d.tagline}</p>
 
-                <div className="flex gap-4 text-sm text-gray-500 mb-4">
-                  <span>👥 {d.capacity}</span>
-                  <span>📐 {d.surface}</span>
+                  <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 mb-5 pb-5 border-b border-slate-100">
+                    <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
+                      <Users className="w-3.5 h-3.5 text-teal-600" />
+                      {d.capacity}
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
+                      <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
+                      {d.surface}
+                    </span>
+                  </div>
+
+                  {/* Highlights */}
+                  <ul className="space-y-2.5 mb-6">
+                    {d.features.map(f => (
+                      <li key={f} className="flex items-center gap-2.5 text-xs text-slate-700">
+                        <span className="w-4 h-4 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center flex-shrink-0">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" />
+                        </span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
 
-                <ul className="space-y-1 mb-5">
-                  {d.features.map(f => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-gray-600">
-                      <span className="text-teal-600">✓</span> {f}
-                    </li>
-                  ))}
-                </ul>
+                {/* Footer Pricing & CTA */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold">À partir de</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg sm:text-xl font-bold text-slate-900">{d.price}</span>
+                      <span className="text-xs text-slate-500">{d.period}</span>
+                    </div>
+                  </div>
 
-                <div className="border-t pt-4 flex items-center justify-between">
-                  <span className="text-teal-800 font-semibold text-sm">{d.price}</span>
-                  <Link href="#contact" className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
-                    Réserver
+                  <Link
+                    href="#contact"
+                    className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-teal-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow hover:shadow-md"
+                  >
+                    <span>Réserver</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
