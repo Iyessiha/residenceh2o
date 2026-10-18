@@ -149,6 +149,30 @@ export default function Evenements() {
               <div><p className="label">Solde restant</p><p className="font-semibold text-orange-600">{formatFCFA((selected.montant_devis || 0) - (selected.acompte || 0))}</p></div>
               <div><p className="label">Contact</p><p>{selected.telephone}</p></div>
               <div><p className="label">Notes</p><p className="text-gray-500">{selected.notes || '—'}</p></div>
+              <div>
+                <p className="label mb-2">📸 Photos de l'événement</p>
+                <label className="flex items-center justify-center p-3 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition text-xs">
+                  <span className="text-gray-600">Cliquez pour ajouter des photos</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || [])
+                      files.forEach(file => {
+                        const formData = new FormData()
+                        formData.append('file', file)
+                        formData.append('eventId', selected.id)
+                        fetch('/api/events/upload', { method: 'POST', body: formData })
+                          .then(r => r.json())
+                          .then(d => d.success && load())
+                          .catch(err => console.error(err))
+                      })
+                    }}
+                  />
+                </label>
+              </div>
             </div>
             <div className="mt-5 flex gap-3">
               <a href={`https://wa.me/${(selected.telephone || '').replace(/\D/g, '')}`}
