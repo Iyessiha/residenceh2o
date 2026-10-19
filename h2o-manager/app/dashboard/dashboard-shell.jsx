@@ -63,8 +63,31 @@ export default function DashboardLayout({ children }) {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [counts, setCounts] = useState({ restaurant: 0, assistance: 0, boutique: 0 })
+  const [installPrompt, setInstallPrompt] = useState(null)
+  const [installed, setInstalled] = useState(false)
   const isFirstLoad = useRef(true)
   const supabase = createClient()
+
+  // Capturer l'événement d'installation PWA
+  useEffect(() => {
+    // Déjà installée si lancée en standalone
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setInstalled(true)
+      return
+    }
+    const handler = (e) => { e.preventDefault(); setInstallPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', () => { setInstallPrompt(null); setInstalled(true) })
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function handleInstall() {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    const { outcome } = await installPrompt.userChoice
+    if (outcome === 'accepted') setInstalled(true)
+    setInstallPrompt(null)
+  }
 
   const loadCounts = useCallback(async () => {
     try {
@@ -213,6 +236,17 @@ export default function DashboardLayout({ children }) {
           </button>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3 text-sm text-gray-500">
+            {installPrompt && !installed && (
+              <button
+                onClick={handleInstall}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 animate-pulse"
+                style={{ backgroundColor: 'var(--primary)' }}
+                title="Installer H2O Manager sur cet appareil"
+              >
+                <span>📲</span>
+                <span className="hidden sm:inline">Installer l'app</span>
+              </button>
+            )}
             <span>📍 Résidences H2O</span>
           </div>
         </header>
