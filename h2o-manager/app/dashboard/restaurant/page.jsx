@@ -148,6 +148,17 @@ export default function Restaurant() {
     Promise.all([loadCommandes(), loadMenu()]).finally(() => setLoading(false))
   }, [loadCommandes, loadMenu])
 
+  // Realtime : rafraîchir dès qu'une commande arrive via le guest portal
+  useEffect(() => {
+    const channel = supabase
+      .channel('commandes_restaurant_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'commandes_restaurant' }, () => {
+        loadCommandes()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [loadCommandes])
+
   // Pré-remplissage depuis CRM
   useEffect(() => {
     const nom = searchParams.get('nom')
