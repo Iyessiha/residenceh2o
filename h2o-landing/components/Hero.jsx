@@ -45,7 +45,7 @@ export default function Hero() {
 
         <p className="text-white/70 text-lg sm:text-xl max-w-2xl mx-auto mb-10">
           Duplexes meublés avec piscine privée, pontoon et vue lac.
-          À 10 minutes de la mer et à 30 min d'Abidjan.
+          À 10 minutes de la plage et à 30 min d'Abidjan.
         </p>
 
         {/* CTAs */}
