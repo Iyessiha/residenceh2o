@@ -3,28 +3,27 @@ alter table duplexes add column if not exists tagline text;
 alter table duplexes add column if not exists badge text;
 alter table duplexes add column if not exists features text[] not null default '{}';
 
-update duplexes set nom = 'Duplex Signature' where code = 'D-3' and nom = 'Duplex Premium';
+-- Les trois duplex (créés s'ils n'existent pas encore, mis à jour sinon)
+insert into duplexes (code, nom, capacite, surface_m2, tarif_nuit, description, statut, tagline, badge, features) values
+  ('D-1', 'Duplex Lac', 4, 80, 350000, 'Vue panoramique sur le lac, piscine privée 20m², pontoon', 'disponible',
+   'Vue panoramique sur la lagune & pontoon privé', 'Vue Lagune',
+   array['Piscine privée 20m²','Pontoon privé','Chambre king size','Cuisine équipée','Terrasse vue lagune']),
+  ('D-2', 'Duplex Jardin', 6, 100, 350000, 'Jardin privatif, 2 chambres, piscine privée 15m²', 'disponible',
+   'Intimité, verdure et sérénité tropicale', 'Idéal Famille',
+   array['Piscine privée 15m²','Jardin privatif paysager','2 chambres avec dressing','Cuisine & bar équipés','Salon lounge']),
+  ('D-3', 'Duplex Signature', 8, 140, 350000, 'Vue 360°, grande piscine 30m², pontoon & jacuzzi', 'disponible',
+   'Le summum du luxe privé avec jacuzzi et rooftop', 'Prestige VIP',
+   array['Grande piscine privée 30m²','Pontoon & jacuzzi chauffé','3 suites parentales','Espace BBQ & rooftop','Vue lagune 360°'])
+on conflict (code) do update set
+  nom = excluded.nom,
+  tarif_nuit = excluded.tarif_nuit,
+  tagline = excluded.tagline,
+  badge = excluded.badge,
+  features = excluded.features;
 
-update duplexes set
-  tarif_nuit = 350000,
-  tagline    = 'Vue panoramique sur la lagune & pontoon privé',
-  badge      = 'Vue Lagune',
-  features   = array['Piscine privée 20m²','Pontoon privé','Chambre king size','Cuisine équipée','Terrasse vue lagune']
-where code = 'D-1';
-
-update duplexes set
-  tarif_nuit = 350000,
-  tagline    = 'Intimité, verdure et sérénité tropicale',
-  badge      = 'Idéal Famille',
-  features   = array['Piscine privée 15m²','Jardin privatif paysager','2 chambres avec dressing','Cuisine & bar équipés','Salon lounge']
-where code = 'D-2';
-
-update duplexes set
-  tarif_nuit = 350000,
-  tagline    = 'Le summum du luxe privé avec jacuzzi et rooftop',
-  badge      = 'Prestige VIP',
-  features   = array['Grande piscine privée 30m²','Pontoon & jacuzzi chauffé','3 suites parentales','Espace BBQ & rooftop','Vue lagune 360°']
-where code = 'D-3';
+-- Lecture publique des duplex pour la landing (politique absente sur ce projet)
+drop policy if exists "public_read_duplexes" on duplexes;
+create policy "public_read_duplexes" on duplexes for select using (true);
 
 -- Photos de la galerie : ordre modifiable depuis le manager (page Photos)
 create table if not exists photos_galerie (
