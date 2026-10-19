@@ -9,7 +9,7 @@ export default function Footer() {
           </div>
           <div>
             <p className="text-white text-sm font-semibold mb-2">Contact</p>
-            <p className="text-sm">Tél : +225 07 49 19 49 52</p>
+            <p className="text-sm">Tél : +225 0749194952</p>
             <p className="text-sm">contact@residencesh2o.com</p>
           </div>
           <div>

@@ -98,7 +98,7 @@ export default function Parametres() {
             <div className="flex justify-between"><span>Support</span>
               <a href="https://wa.me/2250749194952" target="_blank" rel="noopener noreferrer"
                 className="text-teal-600 hover:underline font-medium">
-                +225 07 49 19 49 52
+                +225 0749194952
               </a>
             </div>
           </div>

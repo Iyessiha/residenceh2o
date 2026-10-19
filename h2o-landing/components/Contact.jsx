@@ -100,7 +100,7 @@ export default function Contact({ duplexes }) {
 
               <div className="bg-white rounded-xl p-5 border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Téléphone</p>
-                <p className="font-semibold text-teal-900">+225 07 49 19 49 52</p>
+                <p className="font-semibold text-teal-900">+225 0749194952</p>
               </div>
 
               <div className="bg-white rounded-xl p-5 border border-gray-100">
