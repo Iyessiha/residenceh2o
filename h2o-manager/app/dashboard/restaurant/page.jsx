@@ -27,7 +27,7 @@ const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.key, c]))
 
 const EMPTY_LIGNE = { nom: '', qte: 1, prix: 0 }
 const EMPTY_CMD = { nom_client: '', telephone: '', table_num: '', lignes: [{ ...EMPTY_LIGNE }], mode_paiement: 'especes', statut: 'en_cours', notes: '' }
-const EMPTY_MENU = { nom: '', description: '', prix: '', categorie: 'plat', disponible: true }
+const EMPTY_MENU = { nom: '', description: '', prix: '', categorie: 'plat', disponible: true, photo: '' }
 
 // ── Éditeur de lignes de commande ─────────────────────────
 function LignesEditor({ lignes, menuItems, onChange }) {
@@ -126,10 +126,11 @@ export default function Restaurant() {
   const [savingCmd, setSavingCmd]     = useState(false)
 
   // Menu
-  const [showFormMenu, setShowFormMenu] = useState(false)
-  const [formMenu, setFormMenu]         = useState(EMPTY_MENU)
-  const [editIdMenu, setEditIdMenu]     = useState(null)
-  const [savingMenu, setSavingMenu]     = useState(false)
+  const [showFormMenu, setShowFormMenu]   = useState(false)
+  const [formMenu, setFormMenu]           = useState(EMPTY_MENU)
+  const [editIdMenu, setEditIdMenu]       = useState(null)
+  const [savingMenu, setSavingMenu]       = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   const loadCommandes = useCallback(async () => {
     let q = supabase.from('commandes_restaurant').select('*').order('created_at', { ascending: false })
@@ -206,8 +207,19 @@ export default function Restaurant() {
   function openCreateMenu() { setEditIdMenu(null); setFormMenu(EMPTY_MENU); setShowFormMenu(true) }
   function openEditMenu(m) {
     setEditIdMenu(m.id)
-    setFormMenu({ nom: m.nom, description: m.description || '', prix: m.prix, categorie: m.categorie, disponible: m.disponible })
+    setFormMenu({ nom: m.nom, description: m.description || '', prix: m.prix, categorie: m.categorie, disponible: m.disponible, photo: m.photo || '' })
     setShowFormMenu(true)
+  }
+  async function uploadMenuPhoto(file) {
+    if (!file) return
+    setUploadingPhoto(true)
+    const nom = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const { error } = await supabase.storage.from('restaurant').upload(nom, file, { cacheControl: '31536000' })
+    if (!error) {
+      const { data: { publicUrl } } = supabase.storage.from('restaurant').getPublicUrl(nom)
+      setFormMenu(p => ({ ...p, photo: publicUrl }))
+    }
+    setUploadingPhoto(false)
   }
   async function saveMenu() {
     setSavingMenu(true)
@@ -377,7 +389,15 @@ export default function Restaurant() {
               {menuFiltré.map(item => {
                 const cat = CAT_MAP[item.categorie]
                 return (
-                  <div key={item.id} className={`card p-4 ${!item.disponible ? 'opacity-50' : ''}`}>
+                  <div key={item.id} className={`card overflow-hidden ${!item.disponible ? 'opacity-50' : ''}`}>
+                    {/* Photo */}
+                    {item.photo && (
+                      <div className="h-36 bg-gray-100 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.photo} alt={item.nom} className="w-full h-full object-cover" loading="lazy" />
+                      </div>
+                    )}
+                    <div className="p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-0.5">
@@ -410,6 +430,7 @@ export default function Restaurant() {
                         {item.disponible ? 'Retirer' : 'Remettre'}
                       </button>
                     </div>
+                    </div>{/* end p-4 */}
                   </div>
                 )
               })}
@@ -506,6 +527,29 @@ export default function Restaurant() {
                 <label className="label">Prix (FCFA)</label>
                 <input className="input" type="number" min="0" value={formMenu.prix} onChange={e => setFormMenu(p => ({...p, prix: e.target.value}))} />
               </div>
+              {/* Photo */}
+              <div>
+                <label className="label">Photo du plat</label>
+                {formMenu.photo && (
+                  <div className="relative mb-2 rounded-xl overflow-hidden h-32 bg-gray-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={formMenu.photo} alt="" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setFormMenu(p => ({ ...p, photo: '' }))}
+                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-black/80"
+                    >×</button>
+                  </div>
+                )}
+                <label className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border-2 border-dashed cursor-pointer transition-colors hover:opacity-80 ${uploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-3)' }}>
+                  <span className="text-lg">📷</span>
+                  <span className="text-sm font-medium">{uploadingPhoto ? 'Envoi en cours…' : formMenu.photo ? 'Changer la photo' : 'Ajouter une photo'}</span>
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadMenuPhoto(f) }} />
+                </label>
+              </div>
+
               <div className="flex items-center gap-2 pt-1">
                 <input type="checkbox" id="dispo" checked={formMenu.disponible} onChange={e => setFormMenu(p => ({...p, disponible: e.target.checked}))} className="rounded" />
                 <label htmlFor="dispo" className="text-sm" style={{ color: 'var(--text-2)' }}>Disponible aujourd'hui</label>
