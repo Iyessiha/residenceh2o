@@ -115,7 +115,7 @@ export function FacturePDF({ facture }) {
           <View>
             <Text style={s.logo}>Les Résidences H₂O</Text>
             <Text style={s.logoSub}>Route de Grand-Bassam, Modeste Beach · Côte d'Ivoire</Text>
-            <Text style={s.logoSub}>contact@residencesh2o.com · +225 07 XX XX XX XX</Text>
+            <Text style={s.logoSub}>contact@residencesh2o.com · +225 07 49 19 49 52</Text>
             <View style={s.gradient} />
           </View>
           <View style={{ alignItems: 'flex-end' }}>

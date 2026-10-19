@@ -63,7 +63,7 @@ export default function Nav() {
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {/* WhatsApp Button - Hidden on small mobile */}
             <a
-              href="https://wa.me/2250500446464?text=Bonjour%2C%20je%20souhaite%20des%20informations"
+              href="https://wa.me/2250749194952?text=Bonjour%2C%20je%20souhaite%20des%20informations"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-2 text-white/70 hover:text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg border border-white/10 hover:border-emerald-400/50 bg-white/5 backdrop-blur-sm hover:bg-emerald-500/10 transition-all"
@@ -119,7 +119,7 @@ export default function Nav() {
               Réserver maintenant
             </Link>
             <a
-              href="https://wa.me/2250500446464?text=Bonjour"
+              href="https://wa.me/2250749194952?text=Bonjour"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full text-center py-3 rounded-lg bg-white/10 border border-white/15 text-white text-sm font-medium flex items-center justify-center gap-2 hover:bg-emerald-500/10 hover:border-emerald-400/50 transition-all"

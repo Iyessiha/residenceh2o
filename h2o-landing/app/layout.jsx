@@ -39,7 +39,7 @@ const jsonLd = {
       name: 'Les Résidences H₂O',
       description: 'Duplexes meublés avec piscine privée, pontoon et vue lagune à Modeste Beach. Restaurant, pergola événementielle, parking gratuit.',
       url: 'https://residencesh2o.com',
-      telephone: '+2250500446464',
+      telephone: '+2250749194952',
       email: 'contact@residencesh2o.com',
       address: {
         '@type': 'PostalAddress',
