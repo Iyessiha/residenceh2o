@@ -13,12 +13,12 @@ const services = [
   { icon: '⚓', title: 'Pontoon', description: 'Un pontoon face à la lagune, pour les couchers de soleil.' },
   { icon: '🛁', title: 'Jacuzzi chauffé', description: 'Disponible dans le Duplex Signature.' },
   { icon: '🍽️', title: 'Restaurant', description: 'Un restaurant sur place. Horaires à demander via WhatsApp.' },
-  { icon: '🎪', title: 'Pergola événementielle', description: 'Jusqu'à 200 invités, avec service traiteur clé en main.' },
+  { icon: '🎪', title: 'Pergola evenementielle', description: "Jusqu'a 200 invites, avec service traiteur cle en main." },
   { icon: '🥂', title: 'Privatisation', description: 'Privatisation totale possible sur réservation.' },
   { icon: '🚗', title: 'Parking gratuit', description: 'Un parking gratuit pour tous nos hôtes.' },
   { icon: '🛡️', title: 'Sécurité 24h/24', description: 'Résidence sécurisée avec gardiennage permanent.' },
   { icon: '📶', title: 'Wi-Fi haut débit', description: 'Disponible dans les duplexes.' },
-  { icon: '🛎️', title: 'Conciergerie', description: 'Une conciergerie dédiée et des horaires d'arrivée flexibles.' },
+  { icon: '🛎️', title: 'Conciergerie', description: "Une conciergerie dediee et des horaires d'arrivee flexibles." },
 ]
 
 export default function ServicesPage() {

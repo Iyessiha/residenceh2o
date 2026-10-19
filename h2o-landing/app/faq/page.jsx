@@ -48,19 +48,19 @@ function construireFaq(duplexes) {
   },
   {
     question: 'Peut-on organiser un mariage ou un événement ?',
-    answer: 'Oui. La pergola peut accueillir jusqu'à 200 invités, avec accès au pontoon et service traiteur clé en main. Demandez un devis sur mesure.',
+    answer: "Oui. La pergola peut accueillir jusqu'a 200 invites, avec acces au pontoon et service traiteur cle en main. Demandez un devis sur mesure.",
   },
   {
-    question: 'Peut-on privatiser la résidence ?',
-    answer: 'Oui, la privatisation totale est possible sur réservation. L'hébergement des invités est inclus dans nos duplexes.',
+    question: 'Peut-on privatiser la residence ?',
+    answer: "Oui, la privatisation totale est possible sur reservation. L'hebergement des invites est inclus dans nos duplexes.",
   },
   {
-    question: 'Accueillez-vous des séminaires d'entreprise ?',
-    answer: 'Oui, la résidence accueille séminaires d'entreprise, teambuildings et dîners gastronomiques au bord du lac, sur devis.',
+    question: "Accueillez-vous des seminaires d'entreprise ?",
+    answer: "Oui, la residence accueille seminaires d'entreprise, teambuildings et diners gastronomiques au bord du lac, sur devis.",
   },
   {
-    question: 'Comment se passe l'accueil ?',
-    answer: 'Une conciergerie dédiée vous accueille, avec une flexibilité sur les horaires d'arrivée.',
+    question: "Comment se passe l'accueil ?",
+    answer: "Une conciergerie dediee vous accueille, avec une flexibilite sur les horaires d'arrivee.",
   },
   ]
 }
