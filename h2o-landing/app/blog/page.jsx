@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { blogArticles } from '@/lib/blog/articles'
 
 export const metadata = {
-  title: 'Blog | Residence H2O - Conseils de Voyage & Guides',
+  title: 'Blog | Les Résidences H₂O - Conseils & Guides',
   description: 'Découvrez notre blog avec des articles sur les voyages, les amenités, la gastronomie locale et bien plus encore.',
   keywords: 'blog voyage, conseils séjour, guides destination, tourisme',
   openGraph: {
-    title: 'Blog Residence H2O',
+    title: 'Blog Les Résidences H₂O',
     description: 'Guides et conseils de voyage pour votre séjour',
     type: 'website',
   }
@@ -28,7 +28,7 @@ export default function BlogPage() {
           style={{ backgroundImage: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dk) 100%)' }}
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">Blog Residence H2O</h1>
+            <h1 className="text-4xl sm:text-5xl font-bold mb-4">Blog des Résidences H₂O</h1>
             <p className="text-lg sm:text-xl text-white/90 max-w-2xl mx-auto">
               Découvrez nos guides, conseils de voyage et articles informatifs pour enrichir votre séjour
             </p>
@@ -40,10 +40,8 @@ export default function BlogPage() {
           <div className="flex flex-wrap gap-2 justify-center mb-12">
             <Link
               href="/blog"
-              className="px-4 py-2 rounded-full text-white font-medium transition-colors"
+              className="px-4 py-2 rounded-full text-white font-medium transition-colors hover:bg-[var(--primary-dk)]"
               style={{ backgroundColor: 'var(--primary)' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--primary-dk)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--primary)')}
             >
               Tous les articles
             </Link>
@@ -102,10 +100,8 @@ export default function BlogPage() {
                 {/* Read More Link */}
                 <Link
                   href={`/blog/${article.slug}`}
-                  className="inline-block font-semibold transition-colors"
+                  className="inline-block font-semibold transition-colors hover:text-[var(--primary-dk)]"
                   style={{ color: 'var(--primary)' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary-dk)')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--primary)')}
                 >
                   Lire l'article →
                 </Link>
@@ -130,10 +126,8 @@ export default function BlogPage() {
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-white font-bold rounded-lg transition-all"
+                className="px-6 py-3 bg-white font-bold rounded-lg transition-all hover:bg-[#f0f0f0]"
                 style={{ color: 'var(--primary)' }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f0f0f0')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'white')}
               >
                 S'abonner
               </button>

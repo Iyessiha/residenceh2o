@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
 const featuredImages = [
-  { id: 1, src: '/images/gallery/IMG_2868.jpg', alt: 'Residence H2O - Vue 1' },
-  { id: 2, src: '/images/gallery/IMG_2869.jpg', alt: 'Residence H2O - Vue 2' },
-  { id: 3, src: '/images/gallery/IMG_2870.jpg', alt: 'Residence H2O - Vue 3' },
-  { id: 4, src: '/images/gallery/IMG_2873.jpg', alt: 'Residence H2O - Vue 4' },
-  { id: 5, src: '/images/gallery/IMG_2875.jpg', alt: 'Residence H2O - Vue 5' },
-  { id: 6, src: '/images/gallery/IMG_2877.jpg', alt: 'Residence H2O - Vue 6' },
+  { id: 1, src: '/images/gallery/IMG_2868.jpg', alt: 'Les Résidences H₂O — vue 1' },
+  { id: 2, src: '/images/gallery/IMG_2869.jpg', alt: 'Les Résidences H₂O — vue 2' },
+  { id: 3, src: '/images/gallery/IMG_2870.jpg', alt: 'Les Résidences H₂O — vue 3' },
+  { id: 4, src: '/images/gallery/IMG_2873.jpg', alt: 'Les Résidences H₂O — vue 4' },
+  { id: 5, src: '/images/gallery/IMG_2875.jpg', alt: 'Les Résidences H₂O — vue 5' },
+  { id: 6, src: '/images/gallery/IMG_2877.jpg', alt: 'Les Résidences H₂O — vue 6' },
 ];
 
 export default function FeaturedGallery() {

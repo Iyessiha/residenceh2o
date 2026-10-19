@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { DUPLEXES } from '@/lib/residences'
 
 export default function Contact() {
   const [form, setForm] = useState({
@@ -82,7 +83,7 @@ export default function Contact() {
 
               <div className="bg-white rounded-xl p-5 border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Téléphone</p>
-                <p className="font-semibold text-teal-900">+225 07 XX XX XX XX</p>
+                <p className="font-semibold text-teal-900">+225 05 00 44 64 64</p>
               </div>
 
               <div className="bg-white rounded-xl p-5 border border-gray-100">
@@ -152,9 +153,9 @@ export default function Contact() {
                       <select name="duplex" value={form.duplex} onChange={handleChange}
                         className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                         <option value="">— Pas de préférence —</option>
-                        <option value="D-1">Duplex Lac (D-1)</option>
-                        <option value="D-2">Duplex Jardin (D-2)</option>
-                        <option value="D-3">Duplex Premium (D-3)</option>
+                        {DUPLEXES.map(d => (
+                          <option key={d.id} value={d.id}>{d.nom} ({d.id})</option>
+                        ))}
                       </select>
                     </div>
                     <div className="grid grid-cols-2 gap-3">

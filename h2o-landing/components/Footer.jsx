@@ -9,16 +9,16 @@ export default function Footer() {
           </div>
           <div>
             <p className="text-white text-sm font-semibold mb-2">Contact</p>
-            <p className="text-sm">Tél : +225 07 XX XX XX XX</p>
+            <p className="text-sm">Tél : +225 05 00 44 64 64</p>
             <p className="text-sm">contact@residencesh2o.com</p>
           </div>
           <div>
             <p className="text-white text-sm font-semibold mb-2">Navigation</p>
             <div className="flex flex-col gap-1 text-sm">
-              <a href="#sejours" className="hover:text-white transition-colors">Séjours</a>
-              <a href="#evenements" className="hover:text-white transition-colors">Événements</a>
-              <a href="#galerie" className="hover:text-white transition-colors">Galerie</a>
-              <a href="#contact" className="hover:text-white transition-colors">Réserver</a>
+              <a href="/#sejours" className="hover:text-white transition-colors">Séjours</a>
+              <a href="/#evenements" className="hover:text-white transition-colors">Événements</a>
+              <a href="/#galerie" className="hover:text-white transition-colors">Galerie</a>
+              <a href="/#contact" className="hover:text-white transition-colors">Réserver</a>
             </div>
           </div>
         </div>

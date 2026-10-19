@@ -1,48 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Users, Maximize2, Waves, Sparkles, Check, ArrowRight } from 'lucide-react'
-
-const DUPLEXES = [
-  {
-    id: 'D-1',
-    name: 'Duplex Lac',
-    tagline: 'Vue panoramique sur la lagune & pontoon privé',
-    image: '/images/gallery/IMG_2869.jpg',
-    features: ['Piscine privée 20m²', 'Pontoon privé', 'Chambre king size', 'Cuisine équipée', 'Terrasse vue lagune'],
-    capacity: '2–4 personnes',
-    surface: '80 m²',
-    price: '120 000 FCFA',
-    period: '/ nuit',
-    badge: 'Vue Lagune',
-    badgeClass: 'bg-teal-500/90 text-white',
-  },
-  {
-    id: 'D-2',
-    name: 'Duplex Jardin',
-    tagline: 'Intimité, verdure et sérénité tropicale',
-    image: '/images/gallery/IMG_2873.jpg',
-    features: ['Piscine privée 15m²', 'Jardin privatif paysager', '2 chambres avec dressing', 'Cuisine & bar équipés', 'Salon lounge'],
-    capacity: '4–6 personnes',
-    surface: '100 m²',
-    price: '150 000 FCFA',
-    period: '/ nuit',
-    badge: 'Idéal Famille',
-    badgeClass: 'bg-emerald-600/90 text-white',
-  },
-  {
-    id: 'D-3',
-    name: 'Duplex Signature',
-    tagline: 'Le summum du luxe privé avec jacuzzi et rooftop',
-    image: '/images/gallery/IMG_2875.jpg',
-    features: ['Grande piscine privée 30m²', 'Pontoon & jacuzzi chauffé', '3 suites parentales', 'Espace BBQ & rooftop', 'Vue lagune 360°'],
-    capacity: '6–8 personnes',
-    surface: '140 m²',
-    price: '220 000 FCFA',
-    period: '/ nuit',
-    badge: 'Prestige VIP',
-    badgeClass: 'bg-amber-500/95 text-slate-900 font-bold',
-  },
-]
+import { Users, Maximize2, Check, ArrowRight } from 'lucide-react'
+import { DUPLEXES, formatFCFA } from '@/lib/residences'
 
 export default function Duplexes() {
   return (
@@ -71,7 +30,7 @@ export default function Duplexes() {
               {/* Photo HD */}
               <div className="relative h-64 w-full overflow-hidden bg-slate-100">
                 <Image
-                  src={d.image}
+                  src={d.images[0]}
                   alt={d.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -99,7 +58,7 @@ export default function Duplexes() {
                   <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 mb-5 pb-5 border-b border-slate-100">
                     <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
                       <Users className="w-3.5 h-3.5 text-teal-600" />
-                      {d.capacity}
+                      {d.capacite}
                     </span>
                     <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
                       <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
@@ -125,7 +84,7 @@ export default function Duplexes() {
                   <div>
                     <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold">À partir de</span>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-lg sm:text-xl font-bold text-slate-900">{d.price}</span>
+                      <span className="text-lg sm:text-xl font-bold text-slate-900">{formatFCFA(d.prix)}</span>
                       <span className="text-xs text-slate-500">{d.period}</span>
                     </div>
                   </div>

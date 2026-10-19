@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    // « Chambres » n'existe plus : les hébergements sont les trois duplexes.
+    return [{ source: '/rooms', destination: '/residences', permanent: true }]
+  },
   images: {
     domains: ['images.unsplash.com'],
   },

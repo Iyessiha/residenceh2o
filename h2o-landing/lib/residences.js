@@ -1,90 +1,88 @@
-// Données centralisées des résidences (à synchroniser avec Manager)
-export const RESIDENCES = {
-  deluxe: {
-    id: 'deluxe',
-    slug: 'deluxe',
-    nom: 'Duplex Deluxe',
-    prix: 150,
-    description: 'Notre entrée de gamme offre le confort essentiel avec style.',
-    capacite: '2-4 personnes',
+// Source unique des duplexes : la landing, la page Résidences, le widget de réservation
+// et le formulaire de contact lisent tous ce fichier. Ne pas dupliquer ces valeurs ailleurs.
+export const DUPLEXES = [
+  {
+    id: 'D-1',
+    slug: 'lac',
+    nom: 'Duplex Lac',
+    tagline: 'Vue panoramique sur la lagune & pontoon privé',
+    prix: 120000,
+    capacite: '2–4 personnes',
+    surface: '80 m²',
+    badge: 'Vue Lagune',
+    badgeClass: 'bg-teal-500/90 text-white',
     features: [
-      'Piscine privée chauffée',
-      'Pontoon aménagé',
-      'Chambre principale luxe',
+      'Piscine privée 20m²',
+      'Pontoon privé',
+      'Chambre king size',
       'Cuisine équipée',
-      'Salle de bain spa',
-      'Terrasse vue lac',
-      'WiFi haut débit',
-      'Climatisation programmable',
+      'Terrasse vue lagune',
     ],
     images: [
-      '/images/gallery/IMG_2868.jpg',
       '/images/gallery/IMG_2869.jpg',
+      '/images/gallery/IMG_2868.jpg',
       '/images/gallery/IMG_2870.jpg',
-      '/images/gallery/IMG_2873.jpg',
     ],
-    amenities: ['🏊 Piscine privée', '⚓ Pontoon', '🍽 Restaurant', '💆 Spa', '🚗 Parking gratuit'],
   },
-  jardin: {
-    id: 'jardin',
+  {
+    id: 'D-2',
     slug: 'jardin',
     nom: 'Duplex Jardin',
-    prix: 200,
-    description: 'Avec jardin privatif et vue panoramique sur la lagune.',
-    capacite: '2-6 personnes',
+    tagline: 'Intimité, verdure et sérénité tropicale',
+    prix: 150000,
+    capacite: '4–6 personnes',
+    surface: '100 m²',
+    badge: 'Idéal Famille',
+    badgeClass: 'bg-emerald-600/90 text-white',
     features: [
-      'Piscine privée chauffée XL',
-      'Pontoon premium',
-      '2 chambres luxe',
-      'Cuisine gastronomique',
-      'Jardin tropical privé',
-      'Terrasse panoramique',
-      'Salle de bain principale spa',
-      'Climatisation intelligente',
-      'Sonorisation intégrée',
+      'Piscine privée 15m²',
+      'Jardin privatif paysager',
+      '2 chambres avec dressing',
+      'Cuisine & bar équipés',
+      'Salon lounge',
+    ],
+    images: [
+      '/images/gallery/IMG_2873.jpg',
+      '/images/gallery/IMG_2877.jpg',
+    ],
+  },
+  {
+    id: 'D-3',
+    slug: 'signature',
+    nom: 'Duplex Signature',
+    tagline: 'Le summum du luxe privé avec jacuzzi et rooftop',
+    prix: 220000,
+    capacite: '6–8 personnes',
+    surface: '140 m²',
+    badge: 'Prestige VIP',
+    badgeClass: 'bg-amber-500/95 text-slate-900 font-bold',
+    features: [
+      'Grande piscine privée 30m²',
+      'Pontoon & jacuzzi chauffé',
+      '3 suites parentales',
+      'Espace BBQ & rooftop',
+      'Vue lagune 360°',
     ],
     images: [
       '/images/gallery/IMG_2875.jpg',
-      '/images/gallery/IMG_2877.jpg',
       '/images/gallery/IMG_2879.jpg',
       '/images/gallery/IMG_2880.jpg',
-    ],
-    amenities: ['🏊 Piscine XL', '⚓ Pontoon Premium', '🎪 Pergola events', '💪 Gym', '🍽 Restaurant'],
-  },
-  presidential: {
-    id: 'presidential',
-    slug: 'presidential',
-    nom: 'Duplex Presidential',
-    prix: 350,
-    description: 'L\'apothéose du luxe avec tous les services premium.',
-    capacite: '2-8 personnes',
-    features: [
-      'Piscine privée chauffée 3 niveaux',
-      'Pontoon VIP avec jacuzzi',
-      '3 chambres suites luxe',
-      'Cuisine professionnelle',
-      'Jardin tropical aménagé',
-      ' Terrasse panoramique 360°',
-      'Home cinema',
-      'Salle de spa privée',
-      'Ascenseur privatif',
-      'Système domotique complet',
-      'Sommelier sur demande',
-    ],
-    images: [
       '/images/gallery/IMG_2881.jpg',
-      '/images/gallery/IMG_2884.jpg',
-      '/images/gallery/IMG_2885.jpg',
-      '/images/gallery/IMG_2887.jpg',
     ],
-    amenities: ['🏊 Piscine 3 niveaux', '⚓ Pontoon VIP', '🎪 Pergola VIP', '💆 Spa privé', '🎬 Cinéma'],
   },
+]
+
+// 120000 -> "120 000 FCFA" (espace simple, identique côté serveur et client)
+export function formatFCFA(montant) {
+  return `${String(montant).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} FCFA`
 }
 
+export const PRIX_MINIMUM = Math.min(...DUPLEXES.map((d) => d.prix))
+
 export function getResidenceBySlug(slug) {
-  return RESIDENCES[slug] || null
+  return DUPLEXES.find((d) => d.slug === slug) || null
 }
 
 export function getAllResidences() {
-  return Object.values(RESIDENCES)
+  return DUPLEXES
 }
