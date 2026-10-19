@@ -201,3 +201,17 @@ on conflict (fichier) do nothing;
 update photos_galerie set duplex_code = 'D-1' where fichier in ('/images/gallery/IMG_2868.jpg','/images/gallery/IMG_2869.jpg','/images/gallery/IMG_2870.jpg');
 update photos_galerie set duplex_code = 'D-2' where fichier in ('/images/gallery/IMG_2873.jpg','/images/gallery/IMG_2877.jpg');
 update photos_galerie set duplex_code = 'D-3' where fichier in ('/images/gallery/IMG_2875.jpg','/images/gallery/IMG_2879.jpg','/images/gallery/IMG_2880.jpg','/images/gallery/IMG_2881.jpg');
+
+-- Bucket public des photos téléversées depuis le manager
+insert into storage.buckets (id, name, public)
+values ('galerie', 'galerie', true)
+on conflict (id) do nothing;
+
+drop policy if exists "galerie_public_read" on storage.objects;
+create policy "galerie_public_read" on storage.objects
+  for select using (bucket_id = 'galerie');
+
+drop policy if exists "galerie_auth_write" on storage.objects;
+create policy "galerie_auth_write" on storage.objects
+  for all using (bucket_id = 'galerie' and auth.role() = 'authenticated')
+  with check (bucket_id = 'galerie' and auth.role() = 'authenticated');

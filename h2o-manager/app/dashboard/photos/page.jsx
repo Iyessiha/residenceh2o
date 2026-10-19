@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { ChevronUp, ChevronDown, Save } from 'lucide-react'
+import { ChevronUp, ChevronDown, Save, Trash2, Upload } from 'lucide-react'
 
 // Adresse du site vitrine, pour afficher les miniatures (ex: https://residencesh2o.com)
 const SITE_URL = process.env.NEXT_PUBLIC_LANDING_URL || ''
@@ -14,6 +14,7 @@ export default function PhotosPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -39,6 +40,44 @@ export default function PhotosPage() {
       || avant.visible !== photo.visible
     return change ? [{ id: photo.id, position: index + 1, duplex_code: photo.duplex_code, visible: photo.visible }] : []
   })
+
+  // Envoie les photos dans le bucket « galerie » puis les ajoute en fin de liste
+  async function televerser(e) {
+    const fichiers = Array.from(e.target.files || [])
+    e.target.value = ''
+    if (fichiers.length === 0) return
+    setUploading(true)
+    setMessage('')
+    let position = Math.max(0, ...photos.map(p => p.position)) + 1
+    for (const fichier of fichiers) {
+      const nom = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${fichier.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+      const { error: erreurEnvoi } = await supabase.storage.from('galerie').upload(nom, fichier, { cacheControl: '31536000' })
+      if (erreurEnvoi) {
+        setMessage(`Erreur sur ${fichier.name} : ${erreurEnvoi.message}`)
+        break
+      }
+      const { data: { publicUrl } } = supabase.storage.from('galerie').getPublicUrl(nom)
+      const { error: erreurLigne } = await supabase.from('photos_galerie').insert([{ fichier: publicUrl, position: position++, visible: true }])
+      if (erreurLigne) {
+        setMessage(`Erreur sur ${fichier.name} : ${erreurLigne.message}`)
+        break
+      }
+    }
+    setUploading(false)
+    load()
+  }
+
+  // Retire la photo du site et supprime le fichier s'il est dans le bucket
+  async function supprimer(photo) {
+    if (!window.confirm('Retirer cette photo de la galerie ?')) return
+    const marqueur = '/galerie/'
+    if (photo.fichier.includes(marqueur)) {
+      await supabase.storage.from('galerie').remove([photo.fichier.split(marqueur)[1]])
+    }
+    const { error } = await supabase.from('photos_galerie').delete().eq('id', photo.id)
+    if (error) setMessage(`Erreur : ${error.message}`)
+    load()
+  }
 
   function deplacer(index, sens) {
     const cible = index + sens
@@ -78,6 +117,12 @@ export default function PhotosPage() {
             Rangez les photos : la première de la liste apparaît en premier sur le site.
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+          <label className={`btn-secondary flex items-center gap-2 cursor-pointer ${uploading ? 'opacity-50 pointer-events-none' : ''}`}>
+            <Upload size={16} />
+            {uploading ? 'Envoi...' : 'Ajouter des photos'}
+            <input type="file" accept="image/*" multiple className="hidden" onChange={televerser} />
+          </label>
         <button
           onClick={enregistrer}
           disabled={saving || modifications.length === 0}
@@ -86,6 +131,7 @@ export default function PhotosPage() {
           <Save size={16} />
           {saving ? 'Enregistrement...' : `Enregistrer${modifications.length ? ` (${modifications.length})` : ''}`}
         </button>
+        </div>
       </div>
 
       {message && <p className="text-sm mb-4 text-gray-700">{message}</p>}
@@ -120,7 +166,7 @@ export default function PhotosPage() {
               <div className="w-20 h-14 bg-gray-200 rounded overflow-hidden flex-shrink-0">
                 {SITE_URL && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={`${SITE_URL}${encodeURI(photo.fichier)}`} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  <img src={photo.fichier.startsWith('http') ? photo.fichier : `${SITE_URL}${encodeURI(photo.fichier)}`} alt="" className="w-full h-full object-cover" loading="lazy" />
                 )}
               </div>
 
@@ -147,6 +193,10 @@ export default function PhotosPage() {
                   </label>
                 </div>
               </div>
+
+              <button onClick={() => supprimer(photo)} className="p-2 text-red-600 hover:text-red-800" aria-label="Retirer la photo">
+                <Trash2 size={18} />
+              </button>
             </div>
           ))}
 
