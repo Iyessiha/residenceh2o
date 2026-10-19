@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase'
+import { createServiceClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { FacturePDF } from '@/lib/pdf/FacturePDF'
@@ -10,7 +10,7 @@ import React from 'react'
  */
 export async function GET(_req, { params }) {
   const { id } = params
-  const supabase = createClient()
+  const supabase = createServiceClient()
 
   const { data: facture, error } = await supabase
     .from('factures')
