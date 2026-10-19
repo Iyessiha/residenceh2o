@@ -151,7 +151,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <Contact duplexes={duplexes} />
+        <Contact duplexes={duplexes} chambres={chambres} />
       </main>
       <Footer />
     </>

@@ -21,14 +21,14 @@ export default function Events() {
         <div className="grid lg:grid-cols-12 gap-12 items-center">
           {/* Left: Presentation */}
           <div className="lg:col-span-6">
-            <span className="text-xs font-bold tracking-[0.25em] uppercase text-teal-300 bg-teal-950/80 border border-teal-500/30 px-3.5 py-1.5 rounded-full inline-flex items-center gap-2 mb-4">
-              <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+            <span className="text-xs font-bold tracking-[0.25em] uppercase text-[#7FB8B5] bg-[#0C3A3D]/80 border border-[#7FB8B5]/30 px-3.5 py-1.5 rounded-full inline-flex items-center gap-2 mb-4">
+              <Sparkles className="w-3.5 h-3.5 text-[#7FB8B5]" />
               Événements & Réceptions
             </span>
 
             <h2 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-white mb-6 leading-tight">
               La Pergola & le Pontoon : <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-200 via-cyan-100 to-amber-200">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C8E6E5] to-[#F5D9A8]">
                 un décor féerique sur l'eau
               </span>
             </h2>
@@ -41,7 +41,7 @@ export default function Events() {
             <div className="space-y-3 mb-10">
               {EVENT_PILLARS.map((item) => (
                 <div key={item} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center flex-shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-white/10 text-[#7FB8B5] flex items-center justify-center flex-shrink-0">
                     <Check className="w-3.5 h-3.5 stroke-[3]" />
                   </div>
                   <span className="text-sm sm:text-base text-white/90">{item}</span>
@@ -52,7 +52,8 @@ export default function Events() {
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 href="#contact"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-lg shadow-teal-500/25 transition-all"
+                className="inline-flex items-center gap-2 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-lg transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #1C6E70 0%, #0C3A3D 100%)' }}
               >
                 <span>Demander un devis sur mesure</span>
                 <ArrowRight className="w-4 h-4" />
@@ -100,7 +101,7 @@ export default function Events() {
                 <p className="text-sm font-semibold text-white">Privatisation totale possible</p>
                 <p className="text-xs text-white/60">Hébergement des invités inclus dans nos duplexes</p>
               </div>
-              <span className="px-3 py-1.5 rounded-full bg-amber-400/20 border border-amber-400/30 text-amber-300 text-xs font-semibold">
+              <span className="px-3 py-1.5 rounded-full bg-[#D98A3A]/20 border border-[#D98A3A]/30 text-[#F5D9A8] text-xs font-semibold">
                 Sur réservation
               </span>
             </div>

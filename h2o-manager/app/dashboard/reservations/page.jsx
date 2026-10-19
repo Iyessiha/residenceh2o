@@ -12,22 +12,26 @@ const EMPTY = {
   montant_total: '', notes: '', statut: 'en_attente',
   source: 'manuel', type: 'sejour',
 }
+const EMPTY_CHAMBRE = { ...EMPTY, type: 'chambre', duplex_id: '' }
 
 export default function Reservations() {
   const supabase     = createClient()
   const searchParams = useSearchParams()
 
-  const [reservations, setReservations] = useState([])
-  const [duplexes,     setDuplexes]     = useState([])
-  const [filter,       setFilter]       = useState('tous')
-  const [loading,      setLoading]      = useState(true)
-  const [showForm,     setShowForm]     = useState(false)
-  const [editId,       setEditId]       = useState(null)
-  const [form,         setForm]         = useState(EMPTY)
-  const [saving,       setSaving]       = useState(false)
-  const [conflict,     setConflict]     = useState(null)   // { nom_client, date_arrivee, date_depart }
-  const [search,       setSearch]       = useState('')
-  const [deleteId,     setDeleteId]     = useState(null)
+  const [reservations,     setReservations]     = useState([])
+  const [duplexes,         setDuplexes]         = useState([])
+  const [chambres,         setChambres]         = useState([])
+  const [typeHebergement,  setTypeHebergement]  = useState('duplex')
+  const [chambreId,        setChambreId]        = useState('')
+  const [filter,           setFilter]           = useState('tous')
+  const [loading,          setLoading]          = useState(true)
+  const [showForm,         setShowForm]         = useState(false)
+  const [editId,           setEditId]           = useState(null)
+  const [form,             setForm]             = useState(EMPTY)
+  const [saving,           setSaving]           = useState(false)
+  const [conflict,         setConflict]         = useState(null)
+  const [search,           setSearch]           = useState('')
+  const [deleteId,         setDeleteId]         = useState(null)
 
   // Ouvrir le formulaire si ?new=1 dans l'URL
   useEffect(() => {
@@ -48,24 +52,48 @@ export default function Reservations() {
   useEffect(() => {
     supabase.from('duplexes').select('code, nom, tarif_nuit').order('code')
       .then(({ data }) => setDuplexes(data || []))
+    supabase.from('chambres').select('id, nom, type, tarif_nuit, statut').order('nom')
+      .then(({ data }) => setChambres(data || []))
   }, [])
 
-  // Calcul auto du montant à partir des dates et du tarif duplex
+  // Calcul auto montant — duplex
   useEffect(() => {
+    if (typeHebergement !== 'duplex') return
     if (!form.date_arrivee || !form.date_depart || !form.duplex_id) return
     const nuits = (new Date(form.date_depart) - new Date(form.date_arrivee)) / 86400000
     if (nuits <= 0) return
     const dup = duplexes.find(d => d.code === form.duplex_id)
-    if (dup?.tarif_nuit) {
-      setForm(p => ({ ...p, montant_total: String(dup.tarif_nuit * nuits) }))
-    }
-  }, [form.date_arrivee, form.date_depart, form.duplex_id, duplexes])
+    if (dup?.tarif_nuit) setForm(p => ({ ...p, montant_total: String(dup.tarif_nuit * nuits) }))
+  }, [form.date_arrivee, form.date_depart, form.duplex_id, duplexes, typeHebergement])
+
+  // Calcul auto montant — chambre
+  useEffect(() => {
+    if (typeHebergement !== 'chambre') return
+    if (!form.date_arrivee || !form.date_depart || !chambreId) return
+    const nuits = (new Date(form.date_depart) - new Date(form.date_arrivee)) / 86400000
+    if (nuits <= 0) return
+    const ch = chambres.find(c => String(c.id) === String(chambreId))
+    if (ch?.tarif_nuit) setForm(p => ({ ...p, montant_total: String(ch.tarif_nuit * nuits) }))
+  }, [form.date_arrivee, form.date_depart, chambreId, chambres, typeHebergement])
 
   function openNew() {
-    setForm(EMPTY); setEditId(null); setConflict(null); setShowForm(true)
+    setForm(EMPTY); setEditId(null); setConflict(null)
+    setTypeHebergement('duplex'); setChambreId('')
+    setShowForm(true)
   }
 
   function openEdit(r) {
+    const isChambre = r.type === 'chambre'
+    // Extraire l'id chambre depuis les notes si dispo
+    let parsedChambreId = ''
+    if (isChambre) {
+      // notes stocke "Chambre souhaitée : NomChambre\n..." — on retrouve par nom
+      const match = r.notes?.match(/^Chambre souhait[ée]e? : (.+?)(\n|$)/i)
+      if (match) {
+        const ch = chambres.find(c => c.nom === match[1].trim())
+        if (ch) parsedChambreId = String(ch.id)
+      }
+    }
     setForm({
       nom_client: r.nom_client || '', telephone: r.telephone || '',
       email: r.email || '', duplex_id: r.duplex_id || '',
@@ -74,10 +102,13 @@ export default function Reservations() {
       montant_total: r.montant_total ? String(r.montant_total) : '',
       notes: r.notes || '', statut: r.statut, source: r.source, type: r.type,
     })
+    setTypeHebergement(isChambre ? 'chambre' : 'duplex')
+    setChambreId(parsedChambreId)
     setEditId(r.id); setConflict(null); setShowForm(true)
   }
 
   async function checkConflict() {
+    if (typeHebergement === 'chambre') return false
     if (!form.duplex_id || !form.date_arrivee || !form.date_depart) return true
     const res = await fetch('/api/reservations/check-conflict', {
       method: 'POST',
@@ -103,8 +134,24 @@ export default function Reservations() {
     const hasConflict = await checkConflict()
     if (hasConflict) { setSaving(false); return }
 
+    let notes = form.notes
+    let type = form.type
+    let duplex_id = form.duplex_id || null
+
+    if (typeHebergement === 'chambre') {
+      const ch = chambres.find(c => String(c.id) === String(chambreId))
+      const chambreNom = ch ? ch.nom : chambreId
+      const notesBase = form.notes.replace(/^Chambre souhait[ée]e? : .+?(\n|$)/i, '').trim()
+      notes = chambreNom ? `Chambre souhaitée : ${chambreNom}${notesBase ? '\n' + notesBase : ''}` : notesBase
+      type = 'chambre'
+      duplex_id = null
+    }
+
     const payload = {
       ...form,
+      type,
+      duplex_id,
+      notes,
       nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
       montant_total: form.montant_total ? parseInt(form.montant_total) : null,
       updated_at: new Date().toISOString(),
@@ -115,7 +162,9 @@ export default function Reservations() {
     } else {
       await supabase.from('reservations').insert([payload])
     }
-    setShowForm(false); setForm(EMPTY); setEditId(null); load()
+    setShowForm(false); setForm(EMPTY); setEditId(null)
+    setTypeHebergement('duplex'); setChambreId('')
+    load()
     setSaving(false)
   }
 
@@ -167,7 +216,7 @@ export default function Reservations() {
             <thead style={{ backgroundColor: 'var(--bg-2)' }}>
               <tr>
                 <th className="table-th">Client</th>
-                <th className="table-th">Duplex</th>
+                <th className="table-th">Hébergement</th>
                 <th className="table-th">Arrivée</th>
                 <th className="table-th">Départ</th>
                 <th className="table-th">Montant</th>
@@ -186,7 +235,14 @@ export default function Reservations() {
                     <p className="font-medium" style={{ color: 'var(--text)' }}>{r.nom_client}</p>
                     <p className="text-xs" style={{ color: 'var(--text-3)' }}>{r.telephone}</p>
                   </td>
-                  <td className="table-td">{dupNom(r.duplex_id)}</td>
+                  <td className="table-td">
+                    {r.type === 'chambre'
+                      ? <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--bg-2)', color: 'var(--primary)' }}>
+                          {r.notes?.match(/^Chambre souhait[ée]e? : (.+?)(\n|$)/i)?.[1] || 'Chambre'}
+                        </span>
+                      : dupNom(r.duplex_id)
+                    }
+                  </td>
                   <td className="table-td">{formatDate(r.date_arrivee)}</td>
                   <td className="table-td">{formatDate(r.date_depart)}</td>
                   <td className="table-td">{formatFCFA(r.montant_total)}</td>
@@ -260,22 +316,58 @@ export default function Reservations() {
                   onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
               </div>
 
+              {/* Toggle Duplex / Chambre */}
+              <div>
+                <label className="label">Type d'hébergement</label>
+                <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+                  {[['duplex', 'Duplex'], ['chambre', 'Chambre à la nuit']].map(([val, label]) => (
+                    <button key={val} type="button"
+                      onClick={() => { setTypeHebergement(val); setChambreId(''); setConflict(null); setForm(p => ({ ...p, montant_total: '' })) }}
+                      className="flex-1 py-2 text-sm font-medium transition-colors"
+                      style={typeHebergement === val
+                        ? { backgroundColor: 'var(--primary)', color: '#fff' }
+                        : { backgroundColor: 'var(--bg)', color: 'var(--text-2)' }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="label">Duplex</label>
-                  <select className="input" value={form.duplex_id}
-                    onChange={e => setForm(p => ({ ...p, duplex_id: e.target.value }))}>
-                    <option value="">— Choisir —</option>
-                    {duplexes.map(d => (
-                      <option key={d.code} value={d.code}>
-                        {d.nom} ({d.code}) — {d.tarif_nuit ? `${new Intl.NumberFormat('fr-FR').format(d.tarif_nuit)} FCFA/nuit` : '—'}
-                      </option>
-                    ))}
-                  </select>
+                  {typeHebergement === 'duplex' ? (
+                    <>
+                      <label className="label">Duplex</label>
+                      <select className="input" value={form.duplex_id}
+                        onChange={e => setForm(p => ({ ...p, duplex_id: e.target.value }))}>
+                        <option value="">— Choisir —</option>
+                        {duplexes.map(d => (
+                          <option key={d.code} value={d.code}>
+                            {d.nom} ({d.code}) — {d.tarif_nuit ? `${new Intl.NumberFormat('fr-FR').format(d.tarif_nuit)} FCFA/nuit` : '—'}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  ) : (
+                    <>
+                      <label className="label">Chambre</label>
+                      <select className="input" value={chambreId}
+                        onChange={e => setChambreId(e.target.value)}>
+                        <option value="">— Choisir —</option>
+                        {chambres.map(c => (
+                          <option key={c.id} value={String(c.id)}>
+                            {c.type === 'vip' ? '★ ' : ''}{c.nom}{c.tarif_nuit ? ` — ${new Intl.NumberFormat('fr-FR').format(c.tarif_nuit)} FCFA/nuit` : ''}
+                            {c.statut === 'occupee' ? ' (occupée)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className="label">Nbre personnes</label>
-                  <input className="input" type="number" min="1" value={form.nb_personnes}
+                  <input className="input" type="number" min="1" max={typeHebergement === 'chambre' ? 4 : undefined}
+                    value={form.nb_personnes}
                     onChange={e => setForm(p => ({ ...p, nb_personnes: e.target.value }))} />
                 </div>
               </div>
@@ -298,7 +390,7 @@ export default function Reservations() {
               <div>
                 <label className="label">
                   Montant total (FCFA)
-                  {form.duplex_id && form.date_arrivee && form.date_depart && (
+                  {((typeHebergement === 'duplex' && form.duplex_id) || (typeHebergement === 'chambre' && chambreId)) && form.date_arrivee && form.date_depart && (
                     <span className="ml-1 text-xs font-normal" style={{ color: 'var(--primary)' }}>
                       — calculé automatiquement
                     </span>
@@ -306,7 +398,7 @@ export default function Reservations() {
                 </label>
                 <input className="input" type="number" value={form.montant_total}
                   onChange={e => setForm(p => ({ ...p, montant_total: e.target.value }))}
-                  placeholder="Sélectionnez duplex + dates pour calcul auto" />
+                  placeholder="Sélectionnez hébergement + dates pour calcul auto" />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
