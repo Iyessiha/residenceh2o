@@ -72,6 +72,9 @@ export default async function ResidencePage({ params }) {
                 {residence.capacite}
               </div>
               <div className="flex items-center gap-2">
+                {residence.chambres} chambres
+              </div>
+              <div className="flex items-center gap-2">
                 <MapPin size={18} />
                 Modeste Beach, Grand-Bassam
               </div>

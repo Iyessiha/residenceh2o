@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Users, Maximize2, Check, ArrowRight } from 'lucide-react'
+import { Users, Maximize2, BedDouble, Check, ArrowRight } from 'lucide-react'
 import { formatFCFA } from '@/lib/residences'
 
 export default function Duplexes({ duplexes }) {
@@ -65,6 +65,10 @@ export default function Duplexes({ duplexes }) {
                     <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
                       <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
                       {d.surface}
+                    </span>
+                    <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
+                      <BedDouble className="w-3.5 h-3.5 text-teal-600" />
+                      {d.chambres} chambres
                     </span>
                   </div>
 
