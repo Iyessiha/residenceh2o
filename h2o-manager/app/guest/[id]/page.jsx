@@ -129,6 +129,101 @@ function OrderModal({ cart, onClose, onConfirm, type }) {
   )
 }
 
+// ── Suivi en temps réel ───────────────────────────────────
+function SuiviCommande({ orderId, orderType, onRetour }) {
+  const [statut, setStatut] = useState(orderType === 'restaurant' ? 'en_cours' : 'en_attente')
+
+  useEffect(() => {
+    const table = orderType === 'restaurant' ? 'commandes_restaurant' : 'ventes'
+    sb.from(table).select('statut').eq('id', orderId).single()
+      .then(({ data }) => { if (data?.statut) setStatut(data.statut) })
+
+    const channel = sb.channel(`suivi-${orderId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table,
+        filter: `id=eq.${orderId}`,
+      }, (payload) => {
+        if (payload.new?.statut) setStatut(payload.new.statut)
+      })
+      .subscribe()
+
+    return () => { sb.removeChannel(channel) }
+  }, [orderId, orderType])
+
+  const STEPS = orderType === 'restaurant'
+    ? [
+        { key: 'en_cours',       label: 'Commande reçue',  emoji: '✅' },
+        { key: 'en_preparation', label: 'En préparation',  emoji: '🔥' },
+        { key: 'pret',           label: 'Prêt à livrer',   emoji: '🍽️' },
+        { key: 'livre',          label: 'Livré',            emoji: '🎉' },
+      ]
+    : [
+        { key: 'en_attente', label: 'Commande reçue', emoji: '✅' },
+        { key: 'confirme',   label: 'Confirmée',       emoji: '📦' },
+        { key: 'livre',      label: 'Livré',            emoji: '🎉' },
+      ]
+
+  const currentIdx = Math.max(0, STEPS.findIndex(s => s.key === statut))
+  const isDelivered = statut === 'livre'
+
+  return (
+    <div className="px-4 pt-5">
+      <div className="bg-white rounded-3xl p-6 shadow-sm mb-4">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="text-3xl">{isDelivered ? '🎉' : '⏳'}</div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              {isDelivered ? 'Commande livrée !' : 'Commande en cours'}
+            </h2>
+            <p className="text-xs text-gray-400">
+              {isDelivered ? 'Bon appétit !' : 'La page se met à jour automatiquement'}
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          {STEPS.map((step, idx) => {
+            const done = idx < currentIdx
+            const active = idx === currentIdx
+            const isLast = idx === STEPS.length - 1
+            return (
+              <div key={step.key} className="flex items-start gap-4">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-base transition-all ${
+                      done ? 'bg-green-100 text-green-700' : !active ? 'bg-gray-100 text-gray-300' : ''
+                    }`}
+                    style={active ? { backgroundColor: '#E8513A', color: '#fff' } : {}}
+                  >
+                    {done ? '✓' : step.emoji}
+                  </div>
+                  {!isLast && <div className={`w-0.5 h-8 mt-1 ${done ? 'bg-green-200' : 'bg-gray-100'}`} />}
+                </div>
+                <div className="pt-2 pb-5">
+                  <p className={`font-semibold text-sm ${active ? 'text-gray-900' : done ? 'text-green-700' : 'text-gray-300'}`}>
+                    {step.label}
+                  </p>
+                  {active && !isDelivered && (
+                    <p className="text-xs mt-0.5 animate-pulse" style={{ color: '#E8513A' }}>En cours…</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <button
+          onClick={onRetour}
+          className={`w-full py-3 rounded-2xl font-semibold text-sm ${isDelivered ? 'text-white' : 'bg-gray-100 text-gray-600'}`}
+          style={isDelivered ? { backgroundColor: '#E8513A' } : {}}
+        >
+          {isDelivered ? "Retour à l'accueil" : "Retour à l'accueil (commande en cours)"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Page principale ───────────────────────────────────────
 export default function GuestPortal({ params }) {
   const { id } = params
@@ -149,6 +244,10 @@ export default function GuestPortal({ params }) {
   const [assistNom, setAssistNom]   = useState('')
   const [assistSent, setAssistSent] = useState(false)
   const [assistSending, setAssistSending] = useState(false)
+
+  // Suivi commande
+  const [lastOrderId,   setLastOrderId]   = useState(null)
+  const [lastOrderType, setLastOrderType] = useState(null) // 'restaurant' | 'boutique'
 
   useEffect(() => {
     async function load() {
@@ -186,22 +285,25 @@ export default function GuestPortal({ params }) {
     const nom_client = nom || `Duplex ${duplex.code}`
 
     if (view === 'restaurant') {
-      await sb.from('commandes_restaurant').insert([{
+      const { data } = await sb.from('commandes_restaurant').insert([{
         nom_client, telephone: tel || null,
         table_num: duplex.code,
         lignes, montant_total,
         mode_paiement: 'especes', statut: 'en_cours',
         notes: note || null,
-      }])
+      }]).select('id').single()
+      setCart([])
+      return { id: data?.id, type: 'restaurant' }
     } else {
-      await sb.from('ventes').insert([{
+      const { data } = await sb.from('ventes').insert([{
         nom_client, telephone: tel || null,
         lignes, montant_total,
         mode_paiement: 'especes', statut: 'en_attente',
         notes: note || null,
-      }])
+      }]).select('id').single()
+      setCart([])
+      return { id: data?.id, type: 'boutique' }
     }
-    setCart([])
   }
 
   async function sendAssistance() {
@@ -226,6 +328,8 @@ export default function GuestPortal({ params }) {
     setAssistMsg('')
     setAssistNom('')
     setAssistSent(false)
+    setLastOrderId(null)
+    setLastOrderType(null)
   }
 
   // ── Rendu loading / not found ─────────────────────────
@@ -273,6 +377,7 @@ export default function GuestPortal({ params }) {
               {view === 'home'       ? duplex.nom
               : view === 'restaurant' ? 'Restaurant & Bar'
               : view === 'boutique'   ? 'Boutique'
+              : view === 'suivi'      ? 'Suivi de commande'
               : 'Assistance'}
             </h1>
           </div>
@@ -493,6 +598,15 @@ export default function GuestPortal({ params }) {
         </div>
       )}
 
+      {/* ── Vue Suivi commande ──────────────────────────── */}
+      {view === 'suivi' && lastOrderId && (
+        <SuiviCommande
+          orderId={lastOrderId}
+          orderType={lastOrderType}
+          onRetour={goBack}
+        />
+      )}
+
       {/* Barre panier */}
       {(view === 'restaurant' || view === 'boutique') && (
         <CartBar cart={cart} onOpen={() => setCartOpen(true)} />
@@ -505,8 +619,13 @@ export default function GuestPortal({ params }) {
           type={view}
           onClose={() => setCartOpen(false)}
           onConfirm={async (info) => {
-            await confirmOrder(info)
+            const result = await confirmOrder(info)
             setCartOpen(false)
+            if (result?.id) {
+              setLastOrderId(result.id)
+              setLastOrderType(result.type)
+              setView('suivi')
+            }
           }}
         />
       )}

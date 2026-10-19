@@ -163,11 +163,15 @@ export default function PhotosPage() {
 
               <span className="w-8 text-center text-sm font-mono text-gray-500">{index + 1}</span>
 
-              <div className="w-20 h-14 bg-gray-200 rounded overflow-hidden flex-shrink-0">
-                {SITE_URL && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={photo.fichier.startsWith('http') ? photo.fichier : `${SITE_URL}${encodeURI(photo.fichier)}`} alt="" className="w-full h-full object-cover" loading="lazy" />
-                )}
+              <div className="w-32 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={photo.fichier.startsWith('http') ? photo.fichier : `${SITE_URL}${encodeURI(photo.fichier)}`}
+                  alt={photo.alt || ''}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={e => { e.target.style.display = 'none' }}
+                />
               </div>
 
               <div className="flex-1 min-w-0">
