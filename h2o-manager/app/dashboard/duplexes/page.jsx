@@ -224,9 +224,9 @@ export default function Duplexes() {
 
       {/* Modal QR Code invité */}
       {qrDuplex && (() => {
-        const guestUrl = typeof window !== 'undefined'
-          ? `${window.location.origin}/guest/${qrDuplex.id}`
-          : `/guest/${qrDuplex.id}`
+        const managerUrl = process.env.NEXT_PUBLIC_MANAGER_URL ||
+          (typeof window !== 'undefined' ? window.location.origin : '')
+        const guestUrl = `${managerUrl}/guest/${qrDuplex.id}`
         return (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="rounded-2xl p-6 w-full max-w-sm shadow-xl text-center" style={{ backgroundColor: 'var(--bg)' }}>

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -14,9 +14,9 @@ const NAV = [
   { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
 
   { section: 'Services' },
-  { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant & Bar' },
-  { href: '/dashboard/boutique',     icon: '🛍️', label: 'Boutique' },
-  { href: '/dashboard/assistance',   icon: '🔔', label: 'Assistance' },
+  { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant & Bar', badge: 'restaurant' },
+  { href: '/dashboard/boutique',     icon: '🛍️', label: 'Boutique',          badge: 'boutique' },
+  { href: '/dashboard/assistance',   icon: '🔔', label: 'Assistance',        badge: 'assistance' },
 
   { section: 'Événements' },
   { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
@@ -31,11 +31,88 @@ const NAV = [
   { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
 ]
 
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const times = [0, 0.18, 0.36]
+    times.forEach((t) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.value = 880
+      gain.gain.setValueAtTime(0, ctx.currentTime + t)
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + t + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15)
+      osc.start(ctx.currentTime + t)
+      osc.stop(ctx.currentTime + t + 0.15)
+    })
+  } catch {}
+}
+
+function sendBrowserNotification(title, body) {
+  if (!('Notification' in window)) return
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '/icon.svg' })
+  }
+}
+
 export default function DashboardLayout({ children }) {
   const pathname = usePathname()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [counts, setCounts] = useState({ restaurant: 0, assistance: 0, boutique: 0 })
+  const isFirstLoad = useRef(true)
   const supabase = createClient()
+
+  const loadCounts = useCallback(async () => {
+    try {
+      const [r, a, b] = await Promise.all([
+        supabase.from('commandes_restaurant').select('*', { count: 'exact', head: true }).eq('statut', 'en_cours'),
+        supabase.from('demandes_assistance').select('*', { count: 'exact', head: true }).eq('statut', 'nouveau'),
+        supabase.from('ventes').select('*', { count: 'exact', head: true }).eq('statut', 'en_attente'),
+      ])
+      setCounts({
+        restaurant: r.count || 0,
+        assistance: a.count || 0,
+        boutique: b.count || 0,
+      })
+    } catch {}
+  }, [supabase])
+
+  const handleNewEvent = useCallback((table) => {
+    if (isFirstLoad.current) return
+    playNotificationSound()
+    const labels = {
+      commandes_restaurant: 'Nouvelle commande restaurant',
+      demandes_assistance:  'Nouvelle demande d\'assistance',
+      ventes:               'Nouvelle vente boutique',
+    }
+    sendBrowserNotification('H2O Manager', labels[table] || 'Nouvel événement')
+    loadCounts()
+  }, [loadCounts])
+
+  useEffect(() => {
+    loadCounts().then(() => { isFirstLoad.current = false })
+
+    // Request notification permission once
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+
+    const channel = supabase
+      .channel('shell_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'commandes_restaurant' },
+        () => handleNewEvent('commandes_restaurant'))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demandes_assistance' },
+        () => handleNewEvent('demandes_assistance'))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventes' },
+        () => handleNewEvent('ventes'))
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -69,6 +146,7 @@ export default function DashboardLayout({ children }) {
             )
           }
           const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+          const badgeCount = item.badge ? counts[item.badge] : 0
           return (
             <Link
               key={item.href}
@@ -81,7 +159,13 @@ export default function DashboardLayout({ children }) {
               }`}
             >
               <span className="text-base">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {badgeCount > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
+                  style={{ backgroundColor: '#E8513A', color: '#fff' }}>
+                  {badgeCount > 99 ? '99+' : badgeCount}
+                </span>
+              )}
             </Link>
           )
         })}

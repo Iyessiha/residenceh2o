@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#1A0A04"/>
+  <text x="256" y="200" text-anchor="middle" font-size="160" font-weight="900"
+        font-family="system-ui, -apple-system, sans-serif" fill="#E8513A">H</text>
+  <text x="256" y="360" text-anchor="middle" font-size="110" font-weight="700"
+        font-family="system-ui, -apple-system, sans-serif" fill="rgba(255,255,255,0.85)">₂O</text>
+</svg>
