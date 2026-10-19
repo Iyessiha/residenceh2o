@@ -9,16 +9,21 @@ import Footer from '@/components/Footer'
 import BookingWidget from '@/components/BookingWidget'
 import { Star, ArrowRight, Quote, Shield, Compass, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+import { getDuplexes, getPhotos } from '@/lib/data'
 
-export default function Home() {
+export const revalidate = 300
+
+export default async function Home() {
+  const [duplexes, photos] = await Promise.all([getDuplexes(), getPhotos()])
+
   return (
     <>
       <Nav />
-      <BookingWidget />
+      <BookingWidget duplexes={duplexes} />
       <main className="bg-[#FAF8F5]">
         <Hero />
         <HostBadge />
-        <Duplexes />
+        <Duplexes duplexes={duplexes} />
         <Events />
 
         {/* Featured Gallery Section */}
@@ -48,7 +53,7 @@ export default function Home() {
               </div>
             </div>
 
-            <FeaturedGallery />
+            <FeaturedGallery photos={photos.slice(0, 6)} />
           </div>
         </section>
 
@@ -144,7 +149,7 @@ export default function Home() {
           </div>
         </section>
 
-        <Contact />
+        <Contact duplexes={duplexes} />
       </main>
       <Footer />
     </>

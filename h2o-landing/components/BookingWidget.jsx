@@ -1,25 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-
-const DUPLEXES_TARIFS = {
-  '':    { label: '— Choisir un duplex —' },
-  'D-1': { label: 'Duplex Lac (D-1)' },
-  'D-2': { label: 'Duplex Jardin (D-2)' },
-  'D-3': { label: 'Duplex Premium (D-3)' },
-}
-
-const TARIF_WEEKEND = 400000  // ven / sam / dim
-const TARIF_SEMAINE = 350000  // lun–jeu
-
-function isWeekend(dateStr) {
-  if (!dateStr) return false
-  const d = new Date(dateStr).getDay() // 0=dim, 5=ven, 6=sam
-  return d === 0 || d === 5 || d === 6
-}
-
-function formatFCFA(n) {
-  return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA'
-}
+import { formatFCFA } from '@/lib/residences'
 
 function diffNuits(a, b) {
   if (!a || !b) return 0
@@ -27,7 +8,8 @@ function diffNuits(a, b) {
   return diff > 0 ? diff : 0
 }
 
-export default function BookingWidget() {
+export default function BookingWidget({ duplexes }) {
+  const PRIX_MINIMUM = Math.min(...duplexes.map(d => d.prix))
   const [visible, setVisible] = useState(false)
   const [open, setOpen]       = useState(false)  // mobile sheet
   const [duplex, setDuplex]   = useState('')
@@ -42,17 +24,21 @@ export default function BookingWidget() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Tarif selon le jour d'arrivée (weekend = ven/sam/dim)
-  const tarif  = isWeekend(arrivee) ? TARIF_WEEKEND : TARIF_SEMAINE
+  // Tarif du duplex choisi ; sans choix, on affiche le prix le plus bas de la gamme
+  const selected = duplexes.find(d => d.id === duplex) || null
+  const tarif  = selected ? selected.prix : PRIX_MINIMUM
   const nuits  = diffNuits(arrivee, depart)
   const minNuits = nuits > 0 && nuits < 2
   const base   = tarif * nuits
   const total  = base
 
-  const prixAff = formatFCFA(TARIF_SEMAINE)
+  const prixAff = selected ? formatFCFA(tarif) : `dès ${formatFCFA(tarif)}`
 
   function goReserver() {
-    // Scroll vers le formulaire contact avec les données pré-remplies
+    // Transmet la sélection au formulaire de contact (écouté par Contact)
+    window.dispatchEvent(new CustomEvent('h2o:reservation', {
+      detail: { duplex, arrivee, depart, voyageurs },
+    }))
     const el = document.getElementById('contact')
     if (el) el.scrollIntoView({ behavior: 'smooth' })
     setOpen(false)
@@ -69,7 +55,7 @@ export default function BookingWidget() {
           <span className="text-sm" style={{ color: 'var(--text-3)' }}> / nuit</span>
         </div>
         <div className="flex items-center gap-1 mt-0.5 text-xs" style={{ color: 'var(--text-3)' }}>
-          <span>Week-end : {formatFCFA(TARIF_WEEKEND)} · Min. 2 nuits</span>
+          <span>{selected ? selected.nom : 'Choisissez un duplex'} · Min. 2 nuits</span>
         </div>
       </div>
 
@@ -84,8 +70,9 @@ export default function BookingWidget() {
           className="w-full rounded-lg px-3 py-2.5 text-sm focus:outline-none border"
           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text)' }}
         >
-          {Object.entries(DUPLEXES_TARIFS).map(([k, v]) => (
-            <option key={k} value={k}>{v.label}</option>
+          <option value="">— Choisir un duplex —</option>
+          {duplexes.map(d => (
+            <option key={d.id} value={d.id}>{d.nom} ({d.id})</option>
           ))}
         </select>
       </div>
@@ -169,11 +156,6 @@ export default function BookingWidget() {
             <span>{formatFCFA(tarif)} × {nuits} nuit{nuits > 1 ? 's' : ''}</span>
             <span>{formatFCFA(base)}</span>
           </div>
-          {isWeekend(arrivee) && (
-            <div className="flex justify-between text-xs" style={{ color: 'var(--text-3)' }}>
-              <span>Tarif week-end appliqué</span>
-            </div>
-          )}
           <div className="flex justify-between font-bold border-t pt-2" style={{ borderColor: 'var(--border-2)', color: 'var(--text)' }}>
             <span>Total estimé</span>
             <span>{formatFCFA(total)}</span>
@@ -205,7 +187,7 @@ export default function BookingWidget() {
           className="text-white font-semibold px-8 py-3.5 rounded-full shadow-xl min-h-[44px] whitespace-nowrap"
           style={{ background: 'linear-gradient(135deg, #1A0A04 0%, #3A1408 50%, #E8513A 100%)' }}
         >
-          Réserver — dès {formatFCFA(TARIF_SEMAINE)} / nuit
+          Réserver — dès {formatFCFA(PRIX_MINIMUM)} / nuit
         </button>
       </div>
 

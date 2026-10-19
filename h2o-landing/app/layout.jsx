@@ -21,13 +21,11 @@ export const metadata = {
     siteName: 'Les Résidences H₂O',
     locale: 'fr_CI',
     type: 'website',
-    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Les Résidences H₂O — Piscine privée et vue lagune' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Les Résidences H₂O — Duplexes avec piscine privée',
     description: 'Séjours d\'exception à Modeste Beach. Piscine privée, pontoon, vue lagune.',
-    images: ['/og-image.jpg'],
   },
   alternates: { canonical: 'https://residencesh2o.com' },
 }
@@ -41,7 +39,7 @@ const jsonLd = {
       name: 'Les Résidences H₂O',
       description: 'Duplexes meublés avec piscine privée, pontoon et vue lagune à Modeste Beach. Restaurant, pergola événementielle, parking gratuit.',
       url: 'https://residencesh2o.com',
-      telephone: '+22507XXXXXXXX',
+      telephone: '+2250500446464',
       email: 'contact@residencesh2o.com',
       address: {
         '@type': 'PostalAddress',
@@ -58,8 +56,7 @@ const jsonLd = {
         { '@type': 'LocationFeatureSpecification', name: 'Parking gratuit', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Pergola événementielle', value: true },
       ],
-      priceRange: '120 000 – 220 000 FCFA / nuit',
-      aggregateRating: { '@type': 'AggregateRating', ratingValue: '5', reviewCount: '1' },
+      priceRange: '350 000 FCFA / nuit',
     },
     {
       '@type': 'Restaurant',

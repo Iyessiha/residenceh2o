@@ -1,19 +1,16 @@
-import { blogArticles } from '@/lib/blog/articles';
+import { getDuplexes } from '@/lib/data';
 
-export default function sitemap() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://residenceh2o.com';
+export default async function sitemap() {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://residencesh2o.com';
 
-  // Static pages
+  // Pages publiques réellement présentes dans le site
   const staticPages = [
     '',
-    'about',
-    'rooms',
+    'residences',
     'services',
-    'faq',
+    'about',
     'gallery',
-    'blog',
-    'contact',
-    'reservation',
+    'faq',
   ].map(route => ({
     url: `${baseUrl}${route ? '/' + route : ''}`,
     lastModified: new Date().toISOString(),
@@ -21,13 +18,13 @@ export default function sitemap() {
     priority: route === '' ? 1 : 0.8,
   }));
 
-  // Blog articles
-  const blogPages = blogArticles.map(article => ({
-    url: `${baseUrl}/blog/${article.slug}`,
-    lastModified: new Date(article.date).toISOString(),
-    changeFrequency: 'monthly',
-    priority: 0.7,
+  const residences = await getDuplexes();
+  const residencePages = residences.map(residence => ({
+    url: `${baseUrl}/residences/${residence.slug}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: 'weekly',
+    priority: 0.9,
   }));
 
-  return [...staticPages, ...blogPages];
+  return [...staticPages, ...residencePages];
 }

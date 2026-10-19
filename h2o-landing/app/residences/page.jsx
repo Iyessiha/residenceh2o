@@ -1,23 +1,30 @@
-import { getAllResidences } from '@/lib/residences'
+import { formatFCFA } from '@/lib/residences'
+import { getDuplexes } from '@/lib/data'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Star, MapPin, Users } from 'lucide-react'
+import Nav from '@/components/Nav'
+import Footer from '@/components/Footer'
+import { MapPin, Users } from 'lucide-react'
 
 export const metadata = {
-  title: 'Nos Résidences - Residence H2O',
-  description: '3 types de duplexes luxe avec piscine privée, pontoon et vue lagune à Grand-Bassam',
+  title: 'Nos Duplexes | Les Résidences H₂O',
+  description: 'Trois duplexes meublés avec piscine privée, pontoon ou vue lagune à Modeste Beach, route de Grand-Bassam.',
 }
 
-export default function ResidencesPage() {
-  const residences = getAllResidences()
+export const revalidate = 300
+
+export default async function ResidencesPage() {
+  const residences = await getDuplexes()
 
   return (
+    <>
+    <Nav />
     <main className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="bg-gradient-to-r from-teal-600 to-teal-800 text-white py-16 sm:py-24">
+      <section className="bg-gradient-to-r from-teal-600 to-teal-800 text-white pt-32 pb-16 sm:pt-40 sm:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Nos Résidences</h1>
-          <p className="text-xl text-teal-100">3 catégories de duplexes meublés avec vue lagune</p>
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Nos Duplexes</h1>
+          <p className="text-xl text-teal-100">Trois duplexes meublés, chacun avec sa piscine privée</p>
         </div>
       </section>
 
@@ -29,21 +36,19 @@ export default function ResidencesPage() {
               <div className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300">
                 {/* Image */}
                 <div className="relative h-64 bg-gray-200 overflow-hidden">
-                  {residence.images[0] && (
-                    <Image
-                      src={residence.images[0]}
-                      alt={residence.nom}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                  )}
+                  <Image
+                    src={residence.images[0]}
+                    alt={residence.nom}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition" />
                 </div>
 
                 {/* Content */}
                 <div className="p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">{residence.nom}</h2>
-                  <p className="text-gray-600 text-sm mb-4 h-12 overflow-hidden">{residence.description}</p>
+                  <p className="text-gray-600 text-sm mb-4">{residence.tagline}</p>
 
                   {/* Stats */}
                   <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
@@ -53,41 +58,28 @@ export default function ResidencesPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <MapPin size={16} className="text-teal-600" />
-                      Grand-Bassam
+                      Modeste Beach
                     </div>
                   </div>
 
-                  {/* Features preview */}
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {residence.features.slice(0, 3).map((feature, i) => (
-                      <span key={i} className="text-xs bg-teal-50 text-teal-700 px-3 py-1 rounded-full">
-                        {feature.split(' ')[0]}
-                      </span>
+                  {/* Équipements clés */}
+                  <ul className="space-y-2 mb-6">
+                    {residence.features.slice(0, 3).map(feature => (
+                      <li key={feature} className="text-sm text-gray-700">✓ {feature}</li>
                     ))}
-                    {residence.features.length > 3 && (
-                      <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
-                        +{residence.features.length - 3}
-                      </span>
-                    )}
-                  </div>
+                  </ul>
 
-                  {/* Rating & Price */}
+                  {/* Prix */}
                   <div className="border-t pt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} size={16} className="fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-teal-600">€{residence.prix}</p>
+                    <div>
+                      <p className="text-xs text-gray-500">À partir de</p>
+                      <p className="text-2xl font-bold text-teal-600">{formatFCFA(residence.prix)}</p>
                       <p className="text-xs text-gray-500">par nuit</p>
                     </div>
+                    <span className="bg-teal-600 group-hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg transition">
+                      Voir le duplex
+                    </span>
                   </div>
-
-                  {/* CTA */}
-                  <button className="w-full mt-4 bg-teal-600 text-white font-bold py-3 rounded-lg hover:bg-teal-700 transition">
-                    Voir les détails
-                  </button>
                 </div>
               </div>
             </Link>
@@ -98,7 +90,7 @@ export default function ResidencesPage() {
       {/* Comparison */}
       <section className="bg-gray-50 py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Comparaison des résidences</h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Comparaison des duplexes</h2>
 
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -117,7 +109,7 @@ export default function ResidencesPage() {
                   <td className="py-4 px-4 font-semibold text-gray-700">Prix par nuit</td>
                   {residences.map(r => (
                     <td key={r.slug} className="text-center py-4 px-4 text-teal-600 font-bold">
-                      €{r.prix}
+                      {formatFCFA(r.prix)}
                     </td>
                   ))}
                 </tr>
@@ -130,26 +122,26 @@ export default function ResidencesPage() {
                   ))}
                 </tr>
                 <tr className="border-b border-gray-200 bg-white">
-                  <td className="py-4 px-4 font-semibold text-gray-700">Piscine</td>
+                  <td className="py-4 px-4 font-semibold text-gray-700">Surface</td>
                   {residences.map(r => (
-                    <td key={r.slug} className="text-center py-4 px-4">
-                      ✓
+                    <td key={r.slug} className="text-center py-4 px-4 text-gray-600">
+                      {r.surface}
                     </td>
                   ))}
                 </tr>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  <td className="py-4 px-4 font-semibold text-gray-700">Pontoon</td>
+                  <td className="py-4 px-4 font-semibold text-gray-700">Piscine privée</td>
                   {residences.map(r => (
                     <td key={r.slug} className="text-center py-4 px-4">
-                      {r.features.some(f => f.includes('Pontoon')) ? '✓' : '—'}
+                      {r.features.some(f => /piscine/i.test(f)) ? '✓' : '—'}
                     </td>
                   ))}
                 </tr>
                 <tr className="border-b border-gray-200 bg-white">
-                  <td className="py-4 px-4 font-semibold text-gray-700">Équipements</td>
+                  <td className="py-4 px-4 font-semibold text-gray-700">Pontoon</td>
                   {residences.map(r => (
-                    <td key={r.slug} className="text-center py-4 px-4 text-sm text-gray-600">
-                      {r.features.length} équipements
+                    <td key={r.slug} className="text-center py-4 px-4">
+                      {r.features.some(f => f.includes('Pontoon')) ? '✓' : '—'}
                     </td>
                   ))}
                 </tr>
@@ -159,5 +151,7 @@ export default function ResidencesPage() {
         </div>
       </section>
     </main>
+    <Footer />
+    </>
   )
 }

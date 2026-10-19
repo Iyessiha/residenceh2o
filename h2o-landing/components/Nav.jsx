@@ -75,7 +75,7 @@ export default function Nav() {
 
             {/* Book Button */}
             <Link
-              href="#contact"
+              href="/#contact"
               className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-semibold text-xs sm:text-sm px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg shadow-lg shadow-teal-500/25 transition-all hover:shadow-teal-500/40 hover:-translate-y-0.5 min-h-[40px] sm:min-h-[44px] flex items-center justify-center"
             >
               <Calendar className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
@@ -112,7 +112,7 @@ export default function Nav() {
 
           <div className="border-t border-white/10 pt-3 mt-3 space-y-2">
             <Link
-              href="#contact"
+              href="/#contact"
               onClick={() => setOpen(false)}
               className="w-full text-center py-3 rounded-lg bg-gradient-to-r from-teal-500 to-emerald-500 font-semibold text-white text-sm transition-all hover:shadow-lg"
             >

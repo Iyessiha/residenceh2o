@@ -21,9 +21,9 @@ export function generateMetadata({ params }) {
   }
 
   return {
-    title: `${article.title} | Residence H2O Blog`,
+    title: `${article.title} | Blog Les Résidences H₂O`,
     description: article.excerpt,
-    keywords: `${article.category}, voyage, conseils, residence h2o`,
+    keywords: `${article.category}, voyage, conseils, les résidences h2o`,
     authors: [{ name: article.author }],
     openGraph: {
       title: article.title,
