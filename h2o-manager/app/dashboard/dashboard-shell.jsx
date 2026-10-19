@@ -8,6 +8,7 @@ const NAV = [
   { href: '/dashboard',              icon: '📊', label: 'Tableau de bord' },
   { href: '/dashboard/reservations', icon: '📅', label: 'Réservations' },
   { href: '/dashboard/duplexes',     icon: '🏠', label: 'Duplexes' },
+  { href: '/dashboard/chambres',     icon: '🛏️', label: 'Chambres' },
   { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
   { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
   { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
