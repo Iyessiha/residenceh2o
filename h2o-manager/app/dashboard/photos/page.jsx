@@ -134,6 +134,14 @@ export default function PhotosPage() {
         </div>
       </div>
 
+      {!SITE_URL && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+          <strong>⚠️ Variable manquante :</strong> Définissez{' '}
+          <code className="bg-amber-100 px-1 rounded font-mono text-xs">NEXT_PUBLIC_LANDING_URL</code>{' '}
+          dans les variables d'environnement Vercel (ex : <code className="bg-amber-100 px-1 rounded font-mono text-xs">https://residencesh2o.com</code>)
+          pour afficher les miniatures des photos stockées sur la landing page.
+        </div>
+      )}
       {message && <p className="text-sm mb-4 text-gray-700">{message}</p>}
 
       {loading ? (
@@ -163,15 +171,32 @@ export default function PhotosPage() {
 
               <span className="w-8 text-center text-sm font-mono text-gray-500">{index + 1}</span>
 
-              <div className="w-32 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={photo.fichier.startsWith('http') ? photo.fichier : `${SITE_URL}${encodeURI(photo.fichier)}`}
-                  alt={photo.alt || ''}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  onError={e => { e.target.style.display = 'none' }}
-                />
+              <div className="w-32 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 relative">
+                {(() => {
+                  const src = photo.fichier.startsWith('http')
+                    ? photo.fichier
+                    : SITE_URL
+                      ? `${SITE_URL}${encodeURI(photo.fichier)}`
+                      : null
+                  return src ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={src}
+                      alt={photo.alt || ''}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      onError={e => {
+                        e.target.style.display = 'none'
+                        e.target.nextSibling?.style && (e.target.nextSibling.style.display = 'flex')
+                      }}
+                    />
+                  ) : null
+                })()}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 text-xs text-center px-1"
+                  style={{ display: photo.fichier.startsWith('http') ? 'none' : (SITE_URL ? 'none' : 'flex') }}>
+                  <span className="text-2xl mb-1">🖼️</span>
+                  <span>URL landing<br/>non configurée</span>
+                </div>
               </div>
 
               <div className="flex-1 min-w-0">

@@ -108,21 +108,24 @@ export default function Reservations() {
   }
 
   async function checkConflict() {
+    // Chambre : pas de vérification de conflit
     if (typeHebergement === 'chambre') return false
-    if (!form.duplex_id || !form.date_arrivee || !form.date_depart) return true
-    const res = await fetch('/api/reservations/check-conflict', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        duplex_id: form.duplex_id,
-        date_arrivee: form.date_arrivee,
-        date_depart: form.date_depart,
-        exclude_id: editId || undefined,
-      }),
-    })
-    const data = await res.json()
-    if (data.conflict) {
-      setConflict(data.reservation)
+    // Duplex non renseigné ou dates manquantes : on laisse passer (pas de conflit possible)
+    if (!form.duplex_id || !form.date_arrivee || !form.date_depart) return false
+    if (form.date_arrivee >= form.date_depart) return false
+
+    // Vérification directe via client Supabase — pas de dépendance à la route API
+    let query = supabase
+      .from('reservations')
+      .select('id, nom_client, date_arrivee, date_depart')
+      .eq('duplex_id', form.duplex_id)
+      .not('statut', 'in', '("annule","cloture")')
+      .lt('date_arrivee', form.date_depart)
+      .gt('date_depart', form.date_arrivee)
+    if (editId) query = query.neq('id', editId)
+    const { data } = await query.limit(1)
+    if (data?.length > 0) {
+      setConflict(data[0])
       return true
     }
     setConflict(null)
@@ -131,8 +134,9 @@ export default function Reservations() {
 
   async function save() {
     setSaving(true)
+    try {
     const hasConflict = await checkConflict()
-    if (hasConflict) { setSaving(false); return }
+    if (hasConflict) return
 
     let notes = form.notes
     let type = form.type
@@ -165,7 +169,11 @@ export default function Reservations() {
     setShowForm(false); setForm(EMPTY); setEditId(null)
     setTypeHebergement('duplex'); setChambreId('')
     load()
-    setSaving(false)
+    } catch (err) {
+      console.error('save error', err)
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function updateStatut(id, statut) {
