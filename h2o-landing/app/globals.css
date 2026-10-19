@@ -2,20 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Tokens de design ──────────────────────────────────── */
+/* ── Tokens de design — Palette officielle H2O ─────────── */
 :root {
-  --primary:    #E8513A;
-  --primary-dk: #C7391E;
-  --primary-lt: #F7E8E4;
-  --bg:         #FFFFFF;
-  --bg-2:       #F7F7F7;
-  --text:       #222222;
-  --text-2:     #484848;
-  --text-3:     #767676;
-  --border:     #DDDDDD;
-  --border-2:   #EBEBEB;
-  --success:    #008A05;
-  --gold:       #D4A843;
+  --h2o-teal:        #0C3A3D;
+  --h2o-lagune:      #1C6E70;
+  --h2o-lagune-clair:#7FB8B5;
+  --h2o-or:          #D98A3A;
+  --h2o-or-fonce:    #B86F28;
+  --h2o-bois:        #8A6B46;
+  --h2o-creme:       #F7F4EE;
+  --h2o-blanc:       #FFFDF8;
+  --h2o-bordure:     #E2DACB;
+  --primary:         #D98A3A;
+  --primary-dk:      #B86F28;
+  --primary-lt:      #FDF0E0;
+  --bg:              #FFFDF8;
+  --bg-2:            #F7F4EE;
+  --text:            #1A1A18;
+  --text-2:          #3D3D3A;
+  --text-3:          #6B6B66;
+  --border:          #E2DACB;
+  --border-2:        #EDE8DF;
+  --success:         #008A05;
+  --gold:            #D98A3A;
   --radius-card: 12px;
   --radius-el:   8px;
 }
@@ -79,6 +88,6 @@ body {
 
   /* Dégradé signature H2O — en-têtes sombres */
   .gradient-sig {
-    background: linear-gradient(135deg, #1A0A04 0%, #3A1408 60%, #E8513A 100%);
+    background: linear-gradient(135deg, #0C3A3D 0%, #14565A 60%, #1C6E70 100%);
   }
 }

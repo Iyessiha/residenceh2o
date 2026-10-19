@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Phone, Calendar, Menu, X, Waves, Home, Zap, Package, Image as ImageIcon, Info, HelpCircle } from 'lucide-react'
+import Image from 'next/image'
+import { Phone, Calendar, Menu, X, Home, Zap, Package, Image as ImageIcon, Info, HelpCircle } from 'lucide-react'
 
 const NAV_LINKS = [
   { href: '/residences', label: 'Duplexes', icon: Home },
@@ -26,7 +27,7 @@ export default function Nav() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#0B1721]/95 backdrop-blur-xl shadow-2xl border-b border-white/5 py-2 sm:py-3'
+          ? 'bg-[#0C3A3D]/97 backdrop-blur-xl shadow-2xl border-b border-white/5 py-2 sm:py-3'
           : 'bg-gradient-to-b from-black/60 via-black/20 to-transparent py-4 sm:py-5'
       }`}
     >
@@ -34,12 +35,16 @@ export default function Nav() {
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Brand / Logo */}
           <Link href="/" className="flex items-center gap-2 sm:gap-3 group flex-shrink-0">
-            <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-teal-500/20 group-hover:scale-110 transition-transform">
-              <Waves className="w-4 sm:w-5 h-4 sm:h-5 text-white" />
-            </div>
+            <Image
+              src="/icon.svg"
+              alt="Les Résidences H2O"
+              width={40}
+              height={40}
+              className="w-9 sm:w-10 h-9 sm:h-10 rounded-xl group-hover:scale-110 transition-transform"
+            />
             <div className="hidden sm:flex flex-col min-w-0">
               <span className="font-serif text-sm sm:text-lg lg:text-xl font-bold tracking-tight text-white">
-                Résidences <span className="text-teal-400">H₂O</span>
+                Résidences <span style={{ color: '#7FB8B5' }}>H₂O</span>
               </span>
               <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-white/50 font-medium">
                 Modeste Beach
@@ -98,7 +103,7 @@ export default function Nav() {
 
       {/* Mobile drawer */}
       {open && (
-        <div className="lg:hidden mt-2 mx-4 rounded-xl bg-[#0B1721]/98 backdrop-blur-xl border border-white/10 p-4 space-y-1 animate-fadeIn shadow-2xl">
+        <div className="lg:hidden mt-2 mx-4 rounded-xl bg-[#0C3A3D]/98 backdrop-blur-xl border border-white/10 p-4 space-y-1 animate-fadeIn shadow-2xl">
           {NAV_LINKS.map(({ href, label, icon: Icon }) => (
             <Link
               key={href}

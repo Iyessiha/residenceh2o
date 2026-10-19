@@ -123,7 +123,7 @@ export default async function Home() {
         </section>
 
         {/* Invitation & Lifestyle Banner */}
-        <section className="py-20 bg-gradient-to-r from-[#0B1721] to-[#122838] text-white">
+        <section className="py-20 bg-gradient-to-r from-[#0C3A3D] to-[#14565A] text-white">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <span className="text-teal-400 font-mono text-xs uppercase tracking-widest block mb-3">
               ✦ Évasion & Ressourcement ✦

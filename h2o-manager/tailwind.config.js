@@ -9,21 +9,29 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        sidebar:        '#1A0A04',
-        'sidebar-act':  '#3A1408',
-        primary:        '#E8513A',
-        'primary-dk':   '#C7391E',
-        'primary-lt':   '#F7E8E4',
-        success:        '#008A05',
-        gold:           '#D4A843',
-        // teal réutilisé dans le code existant → remappe vers palette H2O
+        // Palette officielle Les Résidences H2O
+        'h2o-teal':        '#0C3A3D',
+        'h2o-lagune':      '#1C6E70',
+        'h2o-lagune-clair':'#7FB8B5',
+        'h2o-or':          '#D98A3A',
+        'h2o-or-fonce':    '#B86F28',
+        'h2o-bois':        '#8A6B46',
+        sidebar:           '#0C3A3D',
+        'sidebar-act':     '#14565A',
+        primary:           '#D98A3A',
+        'primary-dk':      '#B86F28',
+        'primary-lt':      '#FDF0E0',
+        success:           '#008A05',
+        gold:              '#D98A3A',
         teal: {
-          900: '#3A1408',
-          800: '#5C2010',
-          700: '#8B3520',
-          600: '#E8513A',
-          500: '#EF7057',
-          400: '#F49B8B',
+          900: '#0C3A3D',
+          800: '#14565A',
+          700: '#1C6E70',
+          600: '#1C6E70',
+          500: '#7FB8B5',
+          400: '#9FC3C0',
+          100: '#E8F4F3',
+          50:  '#F0F8F7',
         },
       },
       fontFamily: {

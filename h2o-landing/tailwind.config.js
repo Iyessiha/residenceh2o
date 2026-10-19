@@ -9,27 +9,48 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary:    '#E8513A',
-        'primary-dk': '#C7391E',
-        'primary-lt': '#F7E8E4',
-        success:    '#008A05',
-        gold:       '#D4A843',
-        // Remapping teal → palette chaude H2O (évite de toucher les JSX existants)
+        // Palette officielle Les Résidences H2O
+        'h2o-teal':        '#0C3A3D',
+        'h2o-lagune':      '#1C6E70',
+        'h2o-lagune-clair':'#7FB8B5',
+        'h2o-or':          '#D98A3A',
+        'h2o-or-fonce':    '#B86F28',
+        'h2o-bois':        '#8A6B46',
+        'h2o-creme':       '#F7F4EE',
+        'h2o-blanc':       '#FFFDF8',
+        'h2o-bordure':     '#E2DACB',
+        primary:           '#D98A3A',
+        'primary-dk':      '#B86F28',
+        'primary-lt':      '#FDF0E0',
+        success:           '#008A05',
+        gold:              '#D98A3A',
+        // Remap teal → palette lagune H2O (classes teal-* dans les JSX)
         teal: {
-          950: '#1A0A04',   // brun très foncé (ex header/nav/footer)
-          900: '#3A1408',   // brun foncé (dégradé signature milieu)
-          800: '#5C2010',   // brun moyen
-          700: '#8B3520',   // brun chaud
-          600: '#E8513A',   // PRIMARY (liens, badges, accents)
-          500: '#EF7057',   // primary clair
-          400: '#F49B8B',   // primary pâle (texte sur fond sombre)
+          950: '#0C3A3D',
+          900: '#0C3A3D',
+          800: '#14565A',
+          700: '#1C6E70',
+          600: '#1C6E70',
+          500: '#7FB8B5',
+          400: '#9FC3C0',
+          200: '#C8E6E5',
+          100: '#E8F4F3',
+          50:  '#F0F8F7',
         },
-        orange: {
-          500: '#E8513A',
-          600: '#C7391E',
+        emerald: {
+          600: '#14565A',
+          500: '#1C6E70',
+          400: '#7FB8B5',
         },
-        cream: '#F7F7F7',
-        sand:  '#F7F7F7',
+        amber: {
+          700: '#B86F28',
+          600: '#D98A3A',
+          500: '#D98A3A',
+          200: '#F5D9A8',
+          100: '#FDF0E0',
+          50:  '#FEF8EE',
+        },
+        cream: '#F7F4EE',
       },
       fontFamily: {
         sans:  ['Plus Jakarta Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
