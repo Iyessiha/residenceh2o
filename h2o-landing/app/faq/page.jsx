@@ -16,7 +16,7 @@ function construireFaq(duplexes) {
   return [
   {
     question: 'Où se trouvent les Résidences H₂O ?',
-    answer: 'À Modeste Beach, route de Grand-Bassam : à 10 minutes de la plage et à environ 30 minutes du Plateau à Abidjan.',
+    answer: "À Modeste Beach, route de Grand-Bassam : à 10 minutes de la plage, à 30 minutes de l'aéroport et du Plateau d'Abidjan.",
   },
   {
     question: 'Combien coûte un séjour ?',

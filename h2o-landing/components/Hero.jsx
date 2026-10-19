@@ -45,7 +45,7 @@ export default function Hero() {
 
         <p className="text-white/70 text-lg sm:text-xl max-w-2xl mx-auto mb-4">
           Louez un duplex complet avec piscine privée et pontoon, ou réservez une chambre à la nuit dès <span className="text-white font-semibold">60 000 FCFA</span>.
-          À 10 minutes de la plage, à 30 min d'Abidjan.
+          À 10 min de la plage · 30 min de l'aéroport et d'Abidjan.
         </p>
 
         {/* Option pills */}
