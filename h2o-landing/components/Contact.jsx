@@ -106,7 +106,7 @@ export default function Contact({ duplexes }) {
               <div className="bg-white rounded-xl p-5 border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Localisation</p>
                 <p className="font-semibold text-teal-900">Route de Grand-Bassam, Modeste Beach</p>
-                <p className="text-sm text-gray-500">À 30 min du Plateau, Abidjan</p>
+                <p className="text-sm text-gray-500">À 10 minutes de la mer, à 30 min du Plateau, Abidjan</p>
               </div>
             </div>
           </div>

@@ -81,7 +81,7 @@ export default async function Home() {
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
-                  text: "Avoir sa propre piscine face à la lagune sans aucun regard indiscret est un luxe rare à seulement 30 minutes d'Abidjan. Le pontoon au coucher du soleil est magique.",
+                  text: "Avoir sa propre piscine face à la lagune sans aucun regard indiscret est un luxe rare, à 10 minutes de la mer et à 30 minutes d'Abidjan. Le pontoon au coucher du soleil est magique.",
                   author: "Dr. Stéphane Kouassi",
                   role: "Week-end en amoureux",
                   date: "Séjour en Octobre 2026"
