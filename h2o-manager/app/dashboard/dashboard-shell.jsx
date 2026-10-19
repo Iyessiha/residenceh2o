@@ -5,19 +5,29 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
 const NAV = [
-  { href: '/dashboard',              icon: '📊', label: 'Tableau de bord' },
+  { href: '/dashboard', icon: '📊', label: 'Tableau de bord' },
+
+  { section: 'Hébergement' },
   { href: '/dashboard/reservations', icon: '📅', label: 'Réservations' },
   { href: '/dashboard/duplexes',     icon: '🏠', label: 'Duplexes' },
   { href: '/dashboard/chambres',     icon: '🛏️', label: 'Chambres' },
-  { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
   { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
-  { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
-  { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant' },
+
+  { section: 'Services' },
+  { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant & Bar' },
   { href: '/dashboard/boutique',     icon: '🛍️', label: 'Boutique' },
   { href: '/dashboard/assistance',   icon: '🔔', label: 'Assistance' },
+
+  { section: 'Événements' },
+  { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
+
+  { section: 'Finance' },
   { href: '/dashboard/facturation',  icon: '🧾', label: 'Facturation' },
   { href: '/dashboard/rapports',     icon: '📈', label: 'Rapports' },
-  { href: '/dashboard/equipe',        icon: '👨‍👩‍👧', label: 'Équipe' },
+
+  { section: 'Gestion' },
+  { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
+  { href: '/dashboard/equipe',       icon: '👨‍👩‍👧', label: 'Équipe' },
   { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
 ]
 
@@ -47,22 +57,31 @@ export default function DashboardLayout({ children }) {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
-        {NAV.map(({ href, icon, label }) => {
-          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+      <nav className="flex-1 px-2 py-3 overflow-y-auto">
+        {NAV.map((item, i) => {
+          if (item.section) {
+            return (
+              <p key={`s-${i}`}
+                className="px-3 pt-4 pb-1 text-xs font-bold uppercase tracking-widest"
+                style={{ color: 'rgba(255,255,255,0.25)' }}>
+                {item.section}
+              </p>
+            )
+          }
+          const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
           return (
             <Link
-              key={href}
-              href={href}
+              key={item.href}
+              href={item.href}
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors mb-0.5 ${
                 active
                   ? 'bg-primary/20 text-primary font-semibold'
                   : 'text-white/60 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <span>{icon}</span>
-              <span>{label}</span>
+              <span className="text-base">{item.icon}</span>
+              <span>{item.label}</span>
             </Link>
           )
         })}
