@@ -5,14 +5,14 @@ import { Heart, Sparkles, GlassWater, Users, Check, ArrowRight } from 'lucide-re
 const EVENT_PILLARS = [
   'Mariages & Fiançailles de prestige',
   'Anniversaires & Célébrations privées',
-  'Séminaires d’entreprise & Teambuildings',
+  "Seminaires d'entreprise & Teambuildings",
   'Dîners gastronomiques au bord du lac',
   'Privatisation intégrale du domaine',
 ]
 
 export default function Events() {
   return (
-    <section id="evenements" className="py-24 bg-[#0B1721] text-white relative overflow-hidden">
+    <section id="evenements" className="py-24 bg-[#0C3A3D] text-white relative overflow-hidden">
       {/* Decorative background glows */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />

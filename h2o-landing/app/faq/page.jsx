@@ -48,19 +48,19 @@ function construireFaq(duplexes) {
   },
   {
     question: 'Peut-on organiser un mariage ou un événement ?',
-    answer: 'Oui. La pergola peut accueillir jusqu’à 200 invités, avec accès au pontoon et service traiteur clé en main. Demandez un devis sur mesure.',
+    answer: 'Oui. La pergola peut accueillir jusqu'à 200 invités, avec accès au pontoon et service traiteur clé en main. Demandez un devis sur mesure.',
   },
   {
     question: 'Peut-on privatiser la résidence ?',
-    answer: 'Oui, la privatisation totale est possible sur réservation. L’hébergement des invités est inclus dans nos duplexes.',
+    answer: 'Oui, la privatisation totale est possible sur réservation. L'hébergement des invités est inclus dans nos duplexes.',
   },
   {
-    question: 'Accueillez-vous des séminaires d’entreprise ?',
-    answer: 'Oui, la résidence accueille séminaires d’entreprise, teambuildings et dîners gastronomiques au bord du lac, sur devis.',
+    question: 'Accueillez-vous des séminaires d'entreprise ?',
+    answer: 'Oui, la résidence accueille séminaires d'entreprise, teambuildings et dîners gastronomiques au bord du lac, sur devis.',
   },
   {
-    question: 'Comment se passe l’accueil ?',
-    answer: 'Une conciergerie dédiée vous accueille, avec une flexibilité sur les horaires d’arrivée.',
+    question: 'Comment se passe l'accueil ?',
+    answer: 'Une conciergerie dédiée vous accueille, avec une flexibilité sur les horaires d'arrivée.',
   },
   ]
 }
@@ -90,7 +90,7 @@ export default async function FAQPage() {
         {/* Contact CTA */}
         <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
           <div className="text-white rounded-lg p-8 text-center" style={{ backgroundColor: 'var(--primary)' }}>
-            <h2 className="text-2xl font-bold mb-4">Vous n’avez pas trouvé la réponse ?</h2>
+            <h2 className="text-2xl font-bold mb-4">Vous n'avez pas trouvé la réponse ?</h2>
             <p className="mb-6">Écrivez-nous sur WhatsApp ou envoyez votre demande depuis le formulaire de réservation.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a

@@ -13,12 +13,12 @@ const services = [
   { icon: '⚓', title: 'Pontoon', description: 'Un pontoon face à la lagune, pour les couchers de soleil.' },
   { icon: '🛁', title: 'Jacuzzi chauffé', description: 'Disponible dans le Duplex Signature.' },
   { icon: '🍽️', title: 'Restaurant', description: 'Un restaurant sur place. Horaires à demander via WhatsApp.' },
-  { icon: '🎪', title: 'Pergola événementielle', description: 'Jusqu’à 200 invités, avec service traiteur clé en main.' },
+  { icon: '🎪', title: 'Pergola événementielle', description: 'Jusqu'à 200 invités, avec service traiteur clé en main.' },
   { icon: '🥂', title: 'Privatisation', description: 'Privatisation totale possible sur réservation.' },
   { icon: '🚗', title: 'Parking gratuit', description: 'Un parking gratuit pour tous nos hôtes.' },
   { icon: '🛡️', title: 'Sécurité 24h/24', description: 'Résidence sécurisée avec gardiennage permanent.' },
   { icon: '📶', title: 'Wi-Fi haut débit', description: 'Disponible dans les duplexes.' },
-  { icon: '🛎️', title: 'Conciergerie', description: 'Une conciergerie dédiée et des horaires d’arrivée flexibles.' },
+  { icon: '🛎️', title: 'Conciergerie', description: 'Une conciergerie dédiée et des horaires d'arrivée flexibles.' },
 ]
 
 export default function ServicesPage() {
@@ -60,7 +60,7 @@ export default function ServicesPage() {
             {/* CTA */}
             <div className="rounded-lg p-8 sm:p-12 text-center" style={{ backgroundColor: 'var(--primary-lt)' }}>
               <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: 'var(--text)' }}>
-                Prêt à vivre l’expérience ?
+                Prêt à vivre l'expérience ?
               </h2>
               <p className="text-lg mb-8" style={{ color: 'var(--text-2)' }}>
                 Choisissez votre duplex et réservez votre séjour à Modeste Beach
