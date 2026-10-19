@@ -7,14 +7,15 @@ import FeaturedGallery from '@/components/FeaturedGallery'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
 import BookingWidget from '@/components/BookingWidget'
+import Chambres from '@/components/Chambres'
 import { Star, ArrowRight, Quote, Shield, Compass, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import { getDuplexes, getPhotos } from '@/lib/data'
+import { getDuplexes, getPhotos, getChambres } from '@/lib/data'
 
 export const revalidate = 300
 
 export default async function Home() {
-  const [duplexes, photos] = await Promise.all([getDuplexes(), getPhotos()])
+  const [duplexes, photos, chambres] = await Promise.all([getDuplexes(), getPhotos(), getChambres()])
 
   return (
     <>
@@ -24,6 +25,7 @@ export default async function Home() {
         <Hero />
         <HostBadge />
         <Duplexes duplexes={duplexes} />
+        <Chambres chambres={chambres} />
         <Events />
 
         {/* Featured Gallery Section */}
