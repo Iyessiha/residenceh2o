@@ -1,20 +1,20 @@
-import { ShieldCheck, Award, KeyRound, MapPin } from 'lucide-react'
+import { ShieldCheck, Award, KeyRound, BedDouble } from ‘lucide-react’
 
 const BADGES = [
   {
     icon: ShieldCheck,
-    label: 'Établissement vérifié',
-    desc: 'Résidence privée sécurisée 24h/24 avec gardiennage et parking',
+    label: ‘Établissement vérifié’,
+    desc: ‘Résidence privée sécurisée 24h/24 avec gardiennage et parking’,
   },
   {
     icon: Award,
-    label: 'Standing 5 Étoiles',
-    desc: 'Piscine privée individuelle pour chaque duplex, sans vis-à-vis',
+    label: ‘Duplex ou chambre seule’,
+    desc: ‘Louez le duplex entier avec piscine privée, ou uniquement une chambre à la nuit dès 60 000 FCFA’,
   },
   {
     icon: KeyRound,
-    label: 'Accueil personnalisé',
-    desc: 'Conciergerie dédiée et flexibilité des horaires d’arrivée',
+    label: ‘Accueil personnalisé’,
+    desc: ‘Conciergerie dédiée et flexibilité des horaires d’arrivée’,
   },
 ]
 

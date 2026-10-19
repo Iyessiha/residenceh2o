@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { Users, Maximize2, Check, ArrowRight } from 'lucide-react'
+import { Users, Maximize2, Check, ArrowRight, BedDouble } from 'lucide-react'
 import { formatFCFA } from '@/lib/residences'
 
 export default function Duplexes({ duplexes }) {
@@ -18,6 +18,13 @@ export default function Duplexes({ duplexes }) {
           <p className="text-slate-600 text-base sm:text-lg">
             Aucun voisin de bassin, aucun compromis. Une intimité totale conçue pour les couples, familles et séjours de prestige.
           </p>
+          <Link
+            href="#chambres"
+            className="inline-flex items-center gap-2 mt-5 text-sm font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-4 py-2 rounded-full transition-colors"
+          >
+            <BedDouble className="w-4 h-4" />
+            Vous préférez louer une chambre seule ? Voir les chambres →
+          </Link>
         </div>
 
         {/* Duplex Grid */}

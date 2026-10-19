@@ -1,11 +1,11 @@
 import Link from 'next/link'
 
 const AMENITIES = [
+  { icon: '🏠', label: 'Duplex privé' },
+  { icon: '🛏️', label: 'Chambre seule' },
   { icon: '🏊', label: 'Piscine privée' },
-  { icon: '⚓', label: 'Pontoon' },
   { icon: '🍽', label: 'Restaurant' },
   { icon: '🎪', label: 'Pergola events' },
-  { icon: '🚗', label: 'Parking' },
 ]
 
 export default function Hero() {
@@ -39,22 +39,32 @@ export default function Hero() {
 
         {/* Headline */}
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
-          L'intimité d'un duplex,<br />
-          <span className="text-teal-400">le luxe d'un resort</span>
+          Duplex entier ou chambre seule —<br />
+          <span className="text-teal-400">le luxe lagunaire à votre mesure</span>
         </h1>
 
-        <p className="text-white/70 text-lg sm:text-xl max-w-2xl mx-auto mb-10">
-          Duplexes meublés avec piscine privée, pontoon et vue lac.
-          À 10 minutes de la plage et à 30 min d'Abidjan.
+        <p className="text-white/70 text-lg sm:text-xl max-w-2xl mx-auto mb-4">
+          Louez un duplex complet avec piscine privée et pontoon, ou réservez une chambre à la nuit dès <span className="text-white font-semibold">60 000 FCFA</span>.
+          À 10 minutes de la plage, à 30 min d'Abidjan.
         </p>
+
+        {/* Option pills */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+          <span className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-white/80 text-sm">
+            🏠 Duplex entier — piscine privée incluse
+          </span>
+          <span className="inline-flex items-center gap-1.5 bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 rounded-full px-4 py-1.5 text-amber-200 text-sm font-medium">
+            🛏️ Chambre à la nuit — dès 60 000 FCFA
+          </span>
+        </div>
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
           <Link href="#contact" className="btn-primary text-center text-lg">
             Réserver un duplex
           </Link>
-          <Link href="#galerie" className="btn-outline text-center text-lg">
-            Voir la galerie
+          <Link href="#chambres" className="btn-outline text-center text-lg">
+            Voir les chambres
           </Link>
         </div>
 
@@ -71,8 +81,9 @@ export default function Hero() {
         {/* SEO keywords — invisibles visuellement, indexés par les moteurs */}
         <p className="sr-only">
           hôtel Modeste Beach · resort Grand-Bassam · duplex piscine Côte d'Ivoire ·
+          chambre à louer Grand-Bassam · chambre hôtel Bassam · location chambre nuit Abidjan ·
           résidence meublée Bassam · villa piscine privée Abidjan · location vacances lagune ·
-          salle mariage Grand-Bassam
+          salle mariage Grand-Bassam · chambre VIP Côte d'Ivoire
         </p>
       </div>
 
