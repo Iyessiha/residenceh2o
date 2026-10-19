@@ -59,7 +59,7 @@ export default function Events() {
               </Link>
 
               <a
-                href="https://wa.me/2250500446464?text=Bonjour%2C%20je%20souhaite%20un%20devis%20pour%20un%20%C3%A9v%C3%A9nement%20aux%20R%C3%A9sidences%20H2O"
+                href="https://wa.me/2250749194952?text=Bonjour%2C%20je%20souhaite%20un%20devis%20pour%20un%20%C3%A9v%C3%A9nement%20aux%20R%C3%A9sidences%20H2O"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white/90 text-sm font-medium px-5 py-3.5 rounded-xl border border-white/15 transition-all"

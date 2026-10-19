@@ -96,9 +96,9 @@ export default function Parametres() {
             <div className="flex justify-between"><span>Établissement</span><span className="font-medium">Les Résidences H2O</span></div>
             <div className="flex justify-between"><span>Développé par</span><span className="font-medium">MonWe Infinity LLC</span></div>
             <div className="flex justify-between"><span>Support</span>
-              <a href="https://wa.me/2250500446464" target="_blank" rel="noopener noreferrer"
+              <a href="https://wa.me/2250749194952" target="_blank" rel="noopener noreferrer"
                 className="text-teal-600 hover:underline font-medium">
-                +225 05 00 44 64 64
+                +225 0749194952
               </a>
             </div>
           </div>

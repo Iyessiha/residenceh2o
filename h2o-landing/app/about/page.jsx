@@ -5,7 +5,7 @@ import { ShieldCheck, Award, KeyRound } from 'lucide-react'
 
 export const metadata = {
   title: 'À Propos | Les Résidences H₂O',
-  description: 'Les Résidences H₂O : des duplexes meublés avec piscine privée, pontoon et vue lagune à Modeste Beach, à 30 minutes d’Abidjan.'
+  description: 'Les Résidences H₂O : des duplexes meublés avec piscine privée, pontoon et vue lagune à Modeste Beach, à 10 minutes de la plage et à 30 minutes d’Abidjan.'
 }
 
 // Mêmes engagements que le bloc « HostBadge » de la landing.
@@ -43,7 +43,7 @@ export default function AboutPage() {
                   Les Résidences H₂O proposent des duplexes meublés, chacun avec sa piscine privée, un pontoon ou une vue sur la lagune.
                 </p>
                 <p className="text-lg leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  Nous sommes situés route de Grand-Bassam, à Modeste Beach, à environ 30 minutes du Plateau à Abidjan.
+                  Nous sommes situés route de Grand-Bassam, à Modeste Beach, à 10 minutes de la plage et à environ 30 minutes du Plateau à Abidjan.
                 </p>
               </div>
             </div>

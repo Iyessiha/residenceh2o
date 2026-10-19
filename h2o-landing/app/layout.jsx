@@ -6,7 +6,7 @@ export const metadata = {
     default: 'Les Résidences H₂O — Duplexes avec piscine privée à Modeste Beach',
     template: '%s | Les Résidences H₂O',
   },
-  description: 'Duplexes meublés avec piscine privée, pontoon et vue lagune à Modeste Beach, route de Grand-Bassam — à 30 min d\'Abidjan. Séjour, événement, mariage en bord de lac.',
+  description: 'Duplexes meublés avec piscine privée, pontoon et vue lagune à Modeste Beach, route de Grand-Bassam — à 10 minutes de la plage et à 30 min d\'Abidjan. Séjour, événement, mariage en bord de lac.',
   keywords: [
     'hôtel Modeste Beach', 'resort Grand-Bassam', 'duplex piscine Côte d\'Ivoire',
     'résidence meublée Bassam', 'villa piscine privée Abidjan', 'location vacances lagune',
@@ -39,7 +39,7 @@ const jsonLd = {
       name: 'Les Résidences H₂O',
       description: 'Duplexes meublés avec piscine privée, pontoon et vue lagune à Modeste Beach. Restaurant, pergola événementielle, parking gratuit.',
       url: 'https://residencesh2o.com',
-      telephone: '+2250500446464',
+      telephone: '+2250749194952',
       email: 'contact@residencesh2o.com',
       address: {
         '@type': 'PostalAddress',

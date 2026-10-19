@@ -89,7 +89,7 @@ export default function Contact({ duplexes }) {
 
             <div className="space-y-4">
               <a
-                href="https://wa.me/2250500446464?text=Bonjour%2C%20je%20souhaite%20réserver%20un%20duplex%20aux%20Résidences%20H2O"
+                href="https://wa.me/2250749194952?text=Bonjour%2C%20je%20souhaite%20réserver%20un%20duplex%20aux%20Résidences%20H2O"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition-colors"
@@ -100,13 +100,13 @@ export default function Contact({ duplexes }) {
 
               <div className="bg-white rounded-xl p-5 border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Téléphone</p>
-                <p className="font-semibold text-teal-900">+225 05 00 44 64 64</p>
+                <p className="font-semibold text-teal-900">+225 0749194952</p>
               </div>
 
               <div className="bg-white rounded-xl p-5 border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Localisation</p>
                 <p className="font-semibold text-teal-900">Route de Grand-Bassam, Modeste Beach</p>
-                <p className="text-sm text-gray-500">À 30 min du Plateau, Abidjan</p>
+                <p className="text-sm text-gray-500">À 10 minutes de la plage, à 30 min du Plateau, Abidjan</p>
               </div>
             </div>
           </div>

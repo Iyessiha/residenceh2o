@@ -16,7 +16,7 @@ function construireFaq(duplexes) {
   return [
   {
     question: 'Où se trouvent les Résidences H₂O ?',
-    answer: 'À Modeste Beach, route de Grand-Bassam, à environ 30 minutes du Plateau à Abidjan.',
+    answer: 'À Modeste Beach, route de Grand-Bassam : à 10 minutes de la plage et à environ 30 minutes du Plateau à Abidjan.',
   },
   {
     question: 'Combien coûte un séjour ?',
@@ -94,7 +94,7 @@ export default async function FAQPage() {
             <p className="mb-6">Écrivez-nous sur WhatsApp ou envoyez votre demande depuis le formulaire de réservation.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a
-                href="https://wa.me/2250500446464?text=Bonjour%2C%20j%27ai%20une%20question%20sur%20les%20R%C3%A9sidences%20H2O"
+                href="https://wa.me/2250749194952?text=Bonjour%2C%20j%27ai%20une%20question%20sur%20les%20R%C3%A9sidences%20H2O"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block px-8 py-3 bg-white font-bold rounded-lg hover:bg-gray-100 transition-colors"
