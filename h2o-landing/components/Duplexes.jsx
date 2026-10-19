@@ -1,9 +1,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Users, Maximize2, Check, ArrowRight } from 'lucide-react'
-import { DUPLEXES, formatFCFA } from '@/lib/residences'
+import { formatFCFA } from '@/lib/residences'
 
-export default function Duplexes() {
+export default function Duplexes({ duplexes }) {
   return (
     <section id="sejours" className="py-24 bg-[#FAF8F5] text-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -22,20 +22,22 @@ export default function Duplexes() {
 
         {/* Duplex Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {DUPLEXES.map((d) => (
+          {duplexes.map((d) => (
             <div
               key={d.id}
               className="bg-white rounded-3xl overflow-hidden border border-slate-200/70 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col group hover:-translate-y-1.5"
             >
               {/* Photo HD */}
               <div className="relative h-64 w-full overflow-hidden bg-slate-100">
-                <Image
-                  src={d.images[0]}
-                  alt={d.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
+{d.images[0] && (
+                  <Image
+                    src={d.images[0]}
+                    alt={d.nom}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
                 <span className={`absolute top-4 left-4 backdrop-blur-md text-xs px-3 py-1.5 rounded-full shadow-md font-semibold ${d.badgeClass}`}>

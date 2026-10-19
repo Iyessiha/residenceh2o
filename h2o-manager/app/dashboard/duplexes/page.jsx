@@ -5,7 +5,7 @@ import { DUPLEX_STATUT_COLORS, formatFCFA } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
 
 const STATUT_LABELS = { disponible: 'Disponible', occupe: 'Occupé', maintenance: 'Maintenance' }
-const EMPTY = { nom: '', code: '', capacite: 2, surface_m2: '', description: '', tarif_nuit: '', statut: 'disponible' }
+const EMPTY = { nom: '', code: '', capacite: 2, surface_m2: '', description: '', tagline: '', badge: '', features: '', tarif_nuit: '', statut: 'disponible' }
 
 export default function Duplexes() {
   const supabase = createClient()
@@ -42,6 +42,9 @@ export default function Duplexes() {
       capacite:    d.capacite    ?? 2,
       surface_m2:  d.surface_m2  ?? '',
       description: d.description || '',
+      tagline:     d.tagline     || '',
+      badge:       d.badge       || '',
+      features:    (d.features || []).join('\n'),
       tarif_nuit:  d.tarif_nuit  ?? '',
       statut:      d.statut      || 'disponible',
     })
@@ -55,6 +58,7 @@ export default function Duplexes() {
       capacite:   parseInt(form.capacite)   || 2,
       tarif_nuit: form.tarif_nuit ? parseInt(form.tarif_nuit) : null,
       surface_m2: form.surface_m2 ? parseInt(form.surface_m2) : null,
+      features:   form.features.split('\n').map(f => f.trim()).filter(Boolean),
       updated_at: new Date().toISOString(),
     }
 
@@ -187,6 +191,18 @@ export default function Duplexes() {
               <div>
                 <label className="label">Description</label>
                 <textarea className="input" rows={3} value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))} placeholder="Vue lac, piscine 20m²..." />
+              </div>
+              <div>
+                <label className="label">Accroche (affichée sur le site)</label>
+                <input className="input" value={form.tagline} onChange={e => setForm(p => ({...p, tagline: e.target.value}))} placeholder="Vue panoramique sur la lagune" />
+              </div>
+              <div>
+                <label className="label">Badge</label>
+                <input className="input" value={form.badge} onChange={e => setForm(p => ({...p, badge: e.target.value}))} placeholder="Vue Lagune, Idéal Famille, Prestige VIP" />
+              </div>
+              <div>
+                <label className="label">Équipements (un par ligne, affichés sur le site)</label>
+                <textarea className="input font-mono text-xs" rows={5} value={form.features} onChange={e => setForm(p => ({...p, features: e.target.value}))} placeholder={'Piscine privée 20m²\nPontoon privé'} />
               </div>
               <div>
                 <label className="label">Statut</label>

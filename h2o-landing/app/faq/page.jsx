@@ -1,6 +1,8 @@
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import FAQClient from '@/components/FAQClient'
+import { getDuplexes } from '@/lib/data'
+import { formatFCFA } from '@/lib/residences'
 
 export const metadata = {
   title: 'FAQ | Les Résidences H₂O',
@@ -9,22 +11,24 @@ export const metadata = {
 
 // Chaque réponse reprend un fait présent sur la landing. Toute modification
 // d'un tarif ou d'un duplex doit être faite dans lib/residences.js.
-const faqItems = [
+// Tarifs et capacités viennent du manager : ils ne doivent pas être écrits à la main.
+function construireFaq(duplexes) {
+  return [
   {
     question: 'Où se trouvent les Résidences H₂O ?',
     answer: 'À Modeste Beach, route de Grand-Bassam, à environ 30 minutes du Plateau à Abidjan.',
   },
   {
     question: 'Combien coûte un séjour ?',
-    answer: 'Les tarifs sont par nuit et par duplex : Duplex Lac à partir de 120 000 FCFA, Duplex Jardin à partir de 150 000 FCFA, Duplex Signature à partir de 220 000 FCFA. Le séjour minimum est de 2 nuits.',
+    answer: `Les tarifs sont par nuit et par duplex : ${duplexes.map(d => `${d.nom} ${formatFCFA(d.prix)}`).join(', ')}. Le séjour minimum est de 2 nuits.`,
   },
   {
     question: 'Combien de personnes peuvent séjourner dans chaque duplex ?',
-    answer: 'Duplex Lac : 2 à 4 personnes. Duplex Jardin : 4 à 6 personnes. Duplex Signature : 6 à 8 personnes.',
+    answer: duplexes.map(d => `${d.nom} : ${d.capacite.toLowerCase()}.`).join(' '),
   },
   {
     question: 'Chaque duplex a-t-il sa propre piscine ?',
-    answer: 'Oui, chaque duplex dispose de sa piscine privée, sans vis-à-vis : 20 m² pour le Duplex Lac, 15 m² pour le Duplex Jardin et 30 m² pour le Duplex Signature.',
+    answer: 'Oui, chaque duplex dispose de sa piscine privée, sans vis-à-vis.',
   },
   {
     question: 'Y a-t-il un parking ?',
@@ -58,9 +62,13 @@ const faqItems = [
     question: 'Comment se passe l’accueil ?',
     answer: 'Une conciergerie dédiée vous accueille, avec une flexibilité sur les horaires d’arrivée.',
   },
-]
+  ]
+}
 
-export default function FAQPage() {
+export default async function FAQPage() {
+  const duplexes = await getDuplexes()
+  const faqItems = construireFaq(duplexes)
+
   return (
     <>
       <Nav />

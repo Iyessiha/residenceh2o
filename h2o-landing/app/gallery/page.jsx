@@ -1,30 +1,17 @@
-import fs from 'fs'
-import path from 'path'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import ImageGallery from '@/components/ImageGallery'
+import { getPhotos } from '@/lib/data'
+
+export const revalidate = 300
 
 export const metadata = {
   title: 'Galerie Photos | Les Résidences H₂O',
   description: 'Découvrez les Résidences H₂O en images : duplexes, piscines privées, pontoon et pergola à Modeste Beach.',
 }
 
-// Lit les photos au build : la galerie ne dépend d'aucune API.
-function getGalleryImages() {
-  const dir = path.join(process.cwd(), 'public', 'images', 'gallery')
-  return fs
-    .readdirSync(dir)
-    .filter((name) => /\.(jpe?g|png|webp)$/i.test(name))
-    .sort()
-    .map((filename, index) => ({
-      id: index,
-      path: `/images/gallery/${encodeURIComponent(filename)}`,
-      alt: `Les Résidences H₂O — photo ${index + 1}`,
-    }))
-}
-
-export default function GalleryPage() {
-  const images = getGalleryImages()
+export default async function GalleryPage() {
+  const images = await getPhotos()
 
   return (
     <>

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { DUPLEXES, PRIX_MINIMUM, formatFCFA } from '@/lib/residences'
+import { formatFCFA } from '@/lib/residences'
 
 function diffNuits(a, b) {
   if (!a || !b) return 0
@@ -8,7 +8,8 @@ function diffNuits(a, b) {
   return diff > 0 ? diff : 0
 }
 
-export default function BookingWidget() {
+export default function BookingWidget({ duplexes }) {
+  const PRIX_MINIMUM = Math.min(...duplexes.map(d => d.prix))
   const [visible, setVisible] = useState(false)
   const [open, setOpen]       = useState(false)  // mobile sheet
   const [duplex, setDuplex]   = useState('')
@@ -24,7 +25,7 @@ export default function BookingWidget() {
   }, [])
 
   // Tarif du duplex choisi ; sans choix, on affiche le prix le plus bas de la gamme
-  const selected = DUPLEXES.find(d => d.id === duplex) || null
+  const selected = duplexes.find(d => d.id === duplex) || null
   const tarif  = selected ? selected.prix : PRIX_MINIMUM
   const nuits  = diffNuits(arrivee, depart)
   const minNuits = nuits > 0 && nuits < 2
@@ -34,7 +35,10 @@ export default function BookingWidget() {
   const prixAff = selected ? formatFCFA(tarif) : `dès ${formatFCFA(tarif)}`
 
   function goReserver() {
-    // Scroll vers le formulaire contact avec les données pré-remplies
+    // Transmet la sélection au formulaire de contact (écouté par Contact)
+    window.dispatchEvent(new CustomEvent('h2o:reservation', {
+      detail: { duplex, arrivee, depart, voyageurs },
+    }))
     const el = document.getElementById('contact')
     if (el) el.scrollIntoView({ behavior: 'smooth' })
     setOpen(false)
@@ -67,7 +71,7 @@ export default function BookingWidget() {
           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text)' }}
         >
           <option value="">— Choisir un duplex —</option>
-          {DUPLEXES.map(d => (
+          {duplexes.map(d => (
             <option key={d.id} value={d.id}>{d.nom} ({d.id})</option>
           ))}
         </select>

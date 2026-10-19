@@ -1,88 +1,59 @@
-// Source unique des duplexes : la landing, la page Résidences, le widget de réservation
-// et le formulaire de contact lisent tous ce fichier. Ne pas dupliquer ces valeurs ailleurs.
-export const DUPLEXES = [
+// Fonctions sans dépendance serveur, utilisables côté client (widget, formulaire).
+// Les données réelles viennent de Supabase (voir lib/data.js). DUPLEX_FALLBACK ne sert
+// qu'à afficher le site si Supabase n'est pas joignable : il reprend les valeurs du manager.
+export const DUPLEX_FALLBACK = [
   {
-    id: 'D-1',
-    slug: 'lac',
+    code: 'D-1',
     nom: 'Duplex Lac',
+    capacite: 4,
+    surface_m2: 80,
+    tarif_nuit: 350000,
     tagline: 'Vue panoramique sur la lagune & pontoon privé',
-    prix: 120000,
-    capacite: '2–4 personnes',
-    surface: '80 m²',
     badge: 'Vue Lagune',
-    badgeClass: 'bg-teal-500/90 text-white',
-    features: [
-      'Piscine privée 20m²',
-      'Pontoon privé',
-      'Chambre king size',
-      'Cuisine équipée',
-      'Terrasse vue lagune',
-    ],
-    images: [
-      '/images/gallery/IMG_2869.jpg',
-      '/images/gallery/IMG_2868.jpg',
-      '/images/gallery/IMG_2870.jpg',
-    ],
+    features: ['Piscine privée 20m²', 'Pontoon privé', 'Chambre king size', 'Cuisine équipée', 'Terrasse vue lagune'],
+    images: ['/images/gallery/IMG_2869.jpg', '/images/gallery/IMG_2868.jpg', '/images/gallery/IMG_2870.jpg'],
   },
   {
-    id: 'D-2',
-    slug: 'jardin',
+    code: 'D-2',
     nom: 'Duplex Jardin',
+    capacite: 6,
+    surface_m2: 100,
+    tarif_nuit: 350000,
     tagline: 'Intimité, verdure et sérénité tropicale',
-    prix: 150000,
-    capacite: '4–6 personnes',
-    surface: '100 m²',
     badge: 'Idéal Famille',
-    badgeClass: 'bg-emerald-600/90 text-white',
-    features: [
-      'Piscine privée 15m²',
-      'Jardin privatif paysager',
-      '2 chambres avec dressing',
-      'Cuisine & bar équipés',
-      'Salon lounge',
-    ],
-    images: [
-      '/images/gallery/IMG_2873.jpg',
-      '/images/gallery/IMG_2877.jpg',
-    ],
+    features: ['Piscine privée 15m²', 'Jardin privatif paysager', '2 chambres avec dressing', 'Cuisine & bar équipés', 'Salon lounge'],
+    images: ['/images/gallery/IMG_2873.jpg', '/images/gallery/IMG_2877.jpg'],
   },
   {
-    id: 'D-3',
-    slug: 'signature',
+    code: 'D-3',
     nom: 'Duplex Signature',
+    capacite: 8,
+    surface_m2: 140,
+    tarif_nuit: 350000,
     tagline: 'Le summum du luxe privé avec jacuzzi et rooftop',
-    prix: 220000,
-    capacite: '6–8 personnes',
-    surface: '140 m²',
     badge: 'Prestige VIP',
-    badgeClass: 'bg-amber-500/95 text-slate-900 font-bold',
-    features: [
-      'Grande piscine privée 30m²',
-      'Pontoon & jacuzzi chauffé',
-      '3 suites parentales',
-      'Espace BBQ & rooftop',
-      'Vue lagune 360°',
-    ],
-    images: [
-      '/images/gallery/IMG_2875.jpg',
-      '/images/gallery/IMG_2879.jpg',
-      '/images/gallery/IMG_2880.jpg',
-      '/images/gallery/IMG_2881.jpg',
-    ],
+    features: ['Grande piscine privée 30m²', 'Pontoon & jacuzzi chauffé', '3 suites parentales', 'Espace BBQ & rooftop', 'Vue lagune 360°'],
+    images: ['/images/gallery/IMG_2875.jpg', '/images/gallery/IMG_2879.jpg', '/images/gallery/IMG_2880.jpg', '/images/gallery/IMG_2881.jpg'],
   },
 ]
 
-// 120000 -> "120 000 FCFA" (espace simple, identique côté serveur et client)
+export const BADGE_CLASSES = {
+  'Vue Lagune': 'bg-teal-500/90 text-white',
+  'Idéal Famille': 'bg-emerald-600/90 text-white',
+  'Prestige VIP': 'bg-amber-500/95 text-slate-900 font-bold',
+}
+
+// 350000 -> "350 000 FCFA" (espace simple, identique côté serveur et client)
 export function formatFCFA(montant) {
   return `${String(montant).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} FCFA`
 }
 
-export const PRIX_MINIMUM = Math.min(...DUPLEXES.map((d) => d.prix))
-
-export function getResidenceBySlug(slug) {
-  return DUPLEXES.find((d) => d.slug === slug) || null
-}
-
-export function getAllResidences() {
-  return DUPLEXES
+// "Duplex Lac" -> "duplex-lac"
+export function slugify(texte) {
+  return texte
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
 }

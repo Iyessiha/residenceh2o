@@ -1,4 +1,5 @@
-import { getAllResidences, formatFCFA } from '@/lib/residences'
+import { formatFCFA } from '@/lib/residences'
+import { getDuplexes } from '@/lib/data'
 import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
@@ -10,8 +11,10 @@ export const metadata = {
   description: 'Trois duplexes meublés avec piscine privée, pontoon ou vue lagune à Modeste Beach, route de Grand-Bassam.',
 }
 
-export default function ResidencesPage() {
-  const residences = getAllResidences()
+export const revalidate = 300
+
+export default async function ResidencesPage() {
+  const residences = await getDuplexes()
 
   return (
     <>

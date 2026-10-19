@@ -1,9 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { DUPLEXES } from '@/lib/residences'
 
-export default function Contact() {
+export default function Contact({ duplexes }) {
   const [form, setForm] = useState({
     nom: '',
     telephone: '',
@@ -16,6 +15,24 @@ export default function Contact() {
     type: 'sejour',
   })
   const [status, setStatus] = useState(null) // null | 'loading' | 'success' | 'error'
+
+  // Pré-remplit le formulaire avec la sélection faite dans le widget de réservation
+  useEffect(() => {
+    const onReservation = (e) => {
+      const { duplex, arrivee, depart, voyageurs } = e.detail
+      setForm(prev => ({
+        ...prev,
+        type: 'sejour',
+        duplex: duplex || '',
+        date_arrivee: arrivee || '',
+        date_depart: depart || '',
+        nb_personnes: voyageurs ? String(voyageurs) : '',
+      }))
+      setStatus(null)
+    }
+    window.addEventListener('h2o:reservation', onReservation)
+    return () => window.removeEventListener('h2o:reservation', onReservation)
+  }, [])
 
   const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
@@ -153,7 +170,7 @@ export default function Contact() {
                       <select name="duplex" value={form.duplex} onChange={handleChange}
                         className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                         <option value="">— Pas de préférence —</option>
-                        {DUPLEXES.map(d => (
+                        {duplexes.map(d => (
                           <option key={d.id} value={d.id}>{d.nom} ({d.id})</option>
                         ))}
                       </select>

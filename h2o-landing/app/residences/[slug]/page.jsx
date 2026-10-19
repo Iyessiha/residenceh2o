@@ -1,17 +1,20 @@
-import { getResidenceBySlug, getAllResidences, formatFCFA } from '@/lib/residences'
+import { formatFCFA } from '@/lib/residences'
+import { getDuplexes } from '@/lib/data'
 import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import { Users, MapPin } from 'lucide-react'
 
+export const revalidate = 300
+
 export async function generateStaticParams() {
-  const residences = getAllResidences()
+  const residences = await getDuplexes()
   return residences.map(r => ({ slug: r.slug }))
 }
 
 export async function generateMetadata({ params }) {
-  const residence = getResidenceBySlug(params.slug)
+  const residence = (await getDuplexes()).find(r => r.slug === params.slug)
   if (!residence) return { title: 'Duplex non trouvé' }
 
   return {
@@ -20,8 +23,9 @@ export async function generateMetadata({ params }) {
   }
 }
 
-export default function ResidencePage({ params }) {
-  const residence = getResidenceBySlug(params.slug)
+export default async function ResidencePage({ params }) {
+  const residences = await getDuplexes()
+  const residence = residences.find(r => r.slug === params.slug)
 
   if (!residence) {
     return (
@@ -133,7 +137,7 @@ export default function ResidencePage({ params }) {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Nos autres duplexes</h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {getAllResidences()
+            {residences
               .filter(r => r.slug !== residence.slug)
               .map(r => (
                 <Link key={r.slug} href={`/residences/${r.slug}`} className="group">
