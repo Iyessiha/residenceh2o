@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import FooterInstallButton from './FooterInstallButton'
 
 export default function Footer() {
   return (
@@ -73,6 +74,8 @@ export default function Footer() {
             <Link href="/cgu" className="hover:text-white transition-colors">CGU</Link>
             <span className="opacity-30">·</span>
             <span className="opacity-40">Site réalisé par MonWe Infinity LLC</span>
+            <span className="opacity-30">·</span>
+            <FooterInstallButton />
           </div>
         </div>
       </div>

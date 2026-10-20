@@ -1,5 +1,6 @@
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
+import InstallPWA from '@/components/InstallPWA'
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className={jakarta.className}>
         {children}
+        <InstallPWA />
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'))

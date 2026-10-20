@@ -1,4 +1,5 @@
 import './globals.css'
+import InstallPWA from '@/components/InstallPWA'
 
 export const metadata = {
   metadataBase: new URL('https://residencesh2o.com'),
@@ -77,6 +78,7 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <InstallPWA />
       </body>
     </html>
   )
