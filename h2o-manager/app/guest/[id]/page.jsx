@@ -167,10 +167,9 @@ function SuiviCommande({ orderId, orderType, onRetour }) {
 
   const STEPS = orderType === 'restaurant'
     ? [
-        { key: 'en_cours',       label: 'Commande reçue',  emoji: '✅' },
-        { key: 'en_preparation', label: 'En préparation',  emoji: '🔥' },
-        { key: 'pret',           label: 'Prêt à livrer',   emoji: '🍽️' },
-        { key: 'livre',          label: 'Livré',            emoji: '🎉' },
+        { key: 'en_cours', label: 'Commande reçue',      emoji: '✅' },
+        { key: 'servie',   label: 'En cours de service', emoji: '🔥' },
+        { key: 'payee',    label: 'Réglée — Bon appétit !', emoji: '🎉' },
       ]
     : [
         { key: 'en_attente', label: 'Commande reçue', emoji: '✅' },
@@ -179,7 +178,7 @@ function SuiviCommande({ orderId, orderType, onRetour }) {
       ]
 
   const currentIdx = Math.max(0, STEPS.findIndex(s => s.key === statut))
-  const isDelivered = statut === 'livre'
+  const isDelivered = orderType === 'restaurant' ? statut === 'payee' : statut === 'livre'
 
   return (
     <div className="px-4 pt-5">
