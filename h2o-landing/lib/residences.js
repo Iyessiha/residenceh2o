@@ -40,6 +40,40 @@ export const DUPLEX_FALLBACK = [
   },
 ]
 
+// Chambres louables séparément (données de secours si Supabase indisponible)
+export const CHAMBRES_FALLBACK = [
+  {
+    nom: 'Chambre Standard Lac',
+    duplex_nom: 'Duplex Lac',
+    type: 'standard',
+    tarif_nuit: 60000,
+    capacite: 2,
+    statut: 'disponible',
+    description: 'Chambre confortable avec lit king size, climatisation et accès piscine partagée.',
+    features: ['Lit king size', 'Climatisation', 'Salle de bain privée', 'Accès piscine'],
+  },
+  {
+    nom: 'Chambre Standard Jardin',
+    duplex_nom: 'Duplex Jardin',
+    type: 'standard',
+    tarif_nuit: 60000,
+    capacite: 2,
+    statut: 'disponible',
+    description: 'Chambre lumineuse donnant sur le jardin tropical, idéale pour un séjour reposant.',
+    features: ['Vue jardin', 'Literie premium', 'Climatisation', 'Salle de bain privée'],
+  },
+  {
+    nom: 'Suite VIP Signature',
+    duplex_nom: 'Duplex Signature',
+    type: 'vip',
+    tarif_nuit: 120000,
+    capacite: 2,
+    statut: 'disponible',
+    description: 'Suite parentale de prestige avec jacuzzi, vue lagune et service personnalisé.',
+    features: ['Jacuzzi privatif', 'Vue lagune 360°', 'Dressing', 'Room service', 'Balcon terrasse'],
+  },
+]
+
 export const BADGE_CLASSES = {
   'Vue Lagune': 'bg-teal-500/90 text-white',
   'Idéal Famille': 'bg-emerald-600/90 text-white',

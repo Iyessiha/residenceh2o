@@ -84,11 +84,12 @@ export default async function ResidencePage({ params }) {
             </div>
           </div>
           <div className="md:text-right">
-            <div className="text-3xl font-bold text-teal-600 mb-1">{formatFCFA(residence.prix)}</div>
+            <div className="text-3xl font-bold mb-1" style={{ color: 'var(--h2o-lagune)' }}>{formatFCFA(residence.prix)}</div>
             <p className="text-gray-600 text-sm mb-4">par nuit · minimum 2 nuits</p>
             <Link
               href="/#contact"
-              className="inline-block px-8 py-3 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition"
+              className="inline-block px-8 py-3 text-white font-bold rounded-lg transition hover:opacity-90"
+              style={{ backgroundColor: 'var(--primary)' }}
             >
               Réserver ce duplex
             </Link>
@@ -117,7 +118,7 @@ export default async function ResidencePage({ params }) {
           <ul className="grid md:grid-cols-2 gap-3">
             {residence.features.map((feature) => (
               <li key={feature} className="flex items-start gap-3 text-gray-700">
-                <span className="text-teal-600 font-bold">✓</span>
+                <span className="font-bold" style={{ color: 'var(--h2o-lagune)' }}>✓</span>
                 <span>{feature}</span>
               </li>
             ))}
@@ -125,12 +126,13 @@ export default async function ResidencePage({ params }) {
         </div>
 
         {/* Booking CTA */}
-        <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-2xl p-8 text-center mb-12">
+        <div className="rounded-2xl p-8 text-center mb-12" style={{ backgroundColor: 'var(--bg-2)' }}>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Prêt à réserver ?</h2>
           <p className="text-gray-600 mb-6">Envoyez votre demande pour le {residence.nom}. Nous vous répondons sous 24 h.</p>
           <Link
             href="/#contact"
-            className="inline-block px-10 py-4 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition text-lg"
+            className="inline-block px-10 py-4 text-white font-bold rounded-lg transition text-lg hover:opacity-90"
+            style={{ backgroundColor: 'var(--primary)' }}
           >
             Demander une réservation
           </Link>
@@ -156,7 +158,7 @@ export default async function ResidencePage({ params }) {
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 mb-2">{r.nom}</h3>
                       <p className="text-sm text-gray-600 mb-3">{r.tagline}</p>
-                      <p className="text-teal-600 font-bold">À partir de {formatFCFA(r.prix)} / nuit</p>
+                      <p className="font-bold" style={{ color: 'var(--h2o-lagune)' }}>À partir de {formatFCFA(r.prix)} / nuit</p>
                     </div>
                   </div>
                 </Link>

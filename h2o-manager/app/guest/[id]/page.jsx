@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
 // Client Supabase anon — lecture publique + insertions invitées
@@ -20,6 +21,11 @@ const CATS = [
 ]
 const CAT_LABEL = Object.fromEntries(CATS.map(c => [c.key, c.label]))
 const CAT_EMOJI = Object.fromEntries(CATS.map(c => [c.key, c.emoji]))
+
+const SECTIONS_GUEST = [
+  { key: 'food',   label: 'À manger', emoji: '🍽️', cats: ['plat', 'entree', 'dessert'] },
+  { key: 'drinks', label: 'À boire',  emoji: '🍹', cats: ['vin', 'jus', 'boisson', 'autre'] },
+]
 
 function fcfa(n) {
   if (!n) return '0 FCFA'
@@ -49,30 +55,36 @@ function CartBar({ cart, onOpen }) {
 }
 
 // ── Modal validation commande ─────────────────────────────
-function OrderModal({ cart, onClose, onConfirm, type }) {
-  const [nom, setNom] = useState('')
-  const [tel, setTel] = useState('')
-  const [note, setNote] = useState('')
+function OrderModal({ cart, onClose, onConfirm }) {
+  const [nom, setNom]     = useState('')
+  const [note, setNote]   = useState('')
   const [sending, setSending] = useState(false)
-  const [done, setDone] = useState(false)
+  const [result, setResult]   = useState(null) // { id, type } après succès
+  const [erreur, setErreur]   = useState('')
 
   const total = cart.reduce((s, i) => s + i.prix * i.qte, 0)
 
   async function submit() {
     setSending(true)
-    await onConfirm({ nom, tel, note })
-    setSending(false)
-    setDone(true)
+    setErreur('')
+    try {
+      const res = await onConfirm({ nom, note })
+      setResult(res)
+    } catch {
+      setErreur('Erreur lors de l\'envoi. Veuillez réessayer.')
+    } finally {
+      setSending(false)
+    }
   }
 
-  if (done) return (
+  if (result) return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4">
       <div className="w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl">
         <div className="text-5xl mb-3">✅</div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Commande reçue !</h2>
         <p className="text-gray-500 text-sm mb-6">Notre équipe prend en charge votre commande.</p>
-        <button onClick={onClose} className="w-full py-3 rounded-xl text-white font-semibold"
-          style={{ backgroundColor: '#E8513A' }}>Fermer</button>
+        <button onClick={() => onClose(result)} className="w-full py-3 rounded-xl text-white font-semibold"
+          style={{ backgroundColor: '#E8513A' }}>Suivre ma commande</button>
       </div>
     </div>
   )
@@ -119,6 +131,10 @@ function OrderModal({ cart, onClose, onConfirm, type }) {
           </div>
         </div>
 
+        {erreur && (
+          <p className="text-red-500 text-sm text-center mb-3 font-medium">{erreur}</p>
+        )}
+
         <button onClick={submit} disabled={sending}
           className="w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-50"
           style={{ background: 'linear-gradient(135deg,#1A0A04,#E8513A)' }}>
@@ -129,9 +145,199 @@ function OrderModal({ cart, onClose, onConfirm, type }) {
   )
 }
 
+// ── Suivi en temps réel ───────────────────────────────────
+function SuiviCommande({ orderId, orderType, onRetour, onDelivered }) {
+  const [statut, setStatut] = useState(orderType === 'restaurant' ? 'en_cours' : 'en_attente')
+
+  useEffect(() => {
+    const table = orderType === 'restaurant' ? 'commandes_restaurant' : 'ventes'
+    sb.from(table).select('statut').eq('id', orderId).single()
+      .then(({ data }) => { if (data?.statut) setStatut(data.statut) })
+
+    const channel = sb.channel(`suivi-${orderId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table,
+        filter: `id=eq.${orderId}`,
+      }, (payload) => {
+        if (payload.new?.statut) setStatut(payload.new.statut)
+      })
+      .subscribe()
+
+    return () => { sb.removeChannel(channel) }
+  }, [orderId, orderType])
+
+  useEffect(() => {
+    const done = orderType === 'restaurant' ? statut === 'payee' : statut === 'livre'
+    if (done && onDelivered) onDelivered()
+  }, [statut, orderType, onDelivered])
+
+  const STEPS = orderType === 'restaurant'
+    ? [
+        { key: 'en_cours', label: 'Commande reçue',      emoji: '✅' },
+        { key: 'servie',   label: 'En cours de service', emoji: '🔥' },
+        { key: 'payee',    label: 'Réglée — Bon appétit !', emoji: '🎉' },
+      ]
+    : [
+        { key: 'en_attente', label: 'Commande reçue', emoji: '✅' },
+        { key: 'confirme',   label: 'Confirmée',       emoji: '📦' },
+        { key: 'livre',      label: 'Livré',            emoji: '🎉' },
+      ]
+
+  const currentIdx = Math.max(0, STEPS.findIndex(s => s.key === statut))
+  const isDelivered = orderType === 'restaurant' ? statut === 'payee' : statut === 'livre'
+
+  return (
+    <div className="px-4 pt-5">
+      <div className="bg-white rounded-3xl p-6 shadow-sm mb-4">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="text-3xl">{isDelivered ? '🎉' : '⏳'}</div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">
+              {isDelivered ? 'Commande livrée !' : 'Commande en cours'}
+            </h2>
+            <p className="text-xs text-gray-400">
+              {isDelivered ? 'Bon appétit !' : 'La page se met à jour automatiquement'}
+            </p>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          {STEPS.map((step, idx) => {
+            const done = idx < currentIdx
+            const active = idx === currentIdx
+            const isLast = idx === STEPS.length - 1
+            return (
+              <div key={step.key} className="flex items-start gap-4">
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-base transition-all ${
+                      done ? 'bg-green-100 text-green-700' : !active ? 'bg-gray-100 text-gray-300' : ''
+                    }`}
+                    style={active ? { backgroundColor: '#E8513A', color: '#fff' } : {}}
+                  >
+                    {done ? '✓' : step.emoji}
+                  </div>
+                  {!isLast && <div className={`w-0.5 h-8 mt-1 ${done ? 'bg-green-200' : 'bg-gray-100'}`} />}
+                </div>
+                <div className="pt-2 pb-5">
+                  <p className={`font-semibold text-sm ${active ? 'text-gray-900' : done ? 'text-green-700' : 'text-gray-300'}`}>
+                    {step.label}
+                  </p>
+                  {active && !isDelivered && (
+                    <p className="text-xs mt-0.5 animate-pulse" style={{ color: '#E8513A' }}>En cours…</p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <button
+          onClick={onRetour}
+          className={`w-full py-3 rounded-2xl font-semibold text-sm ${isDelivered ? 'text-white' : 'bg-gray-100 text-gray-600'}`}
+          style={isDelivered ? { backgroundColor: '#E8513A' } : {}}
+        >
+          {isDelivered ? "Retour à l'accueil" : "Retour à l'accueil (commande en cours)"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Prolonger séjour ──────────────────────────────────────
+function ProlongerView({ duplex, resDepart, resId, onBack }) {
+  const [nbNuits, setNbNuits]   = useState('1')
+  const [note, setNote]         = useState('')
+  const [sending, setSending]   = useState(false)
+  const [sent, setSent]         = useState(false)
+
+  async function submit() {
+    setSending(true)
+    await sb.from('demandes_assistance').insert([{
+      duplex_id: duplex.id,
+      duplex_code: duplex.code,
+      duplex_nom: duplex.nom,
+      message: `Demande de prolongation de séjour : ${nbNuits} nuit(s) supplémentaire(s) à partir du ${resDepart}.${note ? ' Note : ' + note : ''}`,
+      statut: 'nouveau',
+    }])
+    setSent(true)
+    setSending(false)
+  }
+
+  if (sent) return (
+    <div className="px-4 pt-5">
+      <div className="bg-white rounded-3xl p-8 text-center shadow-sm">
+        <div className="text-5xl mb-3">✅</div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Demande envoyée !</h2>
+        <p className="text-gray-500 text-sm mb-6">La réception vous contactera très rapidement pour confirmer la prolongation.</p>
+        <button onClick={onBack} className="w-full py-3 rounded-2xl text-white font-semibold"
+          style={{ backgroundColor: '#E8513A' }}>Retour à l'accueil</button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="px-4 pt-5">
+      <div className="bg-white rounded-3xl p-6 shadow-sm">
+        <h2 className="text-xl font-bold text-gray-900 mb-1">Prolonger mon séjour</h2>
+        {resDepart && <p className="text-sm text-gray-400 mb-5">Départ actuel prévu le {new Date(resDepart).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Nombre de nuits supplémentaires
+            </label>
+            <div className="flex items-center gap-4">
+              {['1','2','3','5','7'].map(n => (
+                <button key={n} onClick={() => setNbNuits(n)}
+                  className="w-12 h-12 rounded-xl font-bold text-base transition-all"
+                  style={nbNuits === n
+                    ? { backgroundColor: '#E8513A', color: '#fff' }
+                    : { backgroundColor: '#F3F4F6', color: '#374151' }}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Note (optionnel)
+            </label>
+            <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
+              className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+              placeholder="Informations complémentaires…" />
+          </div>
+          <button onClick={submit} disabled={sending}
+            className="w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg,#1A0A04,#E8513A)' }}>
+            {sending ? 'Envoi en cours…' : `Demander ${nbNuits} nuit${parseInt(nbNuits) > 1 ? 's' : ''} de plus`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null
+  const diff = new Date(dateStr) - new Date(new Date().toDateString())
+  return Math.ceil(diff / 86400000)
+}
+function fmtDate(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+}
+
 // ── Page principale ───────────────────────────────────────
 export default function GuestPortal({ params }) {
   const { id } = params
+  const searchParams = useSearchParams()
+
+  // Données de réservation encodées dans l'URL (depuis QR code manager)
+  const resNom     = searchParams.get('nom')
+  const resArrivee = searchParams.get('arrivee')
+  const resDepart  = searchParams.get('depart')
+  const resId      = searchParams.get('rid')
+  const hasResData = !!(resArrivee && resDepart)
 
   const [duplex, setDuplex]   = useState(null)
   const [menu, setMenu]       = useState([])
@@ -139,7 +345,7 @@ export default function GuestPortal({ params }) {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
-  const [view, setView] = useState('home') // 'home' | 'restaurant' | 'boutique' | 'assistance'
+  const [view, setView] = useState('home') // 'home' | 'restaurant' | 'boutique' | 'assistance' | 'prolonger'
   const [catFilter, setCatFilter] = useState('tous')
   const [cart, setCart]         = useState([])
   const [cartOpen, setCartOpen] = useState(false)
@@ -149,6 +355,10 @@ export default function GuestPortal({ params }) {
   const [assistNom, setAssistNom]   = useState('')
   const [assistSent, setAssistSent] = useState(false)
   const [assistSending, setAssistSending] = useState(false)
+
+  // Suivi commande
+  const [lastOrderId,   setLastOrderId]   = useState(null)
+  const [lastOrderType, setLastOrderType] = useState(null) // 'restaurant' | 'boutique'
 
   useEffect(() => {
     async function load() {
@@ -162,9 +372,27 @@ export default function GuestPortal({ params }) {
       setMenu(menuRes.data || [])
       setArticles(articlesRes.data || [])
       setLoading(false)
+      // Restaure la commande en cours depuis localStorage
+      try {
+        const saved = localStorage.getItem(`h2o_order_${duplexRes.data.id}`)
+        if (saved) {
+          const { id: oid, type } = JSON.parse(saved)
+          setLastOrderId(oid)
+          setLastOrderType(type)
+        }
+      } catch {}
     }
     load()
   }, [id])
+
+  function saveOrderLocally(orderId, orderType) {
+    try { localStorage.setItem(`h2o_order_${id}`, JSON.stringify({ id: orderId, type: orderType })) } catch {}
+  }
+  function clearSavedOrder() {
+    try { localStorage.removeItem(`h2o_order_${id}`) } catch {}
+    setLastOrderId(null)
+    setLastOrderType(null)
+  }
 
   function addToCart(item) {
     setCart(prev => {
@@ -180,28 +408,33 @@ export default function GuestPortal({ params }) {
   }
   function qteOf(itemId) { return cart.find(i => i.id === itemId)?.qte || 0 }
 
-  async function confirmOrder({ nom, tel, note }) {
+  async function confirmOrder({ nom, note }) {
     const lignes = cart.map(i => ({ nom: i.nom, qte: i.qte, prix: i.prix }))
     const montant_total = cart.reduce((s, i) => s + i.prix * i.qte, 0)
     const nom_client = nom || `Duplex ${duplex.code}`
 
     if (view === 'restaurant') {
-      await sb.from('commandes_restaurant').insert([{
-        nom_client, telephone: tel || null,
+      const { data, error } = await sb.from('commandes_restaurant').insert([{
+        nom_client,
         table_num: duplex.code,
         lignes, montant_total,
         mode_paiement: 'especes', statut: 'en_cours',
         notes: note || null,
-      }])
+      }]).select('id').single()
+      if (error) throw new Error(error.message)
+      setCart([])
+      return { id: data?.id, type: 'restaurant' }
     } else {
-      await sb.from('ventes').insert([{
-        nom_client, telephone: tel || null,
+      const { data, error } = await sb.from('ventes').insert([{
+        nom_client,
         lignes, montant_total,
         mode_paiement: 'especes', statut: 'en_attente',
         notes: note || null,
-      }])
+      }]).select('id').single()
+      if (error) throw new Error(error.message)
+      setCart([])
+      return { id: data?.id, type: 'boutique' }
     }
-    setCart([])
   }
 
   async function sendAssistance() {
@@ -226,6 +459,7 @@ export default function GuestPortal({ params }) {
     setAssistMsg('')
     setAssistNom('')
     setAssistSent(false)
+    // lastOrderId conservé — le client peut revenir suivre depuis l'accueil
   }
 
   // ── Rendu loading / not found ─────────────────────────
@@ -270,14 +504,34 @@ export default function GuestPortal({ params }) {
           <div>
             <p className="text-white/60 text-xs font-medium uppercase tracking-widest">Les Résidences H₂O</p>
             <h1 className="text-lg font-bold leading-tight">
-              {view === 'home'       ? duplex.nom
+              {view === 'home'       ? (resNom || duplex.nom)
               : view === 'restaurant' ? 'Restaurant & Bar'
               : view === 'boutique'   ? 'Boutique'
+              : view === 'suivi'      ? 'Suivi de commande'
+              : view === 'prolonger'  ? 'Prolonger mon séjour'
               : 'Assistance'}
             </h1>
           </div>
         </div>
-        {view === 'home' && (
+        {view === 'home' && hasResData && (() => {
+          const jours = daysUntil(resDepart)
+          return (
+            <div className="mt-3 bg-white/10 rounded-xl px-4 py-3 text-sm">
+              <p className="text-white/60 text-xs mb-1">Votre séjour</p>
+              <p className="text-white font-medium">
+                {fmtDate(resArrivee)} <span className="text-white/50">→</span> {fmtDate(resDepart)}
+              </p>
+              {jours !== null && (
+                <p className="text-white/70 text-xs mt-1">
+                  {jours > 0 ? `Départ dans ${jours} jour${jours > 1 ? 's' : ''}`
+                   : jours === 0 ? '⚠️ Départ aujourd\'hui'
+                   : 'Séjour terminé'}
+                </p>
+              )}
+            </div>
+          )
+        })()}
+        {view === 'home' && !hasResData && (
           <p className="mt-3 text-white/70 text-sm">
             Bonjour ! Comment pouvons-nous vous aider ?
           </p>
@@ -287,6 +541,23 @@ export default function GuestPortal({ params }) {
       {/* ── Vue Accueil ─────────────────────────────────── */}
       {view === 'home' && (
         <div className="px-4 pt-5 space-y-3">
+
+          {/* Bandeau commande en cours */}
+          {lastOrderId && (
+            <button onClick={() => setView('suivi')}
+              className="w-full flex items-center gap-4 rounded-2xl p-4 text-left active:scale-95 transition-transform shadow-sm border"
+              style={{ backgroundColor: '#FFF7ED', borderColor: '#FDBA74' }}>
+              <span className="text-2xl animate-pulse">⏳</span>
+              <div className="flex-1">
+                <p className="font-bold text-sm" style={{ color: '#C2410C' }}>Commande en cours</p>
+                <p className="text-xs mt-0.5" style={{ color: '#EA580C' }}>
+                  Appuyez pour suivre l'état de votre {lastOrderType === 'restaurant' ? 'commande' : 'achat'}
+                </p>
+              </div>
+              <span style={{ color: '#FB923C' }}>→</span>
+            </button>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => setView('restaurant')}
               className="bg-white rounded-2xl p-5 text-left shadow-sm active:scale-95 transition-transform">
@@ -310,6 +581,29 @@ export default function GuestPortal({ params }) {
               <p className="text-xs text-gray-400 mt-0.5">Besoin d'aide ? Notre équipe vous répond</p>
             </div>
           </button>
+
+          {hasResData && (
+            <button onClick={() => setView('prolonger')}
+              className="w-full bg-white rounded-2xl p-5 text-left shadow-sm active:scale-95 transition-transform flex items-center gap-4">
+              <span className="text-3xl">📅</span>
+              <div>
+                <p className="font-bold text-gray-900">Prolonger mon séjour</p>
+                <p className="text-xs text-gray-400 mt-0.5">Demandez une extension à la réception</p>
+              </div>
+            </button>
+          )}
+
+          {/* Installer l'app */}
+          <div className="bg-gray-50 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-xl mt-0.5">📲</span>
+            <div>
+              <p className="font-semibold text-gray-800 text-sm">Installer l'application</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                <strong>iPhone :</strong> Appuyez sur <span className="font-medium">Partager 📤</span> puis <span className="font-medium">"Sur l'écran d'accueil"</span><br/>
+                <strong>Android :</strong> Menu ⋮ → <span className="font-medium">"Ajouter à l'écran d'accueil"</span>
+              </p>
+            </div>
+          </div>
 
           <div className="pt-2 pb-4 text-center">
             <p className="text-xs text-gray-400">
@@ -346,36 +640,54 @@ export default function GuestPortal({ params }) {
                 ))}
               </div>
 
-              {/* Items */}
-              <div className="space-y-3">
-                {menuFiltered.map(item => {
-                  const qte = qteOf(item.id)
+              {/* Items groupés par section */}
+              <div className="space-y-6">
+                {SECTIONS_GUEST.map(section => {
+                  const sectionItems = menuFiltered.filter(m => section.cats.includes(m.categorie))
+                  if (sectionItems.length === 0) return null
                   return (
-                    <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="text-sm">{CAT_EMOJI[item.categorie]}</span>
-                          <span className="text-xs text-gray-400">{CAT_LABEL[item.categorie]}</span>
+                    <div key={section.key}>
+                      {/* En-tête de section — masqué si catFilter est spécifique */}
+                      {catFilter === 'tous' && (
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-base">{section.emoji}</span>
+                          <p className="font-bold text-gray-700 text-sm uppercase tracking-wide">{section.label}</p>
+                          <div className="flex-1 h-px bg-gray-200" />
                         </div>
-                        <p className="font-semibold text-gray-900 truncate">{item.nom}</p>
-                        {item.description && <p className="text-xs text-gray-400 truncate">{item.description}</p>}
-                        <p className="font-bold mt-1" style={{ color: '#E8513A' }}>{fcfa(item.prix)}</p>
-                      </div>
-                      <div className="flex-shrink-0">
-                        {qte === 0 ? (
-                          <button onClick={() => addToCart(item)}
-                            className="w-9 h-9 rounded-full text-white text-xl flex items-center justify-center font-bold active:scale-90 transition-transform"
-                            style={{ backgroundColor: '#E8513A' }}>+</button>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => removeFromCart(item.id)}
-                              className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 text-lg flex items-center justify-center font-bold">−</button>
-                            <span className="w-5 text-center font-bold text-gray-900">{qte}</span>
-                            <button onClick={() => addToCart(item)}
-                              className="w-8 h-8 rounded-full text-white text-lg flex items-center justify-center font-bold"
-                              style={{ backgroundColor: '#E8513A' }}>+</button>
-                          </div>
-                        )}
+                      )}
+                      <div className="space-y-3">
+                        {sectionItems.map(item => {
+                          const qte = qteOf(item.id)
+                          return (
+                            <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className="text-sm">{CAT_EMOJI[item.categorie]}</span>
+                                  <span className="text-xs text-gray-400">{CAT_LABEL[item.categorie]}</span>
+                                </div>
+                                <p className="font-semibold text-gray-900 truncate">{item.nom}</p>
+                                {item.description && <p className="text-xs text-gray-400 truncate">{item.description}</p>}
+                                <p className="font-bold mt-1" style={{ color: '#E8513A' }}>{fcfa(item.prix)}</p>
+                              </div>
+                              <div className="flex-shrink-0">
+                                {qte === 0 ? (
+                                  <button onClick={() => addToCart(item)}
+                                    className="w-9 h-9 rounded-full text-white text-xl flex items-center justify-center font-bold active:scale-90 transition-transform"
+                                    style={{ backgroundColor: '#E8513A' }}>+</button>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={() => removeFromCart(item.id)}
+                                      className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 text-lg flex items-center justify-center font-bold">−</button>
+                                    <span className="w-5 text-center font-bold text-gray-900">{qte}</span>
+                                    <button onClick={() => addToCart(item)}
+                                      className="w-8 h-8 rounded-full text-white text-lg flex items-center justify-center font-bold"
+                                      style={{ backgroundColor: '#E8513A' }}>+</button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )
@@ -493,6 +805,26 @@ export default function GuestPortal({ params }) {
         </div>
       )}
 
+      {/* ── Vue Prolonger séjour ────────────────────────── */}
+      {view === 'prolonger' && (
+        <ProlongerView
+          duplex={duplex}
+          resDepart={resDepart}
+          resId={resId}
+          onBack={goBack}
+        />
+      )}
+
+      {/* ── Vue Suivi commande ──────────────────────────── */}
+      {view === 'suivi' && lastOrderId && (
+        <SuiviCommande
+          orderId={lastOrderId}
+          orderType={lastOrderType}
+          onRetour={goBack}
+          onDelivered={clearSavedOrder}
+        />
+      )}
+
       {/* Barre panier */}
       {(view === 'restaurant' || view === 'boutique') && (
         <CartBar cart={cart} onOpen={() => setCartOpen(true)} />
@@ -502,12 +834,16 @@ export default function GuestPortal({ params }) {
       {cartOpen && (
         <OrderModal
           cart={cart}
-          type={view}
-          onClose={() => setCartOpen(false)}
-          onConfirm={async (info) => {
-            await confirmOrder(info)
+          onClose={(result) => {
             setCartOpen(false)
+            if (result?.id) {
+              setLastOrderId(result.id)
+              setLastOrderType(result.type)
+              saveOrderLocally(result.id, result.type)
+              setView('suivi')
+            }
           }}
+          onConfirm={confirmOrder}
         />
       )}
     </div>

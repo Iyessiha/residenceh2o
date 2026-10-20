@@ -132,6 +132,17 @@ export default function Boutique() {
     Promise.all([loadVentes(), loadArticles()]).finally(() => setLoading(false))
   }, [loadVentes, loadArticles])
 
+  // Realtime : rafraîchir dès qu'une vente arrive via le guest portal
+  useEffect(() => {
+    const channel = supabase
+      .channel('ventes_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventes' }, () => {
+        loadVentes()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [loadVentes])
+
   // Pré-remplissage depuis CRM
   useEffect(() => {
     const nom = searchParams.get('nom')

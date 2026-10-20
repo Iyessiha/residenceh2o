@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@/lib/supabase'
+import { createServiceClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
 /**
@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server'
  * Cherche le dernier numéro de l'année en cours et incrémente.
  */
 export async function GET() {
-  const supabase = createClient()
+  const supabase = createServiceClient()
   const year = new Date().getFullYear()
   const prefix = `FAC-${year}-`
 

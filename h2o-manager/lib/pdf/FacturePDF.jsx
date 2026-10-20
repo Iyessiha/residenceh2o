@@ -3,18 +3,30 @@
  * Utilisé UNIQUEMENT côté serveur (API route) — ne jamais importer dans un Client Component.
  */
 import {
-  Document, Page, View, Text, StyleSheet, Font,
+  Document, Page, View, Text, StyleSheet, Svg, Rect,
 } from '@react-pdf/renderer'
+import qrcode from 'qrcode-generator'
 
-// Police : Helvetica (intégrée dans toutes les implémentations PDF)
-// Pour un rendu cohérent sans dépendance réseau sur le serveur.
-Font.register({
-  family: 'Helvetica',
-  fonts: [
-    { src: 'Helvetica' },
-    { src: 'Helvetica-Bold', fontWeight: 700 },
-  ],
-})
+// Helvetica est une police PDF standard — aucune registration nécessaire.
+
+function QRCodePDF({ value, size = 72 }) {
+  const qr = qrcode(0, 'M')
+  qr.addData(value)
+  qr.make()
+  const count = qr.getModuleCount()
+  const cell = size / count
+  const rects = []
+  for (let row = 0; row < count; row++) {
+    for (let col = 0; col < count; col++) {
+      if (qr.isDark(row, col)) {
+        rects.push(
+          <Rect key={`${row}-${col}`} x={col * cell} y={row * cell} width={cell} height={cell} fill="#1A0A04" />
+        )
+      }
+    }
+  }
+  return <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>{rects}</Svg>
+}
 
 const C = {
   primary:  '#E8513A',
@@ -70,6 +82,12 @@ const s = StyleSheet.create({
   // Statut badge
   statutBox: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 8, paddingVertical: 3,
                alignSelf: 'flex-end', marginTop: 2 },
+  // QR code
+  qrSection: { flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 20,
+                backgroundColor: C.bg2, borderRadius: 6, padding: 12 },
+  qrText:    { flex: 1 },
+  qrTitle:   { fontSize: 9, fontWeight: 700, color: C.text, marginBottom: 3 },
+  qrSub:     { fontSize: 8, color: C.text3, lineHeight: 1.5 },
   // Pied de page
   footer:    { position: 'absolute', bottom: 30, left: 40, right: 40 },
   footerLine:{ borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8 },
@@ -97,7 +115,7 @@ const STATUT_COLORS = {
   impaye:    { border: '#E8513A', text: '#E8513A' },
 }
 
-export function FacturePDF({ facture }) {
+export function FacturePDF({ facture, guestUrl }) {
   const sc = STATUT_COLORS[facture.statut] || STATUT_COLORS.brouillon
   const solde = (facture.montant_total || 0) - (facture.montant_paye || 0)
 
@@ -193,6 +211,18 @@ export function FacturePDF({ facture }) {
             </Text>
           </View>
         </View>
+
+        {/* ── QR code réservation ──────────────────────────── */}
+        {guestUrl ? (
+          <View style={s.qrSection}>
+            <QRCodePDF value={guestUrl} size={72} />
+            <View style={s.qrText}>
+              <Text style={s.qrTitle}>Accès direct à votre séjour</Text>
+              <Text style={s.qrSub}>Scannez ce QR code pour suivre votre réservation,</Text>
+              <Text style={s.qrSub}>commander depuis votre chambre et installer l'application.</Text>
+            </View>
+          </View>
+        ) : null}
 
         {/* ── Pied de page ─────────────────────────────────── */}
         <View style={s.footer}>

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase'
+import { createServiceClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
 /**
@@ -17,7 +17,7 @@ export async function POST(req) {
     return NextResponse.json({ error: 'La date de départ doit être après la date d\'arrivée' }, { status: 400 })
   }
 
-  const supabase = createClient()
+  const supabase = createServiceClient()
 
   // Chevauchement : deux séjours se chevauchent si arrivee_A < depart_B ET depart_A > arrivee_B
   let query = supabase

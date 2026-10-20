@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Les Residences H2O">
+  <title>Les Résidences H2O</title>
+  <rect width="512" height="512" rx="96" fill="#0C3A3D"/>
+  <g transform="translate(22 92) scale(1.78)">
+    <rect x="46" y="56" width="62" height="56" fill="#F7F4EE"/>
+    <rect x="108" y="40" width="46" height="72" fill="#9FC3C0"/>
+    <rect x="154" y="60" width="58" height="52" fill="#F7F4EE"/>
+    <path d="M186 112 L216 86 L246 112 Z" fill="#D98A3A"/>
+    <path d="M194 112 L194 134 M238 112 L238 134" stroke="#D98A3A" stroke-width="4"/>
+    <rect x="46" y="130" width="200" height="6" fill="#C8A87A"/>
+    <g stroke="#C8A87A" stroke-width="4">
+      <path d="M60 136 L60 152 M92 136 L92 152 M124 136 L124 152 M156 136 L156 152 M188 136 L188 152 M220 136 L220 152"/>
+    </g>
+    <path d="M10 164 C 40 154, 60 174, 90 164 S 140 154, 170 164 S 220 174, 250 164" fill="none" stroke="#7FB8B5" stroke-width="4" stroke-linecap="round"/>
+    <path d="M30 182 C 56 173, 74 191, 100 182 S 146 173, 172 182 S 208 189, 230 182" fill="none" stroke="#9FC3C0" stroke-width="3.5" stroke-linecap="round"/>
+  </g>
+</svg>

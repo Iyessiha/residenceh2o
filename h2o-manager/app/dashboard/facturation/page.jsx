@@ -5,7 +5,7 @@ import { formatDate, formatFCFA } from '@/lib/utils'
 
 const STATUTS = { brouillon: 'Brouillon', envoye: 'Envoyé', paye: 'Payé', partiel: 'Partiel', impaye: 'Impayé' }
 const STATUT_COLORS = { brouillon: 'bg-gray-100 text-gray-600', envoye: 'bg-blue-100 text-blue-700', paye: 'bg-green-100 text-green-800', partiel: 'bg-yellow-100 text-yellow-800', impaye: 'bg-red-100 text-red-700' }
-const EMPTY = { numero: '', nom_client: '', telephone: '', type_prestation: 'sejour', description: '', montant_total: '', montant_paye: '', statut: 'brouillon', date_echeance: '' }
+const EMPTY = { numero: '', nom_client: '', telephone: '', type_prestation: 'sejour', description: '', montant_total: '', montant_paye: '', statut: 'brouillon', date_echeance: '', reservation_id: '' }
 
 export default function Facturation() {
   const supabase = createClient()
@@ -15,9 +15,15 @@ export default function Facturation() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
-  const [pdfLoading, setPdfLoading] = useState(null) // id de la facture en cours de téléchargement
+  const [saveError, setSaveError] = useState('')
+  const [pdfLoading, setPdfLoading] = useState(null)
+  const [reservations, setReservations] = useState([])
 
   useEffect(() => { load() }, [filterStatut])
+
+  useEffect(() => {
+    supabase.from('reservations').select('id, nom_client, duplex_id, date_arrivee').order('created_at', { ascending: false }).limit(50).then(({ data }) => setReservations(data || []))
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -42,13 +48,19 @@ export default function Facturation() {
 
   async function save() {
     setSaving(true)
+    setSaveError('')
     const payload = {
       ...form,
-      montant_total: form.montant_total ? parseInt(form.montant_total) : null,
-      montant_paye: form.montant_paye ? parseInt(form.montant_paye) : 0,
+      montant_total: parseInt(form.montant_total) || 0,
+      montant_paye:  parseInt(form.montant_paye)  || 0,
     }
-    await supabase.from('factures').insert([payload])
-    setShowForm(false); setForm(EMPTY); load()
+    const { error } = await supabase.from('factures').insert([payload])
+    if (error) {
+      setSaveError('Erreur : ' + error.message)
+      setSaving(false)
+      return
+    }
+    setShowForm(false); setForm(EMPTY); setSaveError(''); load()
     setSaving(false)
   }
 
@@ -60,13 +72,23 @@ export default function Facturation() {
   async function downloadPDF(facture) {
     setPdfLoading(facture.id)
     try {
-      const res = await fetch(`/api/factures/${facture.id}/pdf`)
-      if (!res.ok) throw new Error('Erreur serveur')
+      const guestUrl = facture.reservation_id
+        ? `${window.location.origin}/guest/${facture.reservation_id}`
+        : null
+      const res = await fetch(`/api/factures/${facture.id}/pdf`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...facture, _guestUrl: guestUrl }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || 'Erreur serveur')
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${facture.numero}.pdf`
+      a.download = `${facture.numero || 'facture'}.pdf`
       document.body.appendChild(a)
       a.click()
       a.remove()
@@ -191,6 +213,24 @@ export default function Facturation() {
                 <label className="label">N° facture</label>
                 <input className="input" value={form.numero} onChange={e => setForm(p => ({...p, numero: e.target.value}))} placeholder="FAC-2026-001" />
               </div>
+              <div>
+                <label className="label">Réservation liée (QR code)</label>
+                <select className="input" value={form.reservation_id} onChange={e => {
+                  const res = reservations.find(r => r.id === e.target.value)
+                  setForm(p => ({
+                    ...p,
+                    reservation_id: e.target.value,
+                    nom_client: res?.nom_client || p.nom_client,
+                  }))
+                }}>
+                  <option value="">— Aucune —</option>
+                  {reservations.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.nom_client} · {r.duplex_id || '?'} · {r.date_arrivee || ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="label">Client *</label><input className="input" value={form.nom_client} onChange={e => setForm(p => ({...p, nom_client: e.target.value}))} /></div>
                 <div><label className="label">Téléphone</label><input className="input" value={form.telephone} onChange={e => setForm(p => ({...p, telephone: e.target.value}))} /></div>
@@ -219,7 +259,10 @@ export default function Facturation() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
+            {saveError && (
+              <p className="text-sm text-red-600 mt-3 font-medium">{saveError}</p>
+            )}
+            <div className="flex gap-3 mt-4">
               <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">Annuler</button>
               <button onClick={save} disabled={saving || !form.nom_client} className="btn-primary flex-1">{saving ? '...' : 'Créer'}</button>
             </div>

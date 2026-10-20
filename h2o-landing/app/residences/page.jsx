@@ -21,10 +21,10 @@ export default async function ResidencesPage() {
     <Nav />
     <main className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="bg-gradient-to-r from-teal-600 to-teal-800 text-white pt-32 pb-16 sm:pt-40 sm:pb-24">
+      <section className="gradient-sig text-white pt-32 pb-16 sm:pt-40 sm:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">Nos Duplexes</h1>
-          <p className="text-xl text-teal-100">Trois duplexes meublés, chacun avec sa piscine privée</p>
+          <p className="text-xl text-white/80">Trois duplexes meublés, chacun avec sa piscine privée</p>
         </div>
       </section>
 
@@ -73,10 +73,11 @@ export default async function ResidencesPage() {
                   <div className="border-t pt-4 flex items-center justify-between">
                     <div>
                       <p className="text-xs text-gray-500">À partir de</p>
-                      <p className="text-2xl font-bold text-teal-600">{formatFCFA(residence.prix)}</p>
+                      <p className="text-2xl font-bold" style={{ color: 'var(--h2o-lagune)' }}>{formatFCFA(residence.prix)}</p>
                       <p className="text-xs text-gray-500">par nuit</p>
                     </div>
-                    <span className="bg-teal-600 group-hover:bg-teal-700 text-white font-bold px-4 py-2 rounded-lg transition">
+                    <span className="text-white font-bold px-4 py-2 rounded-lg transition group-hover:opacity-90"
+                      style={{ backgroundColor: 'var(--primary)' }}>
                       Voir le duplex
                     </span>
                   </div>
@@ -108,7 +109,7 @@ export default async function ResidencesPage() {
                 <tr className="border-b border-gray-200 bg-white">
                   <td className="py-4 px-4 font-semibold text-gray-700">Prix par nuit</td>
                   {residences.map(r => (
-                    <td key={r.slug} className="text-center py-4 px-4 text-teal-600 font-bold">
+                    <td key={r.slug} className="text-center py-4 px-4 font-bold" style={{ color: 'var(--h2o-lagune)' }}>
                       {formatFCFA(r.prix)}
                     </td>
                   ))}

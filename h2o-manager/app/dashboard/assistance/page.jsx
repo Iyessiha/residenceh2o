@@ -27,6 +27,17 @@ export default function Assistance() {
 
   useEffect(() => { load() }, [load])
 
+  // Realtime : rafraîchir dès qu'une demande arrive via le guest portal
+  useEffect(() => {
+    const channel = supabase
+      .channel('demandes_assistance_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demandes_assistance' }, () => {
+        load()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [load])
+
   async function updateStatut(id, statut) {
     await supabase.from('demandes_assistance').update({ statut }).eq('id', id)
     load()

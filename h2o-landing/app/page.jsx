@@ -7,14 +7,15 @@ import FeaturedGallery from '@/components/FeaturedGallery'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
 import BookingWidget from '@/components/BookingWidget'
+import Chambres from '@/components/Chambres'
 import { Star, ArrowRight, Quote, Shield, Compass, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import { getDuplexes, getPhotos } from '@/lib/data'
+import { getDuplexes, getPhotos, getChambres } from '@/lib/data'
 
 export const revalidate = 300
 
 export default async function Home() {
-  const [duplexes, photos] = await Promise.all([getDuplexes(), getPhotos()])
+  const [duplexes, photos, chambres] = await Promise.all([getDuplexes(), getPhotos(), getChambres()])
 
   return (
     <>
@@ -24,6 +25,7 @@ export default async function Home() {
         <Hero />
         <HostBadge />
         <Duplexes duplexes={duplexes} />
+        <Chambres chambres={chambres} />
         <Events />
 
         {/* Featured Gallery Section */}
@@ -31,7 +33,8 @@ export default async function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
               <div>
-                <span className="text-xs font-bold tracking-[0.2em] uppercase text-teal-600 bg-teal-50 px-3 py-1.5 rounded-full border border-teal-200/60 inline-block mb-3">
+                <span className="text-xs font-bold tracking-[0.2em] uppercase px-3 py-1.5 rounded-full border inline-block mb-3"
+                  style={{ color: 'var(--h2o-lagune)', backgroundColor: '#EAF5F5', borderColor: 'var(--h2o-lagune-clair)' }}>
                   Immersion Visuelle
                 </span>
                 <h2 className="font-serif text-3xl sm:text-5xl font-bold text-slate-900 tracking-tight">
@@ -45,7 +48,8 @@ export default async function Home() {
               <div className="mt-6 md:mt-0">
                 <Link
                   href="/gallery"
-                  className="inline-flex items-center gap-2 px-6 py-3 text-slate-900 hover:text-teal-600 font-semibold text-sm border border-slate-300 rounded-xl hover:border-teal-500 transition-all group"
+                  className="inline-flex items-center gap-2 px-6 py-3 text-slate-900 font-semibold text-sm border border-slate-300 rounded-xl transition-all group hover:opacity-80"
+                  style={{ '--tw-border-opacity': 1 }}
                 >
                   <span>Explorer toute la collection</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -61,7 +65,8 @@ export default async function Home() {
         <section className="py-24 bg-[#FAF8F5]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-16">
-              <span className="text-xs font-bold tracking-[0.2em] uppercase text-teal-600 bg-teal-50 px-3 py-1.5 rounded-full border border-teal-200/60 inline-block mb-3">
+              <span className="text-xs font-bold tracking-[0.2em] uppercase px-3 py-1.5 rounded-full border inline-block mb-3"
+                style={{ color: 'var(--h2o-lagune)', backgroundColor: '#EAF5F5', borderColor: 'var(--h2o-lagune-clair)' }}>
                 Expériences Partagées
               </span>
               <h2 className="font-serif text-3xl sm:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
@@ -103,7 +108,7 @@ export default async function Home() {
                   key={idx}
                   className="p-8 rounded-3xl bg-white border border-slate-200/70 shadow-sm hover:shadow-xl transition-all relative flex flex-col justify-between"
                 >
-                  <Quote className="w-10 h-10 text-teal-500/20 mb-4" />
+                  <Quote className="w-10 h-10 mb-4" style={{ color: 'var(--h2o-lagune-clair)', opacity: 0.4 }} />
                   <p className="mb-6 text-slate-700 text-sm leading-relaxed italic">
                     "{testimonial.text}"
                   </p>
@@ -111,7 +116,7 @@ export default async function Home() {
                     <p className="font-bold text-slate-900 text-sm">{testimonial.author}</p>
                     <div className="flex items-center justify-between mt-1 text-xs text-slate-500">
                       <span>{testimonial.role}</span>
-                      <span className="text-teal-600 font-medium">{testimonial.date}</span>
+                      <span className="font-medium" style={{ color: 'var(--h2o-lagune)' }}>{testimonial.date}</span>
                     </div>
                   </div>
                 </div>
@@ -121,9 +126,9 @@ export default async function Home() {
         </section>
 
         {/* Invitation & Lifestyle Banner */}
-        <section className="py-20 bg-gradient-to-r from-[#0B1721] to-[#122838] text-white">
+        <section className="py-20 bg-gradient-to-r from-[#0C3A3D] to-[#14565A] text-white">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <span className="text-teal-400 font-mono text-xs uppercase tracking-widest block mb-3">
+            <span className="font-mono text-xs uppercase tracking-widest block mb-3" style={{ color: 'var(--h2o-lagune-clair)' }}>
               ✦ Évasion & Ressourcement ✦
             </span>
             <h2 className="font-serif text-3xl sm:text-5xl font-bold mb-6 tracking-tight">
@@ -135,7 +140,8 @@ export default async function Home() {
             <div className="flex flex-wrap items-center justify-center gap-4">
               <a
                 href="#contact"
-                className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-bold text-sm px-8 py-4 rounded-xl shadow-xl shadow-teal-900/40 transition-all hover:-translate-y-0.5"
+                className="text-white font-bold text-sm px-8 py-4 rounded-xl shadow-xl transition-all hover:opacity-90 hover:-translate-y-0.5"
+                style={{ background: 'linear-gradient(135deg, #D98A3A 0%, #B86F28 100%)' }}
               >
                 Planifier une réservation
               </a>
@@ -149,7 +155,7 @@ export default async function Home() {
           </div>
         </section>
 
-        <Contact duplexes={duplexes} />
+        <Contact duplexes={duplexes} chambres={chambres} />
       </main>
       <Footer />
     </>

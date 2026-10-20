@@ -2,12 +2,13 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
-export default function Contact({ duplexes }) {
+export default function Contact({ duplexes, chambres = [] }) {
   const [form, setForm] = useState({
     nom: '',
     telephone: '',
     email: '',
     duplex: '',
+    chambre: '',
     date_arrivee: '',
     date_depart: '',
     nb_personnes: '',
@@ -47,15 +48,18 @@ export default function Contact({ duplexes }) {
     setStatus('loading')
     try {
       if (supabase) {
+        const notesWithChambre = form.type === 'chambre' && form.chambre
+          ? `Chambre souhaitée : ${form.chambre}${form.message ? '\n' + form.message : ''}`
+          : form.message
         const { error } = await supabase.from('reservations').insert([{
           nom_client: form.nom,
           telephone: form.telephone,
           email: form.email,
-          duplex_id: form.duplex || null,
+          duplex_id: form.type === 'chambre' ? null : (form.duplex || null),
           date_arrivee: form.date_arrivee || null,
           date_depart: form.date_depart || null,
           nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
-          notes: form.message,
+          notes: notesWithChambre,
           type: form.type,
           statut: 'en_attente',
           source: 'site_web',
@@ -66,7 +70,7 @@ export default function Contact({ duplexes }) {
         await new Promise(r => setTimeout(r, 600))
       }
       setStatus('success')
-      setForm({ nom: '', telephone: '', email: '', duplex: '', date_arrivee: '', date_depart: '', nb_personnes: '', message: '', type: 'sejour' })
+      setForm({ nom: '', telephone: '', email: '', duplex: '', chambre: '', date_arrivee: '', date_depart: '', nb_personnes: '', message: '', type: 'sejour' })
     } catch {
       setStatus('error')
     }
@@ -106,7 +110,7 @@ export default function Contact({ duplexes }) {
               <div className="bg-white rounded-xl p-5 border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Localisation</p>
                 <p className="font-semibold text-teal-900">Route de Grand-Bassam, Modeste Beach</p>
-                <p className="text-sm text-gray-500">À 10 minutes de la plage, à 30 min du Plateau, Abidjan</p>
+                <p className="text-sm text-gray-500">{"À 10 min de la plage · 30 min de l'aéroport et d'Abidjan"}</p>
               </div>
             </div>
           </div>
@@ -136,6 +140,7 @@ export default function Contact({ duplexes }) {
                   <select name="type" value={form.type} onChange={handleChange}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                     <option value="sejour">Séjour en duplex</option>
+                    <option value="chambre">Chambre à la nuit</option>
                     <option value="evenement">Événement / Pergola</option>
                     <option value="renseignement">Simple renseignement</option>
                   </select>
@@ -192,6 +197,41 @@ export default function Contact({ duplexes }) {
                       <input name="nb_personnes" type="number" min="1" max="20" value={form.nb_personnes} onChange={handleChange}
                         className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                         placeholder="2" />
+                    </div>
+                  </>
+                )}
+
+                {form.type === 'chambre' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Chambre souhaitée</label>
+                      <select name="chambre" value={form.chambre} onChange={handleChange}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        <option value="">— Pas de préférence —</option>
+                        {chambres.filter(c => c.statut !== 'occupee').map((c, i) => (
+                          <option key={i} value={c.nom}>
+                            {c.type === 'vip' ? '★ ' : ''}{c.nom}{c.tarif_nuit ? ` — ${new Intl.NumberFormat('fr-FR').format(c.tarif_nuit)} FCFA/nuit` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Arrivée</label>
+                        <input name="date_arrivee" type="date" value={form.date_arrivee} onChange={handleChange}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Départ</label>
+                        <input name="date_depart" type="date" value={form.date_depart} onChange={handleChange}
+                          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de personnes</label>
+                      <input name="nb_personnes" type="number" min="1" max="4" value={form.nb_personnes} onChange={handleChange}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        placeholder="1" />
                     </div>
                   </>
                 )}

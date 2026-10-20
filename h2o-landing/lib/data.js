@@ -2,7 +2,7 @@
 // Serveur uniquement : utilise fs pour le secours de la galerie.
 import fs from 'fs'
 import path from 'path'
-import { DUPLEX_FALLBACK, BADGE_CLASSES, slugify } from './residences'
+import { DUPLEX_FALLBACK, BADGE_CLASSES, CHAMBRES_FALLBACK, slugify } from './residences'
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -41,6 +41,16 @@ export async function getPhotos() {
     alt: photo.alt || `Les Résidences H₂O — photo ${index + 1}`,
     duplex: photo.duplex_code,
   }))
+}
+
+// Chambres louables séparément, synchronisées avec le manager.
+export async function getChambres() {
+  const rows = await lire(
+    'chambres',
+    'select=nom,duplex_nom,type,tarif_nuit,capacite,statut,description,features&order=type.asc,nom.asc'
+  )
+  const source = rows && rows.length ? rows : CHAMBRES_FALLBACK
+  return source.filter((c) => c.statut !== 'maintenance')
 }
 
 // Duplex avec prix, contenu et photos (dans l'ordre du manager).
