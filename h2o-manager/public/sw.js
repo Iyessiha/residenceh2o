@@ -1,14 +1,35 @@
-// Service Worker minimal — rend l'app installable (PWA)
-const CACHE = 'h2o-manager-v1'
+const CACHE = 'h2o-manager-v2'
+const PRECACHE = ['/dashboard', '/icon-192.png', '/icon-512.png', '/manifest.json']
 
-self.addEventListener('install', () => self.skipWaiting())
-self.addEventListener('activate', (e) => e.waitUntil(clients.claim()))
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting())
+  )
+})
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => clients.claim())
+  )
+})
 
 self.addEventListener('fetch', (e) => {
-  // On laisse passer toutes les requêtes réseau normalement
-  // (pas de cache agressif pour éviter de servir des données obsolètes)
   if (e.request.method !== 'GET') return
+  // Network-first pour les API, cache-first pour les assets statiques
+  const url = new URL(e.request.url)
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/data/')) {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)))
+    return
+  }
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    caches.match(e.request).then(cached => {
+      const network = fetch(e.request).then(res => {
+        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()))
+        return res
+      })
+      return cached || network
+    })
   )
 })

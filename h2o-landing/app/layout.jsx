@@ -78,6 +78,14 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="fr">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="H₂O" />
+      </head>
       <body className="font-sans antialiased selection:bg-teal-500 selection:text-white">
         <script
           type="application/ld+json"
@@ -86,6 +94,11 @@ export default async function RootLayout({ children }) {
         <TagManager balises={balises} />
         {children}
         <InstallPWA />
+        <script dangerouslySetInnerHTML={{ __html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'))
+          }
+        ` }} />
       </body>
     </html>
   )
