@@ -70,3 +70,9 @@ export async function getDuplexes() {
     }
   })
 }
+
+// Balises et pixels actifs, gérés par les administrateurs dans le manager.
+export async function getBalises() {
+  const rows = await lire('balises_suivi', 'select=id,nom,type,emplacement,code&actif=eq.true&order=created_at.asc')
+  return rows ?? []
+}
