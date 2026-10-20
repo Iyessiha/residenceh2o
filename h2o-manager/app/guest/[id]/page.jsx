@@ -145,7 +145,7 @@ function OrderModal({ cart, onClose, onConfirm }) {
 }
 
 // ── Suivi en temps réel ───────────────────────────────────
-function SuiviCommande({ orderId, orderType, onRetour }) {
+function SuiviCommande({ orderId, orderType, onRetour, onDelivered }) {
   const [statut, setStatut] = useState(orderType === 'restaurant' ? 'en_cours' : 'en_attente')
 
   useEffect(() => {
@@ -164,6 +164,11 @@ function SuiviCommande({ orderId, orderType, onRetour }) {
 
     return () => { sb.removeChannel(channel) }
   }, [orderId, orderType])
+
+  useEffect(() => {
+    const done = orderType === 'restaurant' ? statut === 'payee' : statut === 'livre'
+    if (done && onDelivered) onDelivered()
+  }, [statut, orderType, onDelivered])
 
   const STEPS = orderType === 'restaurant'
     ? [
@@ -275,9 +280,27 @@ export default function GuestPortal({ params }) {
       setMenu(menuRes.data || [])
       setArticles(articlesRes.data || [])
       setLoading(false)
+      // Restaure la commande en cours depuis localStorage
+      try {
+        const saved = localStorage.getItem(`h2o_order_${duplexRes.data.id}`)
+        if (saved) {
+          const { id: oid, type } = JSON.parse(saved)
+          setLastOrderId(oid)
+          setLastOrderType(type)
+        }
+      } catch {}
     }
     load()
   }, [id])
+
+  function saveOrderLocally(orderId, orderType) {
+    try { localStorage.setItem(`h2o_order_${id}`, JSON.stringify({ id: orderId, type: orderType })) } catch {}
+  }
+  function clearSavedOrder() {
+    try { localStorage.removeItem(`h2o_order_${id}`) } catch {}
+    setLastOrderId(null)
+    setLastOrderType(null)
+  }
 
   function addToCart(item) {
     setCart(prev => {
@@ -344,8 +367,7 @@ export default function GuestPortal({ params }) {
     setAssistMsg('')
     setAssistNom('')
     setAssistSent(false)
-    setLastOrderId(null)
-    setLastOrderType(null)
+    // lastOrderId conservé — le client peut revenir suivre depuis l'accueil
   }
 
   // ── Rendu loading / not found ─────────────────────────
@@ -408,6 +430,23 @@ export default function GuestPortal({ params }) {
       {/* ── Vue Accueil ─────────────────────────────────── */}
       {view === 'home' && (
         <div className="px-4 pt-5 space-y-3">
+
+          {/* Bandeau commande en cours */}
+          {lastOrderId && (
+            <button onClick={() => setView('suivi')}
+              className="w-full flex items-center gap-4 rounded-2xl p-4 text-left active:scale-95 transition-transform shadow-sm border"
+              style={{ backgroundColor: '#FFF7ED', borderColor: '#FDBA74' }}>
+              <span className="text-2xl animate-pulse">⏳</span>
+              <div className="flex-1">
+                <p className="font-bold text-sm" style={{ color: '#C2410C' }}>Commande en cours</p>
+                <p className="text-xs mt-0.5" style={{ color: '#EA580C' }}>
+                  Appuyez pour suivre l'état de votre {lastOrderType === 'restaurant' ? 'commande' : 'achat'}
+                </p>
+              </div>
+              <span style={{ color: '#FB923C' }}>→</span>
+            </button>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => setView('restaurant')}
               className="bg-white rounded-2xl p-5 text-left shadow-sm active:scale-95 transition-transform">
@@ -638,6 +677,7 @@ export default function GuestPortal({ params }) {
           orderId={lastOrderId}
           orderType={lastOrderType}
           onRetour={goBack}
+          onDelivered={clearSavedOrder}
         />
       )}
 
@@ -655,6 +695,7 @@ export default function GuestPortal({ params }) {
             if (result?.id) {
               setLastOrderId(result.id)
               setLastOrderType(result.type)
+              saveOrderLocally(result.id, result.type)
               setView('suivi')
             }
           }}
