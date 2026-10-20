@@ -15,6 +15,7 @@ export default function Facturation() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const [pdfLoading, setPdfLoading] = useState(null) // id de la facture en cours de téléchargement
 
   useEffect(() => { load() }, [filterStatut])
@@ -42,13 +43,19 @@ export default function Facturation() {
 
   async function save() {
     setSaving(true)
+    setSaveError('')
     const payload = {
       ...form,
-      montant_total: form.montant_total ? parseInt(form.montant_total) : null,
-      montant_paye: form.montant_paye ? parseInt(form.montant_paye) : 0,
+      montant_total: parseInt(form.montant_total) || 0,
+      montant_paye:  parseInt(form.montant_paye)  || 0,
     }
-    await supabase.from('factures').insert([payload])
-    setShowForm(false); setForm(EMPTY); load()
+    const { error } = await supabase.from('factures').insert([payload])
+    if (error) {
+      setSaveError('Erreur : ' + error.message)
+      setSaving(false)
+      return
+    }
+    setShowForm(false); setForm(EMPTY); setSaveError(''); load()
     setSaving(false)
   }
 
@@ -219,7 +226,10 @@ export default function Facturation() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
+            {saveError && (
+              <p className="text-sm text-red-600 mt-3 font-medium">{saveError}</p>
+            )}
+            <div className="flex gap-3 mt-4">
               <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">Annuler</button>
               <button onClick={save} disabled={saving || !form.nom_client} className="btn-primary flex-1">{saving ? '...' : 'Créer'}</button>
             </div>

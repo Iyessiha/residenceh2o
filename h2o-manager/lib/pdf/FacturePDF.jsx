@@ -3,18 +3,10 @@
  * Utilisé UNIQUEMENT côté serveur (API route) — ne jamais importer dans un Client Component.
  */
 import {
-  Document, Page, View, Text, StyleSheet, Font,
+  Document, Page, View, Text, StyleSheet,
 } from '@react-pdf/renderer'
 
-// Police : Helvetica (intégrée dans toutes les implémentations PDF)
-// Pour un rendu cohérent sans dépendance réseau sur le serveur.
-Font.register({
-  family: 'Helvetica',
-  fonts: [
-    { src: 'Helvetica' },
-    { src: 'Helvetica-Bold', fontWeight: 700 },
-  ],
-})
+// Helvetica est une police PDF standard — aucune registration nécessaire.
 
 const C = {
   primary:  '#E8513A',
