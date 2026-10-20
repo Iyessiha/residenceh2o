@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { formatDate, formatFCFA, STATUT_COLORS, STATUT_LABELS } from '@/lib/utils'
+import { QRCodeSVG } from 'qrcode.react'
 
 const STATUTS = ['tous', 'en_attente', 'confirme', 'en_sejour', 'cloture', 'annule']
 
@@ -32,6 +33,7 @@ export default function Reservations() {
   const [conflict,         setConflict]         = useState(null)
   const [search,           setSearch]           = useState('')
   const [deleteId,         setDeleteId]         = useState(null)
+  const [qrReservation,    setQrReservation]    = useState(null) // { id, nom_client, date_arrivee, date_depart, duplex_uuid }
 
   // Ouvrir le formulaire si ?new=1 dans l'URL
   useEffect(() => {
@@ -50,7 +52,7 @@ export default function Reservations() {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    supabase.from('duplexes').select('code, nom, tarif_nuit').order('code')
+    supabase.from('duplexes').select('id, code, nom, tarif_nuit').order('code')
       .then(({ data }) => setDuplexes(data || []))
     supabase.from('chambres').select('id, nom, type, tarif_nuit, statut').order('nom')
       .then(({ data }) => setChambres(data || []))
@@ -163,11 +165,17 @@ export default function Reservations() {
 
     if (editId) {
       await supabase.from('reservations').update(payload).eq('id', editId)
+      setShowForm(false); setForm(EMPTY); setEditId(null)
+      setTypeHebergement('duplex'); setChambreId('')
     } else {
-      await supabase.from('reservations').insert([payload])
+      const { data: inserted } = await supabase.from('reservations').insert([payload]).select('id, nom_client, date_arrivee, date_depart, duplex_id').single()
+      setShowForm(false); setForm(EMPTY); setEditId(null)
+      setTypeHebergement('duplex'); setChambreId('')
+      if (inserted) {
+        const dupUuid = duplexes.find(d => d.code === inserted.duplex_id)?.id || null
+        setQrReservation({ ...inserted, duplex_uuid: dupUuid })
+      }
     }
-    setShowForm(false); setForm(EMPTY); setEditId(null)
-    setTypeHebergement('duplex'); setChambreId('')
     load()
     } catch (err) {
       console.error('save error', err)
@@ -192,6 +200,24 @@ export default function Reservations() {
   )
 
   const dupNom = (code) => duplexes.find(d => d.code === code)?.nom || code || '—'
+
+  function buildGuestUrl(r) {
+    const dupUuid = duplexes.find(d => d.code === r.duplex_id)?.id
+    if (!dupUuid) return null
+    const base = typeof window !== 'undefined' ? window.location.origin : ''
+    const p = new URLSearchParams({
+      nom: r.nom_client || '',
+      arrivee: r.date_arrivee || '',
+      depart: r.date_depart || '',
+      rid: r.id,
+    })
+    return `${base}/guest/${dupUuid}?${p.toString()}`
+  }
+
+  function openQR(r) {
+    const dupUuid = duplexes.find(d => d.code === r.duplex_id)?.id || null
+    setQrReservation({ ...r, duplex_uuid: dupUuid })
+  }
 
   return (
     <div>
@@ -268,6 +294,12 @@ export default function Reservations() {
                         className="text-xs px-2 py-1 rounded border transition-colors hover:opacity-70"
                         style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
                         title="Modifier">✏️</button>
+                      {r.duplex_id && duplexes.find(d => d.code === r.duplex_id)?.id && (
+                        <button onClick={() => openQR(r)}
+                          className="text-xs px-2 py-1 rounded border transition-colors hover:opacity-70"
+                          style={{ borderColor: 'var(--border)', color: 'var(--primary)' }}
+                          title="QR code client">⬛</button>
+                      )}
                       <button onClick={() => setDeleteId(r.id)}
                         className="text-xs px-2 py-1 rounded border transition-colors hover:opacity-70"
                         style={{ borderColor: 'var(--border)', color: '#C7391E' }}
@@ -448,6 +480,42 @@ export default function Reservations() {
           </div>
         </div>
       )}
+
+      {/* Modal QR code réservation */}
+      {qrReservation && (() => {
+        const url = buildGuestUrl(qrReservation)
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="rounded-2xl p-6 w-full max-w-sm shadow-xl text-center" style={{ backgroundColor: 'var(--bg)' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>QR Code — Portail client</h2>
+                <button onClick={() => setQrReservation(null)} className="text-xl" style={{ color: 'var(--text-3)' }}>×</button>
+              </div>
+              <p className="text-sm mb-1 font-semibold" style={{ color: 'var(--text)' }}>{qrReservation.nom_client}</p>
+              <p className="text-xs mb-4" style={{ color: 'var(--text-3)' }}>
+                {formatDate(qrReservation.date_arrivee)} → {formatDate(qrReservation.date_depart)}
+              </p>
+              {url ? (
+                <>
+                  <div className="flex justify-center mb-4 p-4 rounded-xl" style={{ backgroundColor: 'var(--bg-2)' }}>
+                    <QRCodeSVG value={url} size={200} bgColor="transparent" fgColor="var(--text)" level="M" />
+                  </div>
+                  <p className="text-xs mb-4" style={{ color: 'var(--text-3)' }}>
+                    Le client scanne ce code pour accéder à son portail, suivre son séjour et passer des commandes.
+                  </p>
+                  <div className="flex gap-2">
+                    <button onClick={() => window.print()} className="btn-secondary flex-1 text-sm">🖨 Imprimer</button>
+                    <button onClick={() => { navigator.clipboard?.writeText(url); alert('Lien copié !') }}
+                      className="btn-primary flex-1 text-sm">🔗 Copier le lien</button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-red-500">Ce duplex n'est pas encore configuré pour le portail guest.</p>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Confirmation suppression */}
       {deleteId && (

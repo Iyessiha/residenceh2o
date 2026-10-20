@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
 // Client Supabase anon — lecture publique + insertions invitées
@@ -243,9 +244,100 @@ function SuiviCommande({ orderId, orderType, onRetour, onDelivered }) {
   )
 }
 
+// ── Prolonger séjour ──────────────────────────────────────
+function ProlongerView({ duplex, resDepart, resId, onBack }) {
+  const [nbNuits, setNbNuits]   = useState('1')
+  const [note, setNote]         = useState('')
+  const [sending, setSending]   = useState(false)
+  const [sent, setSent]         = useState(false)
+
+  async function submit() {
+    setSending(true)
+    await sb.from('demandes_assistance').insert([{
+      duplex_id: duplex.id,
+      duplex_code: duplex.code,
+      duplex_nom: duplex.nom,
+      message: `Demande de prolongation de séjour : ${nbNuits} nuit(s) supplémentaire(s) à partir du ${resDepart}.${note ? ' Note : ' + note : ''}`,
+      statut: 'nouveau',
+    }])
+    setSent(true)
+    setSending(false)
+  }
+
+  if (sent) return (
+    <div className="px-4 pt-5">
+      <div className="bg-white rounded-3xl p-8 text-center shadow-sm">
+        <div className="text-5xl mb-3">✅</div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Demande envoyée !</h2>
+        <p className="text-gray-500 text-sm mb-6">La réception vous contactera très rapidement pour confirmer la prolongation.</p>
+        <button onClick={onBack} className="w-full py-3 rounded-2xl text-white font-semibold"
+          style={{ backgroundColor: '#E8513A' }}>Retour à l'accueil</button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="px-4 pt-5">
+      <div className="bg-white rounded-3xl p-6 shadow-sm">
+        <h2 className="text-xl font-bold text-gray-900 mb-1">Prolonger mon séjour</h2>
+        {resDepart && <p className="text-sm text-gray-400 mb-5">Départ actuel prévu le {new Date(resDepart).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Nombre de nuits supplémentaires
+            </label>
+            <div className="flex items-center gap-4">
+              {['1','2','3','5','7'].map(n => (
+                <button key={n} onClick={() => setNbNuits(n)}
+                  className="w-12 h-12 rounded-xl font-bold text-base transition-all"
+                  style={nbNuits === n
+                    ? { backgroundColor: '#E8513A', color: '#fff' }
+                    : { backgroundColor: '#F3F4F6', color: '#374151' }}>
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              Note (optionnel)
+            </label>
+            <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
+              className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+              placeholder="Informations complémentaires…" />
+          </div>
+          <button onClick={submit} disabled={sending}
+            className="w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-50"
+            style={{ background: 'linear-gradient(135deg,#1A0A04,#E8513A)' }}>
+            {sending ? 'Envoi en cours…' : `Demander ${nbNuits} nuit${parseInt(nbNuits) > 1 ? 's' : ''} de plus`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function daysUntil(dateStr) {
+  if (!dateStr) return null
+  const diff = new Date(dateStr) - new Date(new Date().toDateString())
+  return Math.ceil(diff / 86400000)
+}
+function fmtDate(d) {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+}
+
 // ── Page principale ───────────────────────────────────────
 export default function GuestPortal({ params }) {
   const { id } = params
+  const searchParams = useSearchParams()
+
+  // Données de réservation encodées dans l'URL (depuis QR code manager)
+  const resNom     = searchParams.get('nom')
+  const resArrivee = searchParams.get('arrivee')
+  const resDepart  = searchParams.get('depart')
+  const resId      = searchParams.get('rid')
+  const hasResData = !!(resArrivee && resDepart)
 
   const [duplex, setDuplex]   = useState(null)
   const [menu, setMenu]       = useState([])
@@ -253,7 +345,7 @@ export default function GuestPortal({ params }) {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
-  const [view, setView] = useState('home') // 'home' | 'restaurant' | 'boutique' | 'assistance'
+  const [view, setView] = useState('home') // 'home' | 'restaurant' | 'boutique' | 'assistance' | 'prolonger'
   const [catFilter, setCatFilter] = useState('tous')
   const [cart, setCart]         = useState([])
   const [cartOpen, setCartOpen] = useState(false)
@@ -412,15 +504,34 @@ export default function GuestPortal({ params }) {
           <div>
             <p className="text-white/60 text-xs font-medium uppercase tracking-widest">Les Résidences H₂O</p>
             <h1 className="text-lg font-bold leading-tight">
-              {view === 'home'       ? duplex.nom
+              {view === 'home'       ? (resNom || duplex.nom)
               : view === 'restaurant' ? 'Restaurant & Bar'
               : view === 'boutique'   ? 'Boutique'
               : view === 'suivi'      ? 'Suivi de commande'
+              : view === 'prolonger'  ? 'Prolonger mon séjour'
               : 'Assistance'}
             </h1>
           </div>
         </div>
-        {view === 'home' && (
+        {view === 'home' && hasResData && (() => {
+          const jours = daysUntil(resDepart)
+          return (
+            <div className="mt-3 bg-white/10 rounded-xl px-4 py-3 text-sm">
+              <p className="text-white/60 text-xs mb-1">Votre séjour</p>
+              <p className="text-white font-medium">
+                {fmtDate(resArrivee)} <span className="text-white/50">→</span> {fmtDate(resDepart)}
+              </p>
+              {jours !== null && (
+                <p className="text-white/70 text-xs mt-1">
+                  {jours > 0 ? `Départ dans ${jours} jour${jours > 1 ? 's' : ''}`
+                   : jours === 0 ? '⚠️ Départ aujourd\'hui'
+                   : 'Séjour terminé'}
+                </p>
+              )}
+            </div>
+          )
+        })()}
+        {view === 'home' && !hasResData && (
           <p className="mt-3 text-white/70 text-sm">
             Bonjour ! Comment pouvons-nous vous aider ?
           </p>
@@ -470,6 +581,29 @@ export default function GuestPortal({ params }) {
               <p className="text-xs text-gray-400 mt-0.5">Besoin d'aide ? Notre équipe vous répond</p>
             </div>
           </button>
+
+          {hasResData && (
+            <button onClick={() => setView('prolonger')}
+              className="w-full bg-white rounded-2xl p-5 text-left shadow-sm active:scale-95 transition-transform flex items-center gap-4">
+              <span className="text-3xl">📅</span>
+              <div>
+                <p className="font-bold text-gray-900">Prolonger mon séjour</p>
+                <p className="text-xs text-gray-400 mt-0.5">Demandez une extension à la réception</p>
+              </div>
+            </button>
+          )}
+
+          {/* Installer l'app */}
+          <div className="bg-gray-50 rounded-2xl p-4 flex items-start gap-3">
+            <span className="text-xl mt-0.5">📲</span>
+            <div>
+              <p className="font-semibold text-gray-800 text-sm">Installer l'application</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                <strong>iPhone :</strong> Appuyez sur <span className="font-medium">Partager 📤</span> puis <span className="font-medium">"Sur l'écran d'accueil"</span><br/>
+                <strong>Android :</strong> Menu ⋮ → <span className="font-medium">"Ajouter à l'écran d'accueil"</span>
+              </p>
+            </div>
+          </div>
 
           <div className="pt-2 pb-4 text-center">
             <p className="text-xs text-gray-400">
@@ -669,6 +803,16 @@ export default function GuestPortal({ params }) {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Vue Prolonger séjour ────────────────────────── */}
+      {view === 'prolonger' && (
+        <ProlongerView
+          duplex={duplex}
+          resDepart={resDepart}
+          resId={resId}
+          onBack={goBack}
+        />
       )}
 
       {/* ── Vue Suivi commande ──────────────────────────── */}
