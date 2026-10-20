@@ -25,6 +25,13 @@ const CATEGORIES = [
 ]
 const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.key, c]))
 
+const FOOD_CATS   = ['plat', 'entree', 'dessert']
+const DRINK_CATS  = ['vin', 'jus', 'boisson', 'autre']
+const SECTIONS_MENU = [
+  { key: 'food',   label: 'Restauration',   emoji: '🍽️', cats: FOOD_CATS },
+  { key: 'drinks', label: 'Bar & Boissons', emoji: '🍹', cats: DRINK_CATS },
+]
+
 const EMPTY_LIGNE = { nom: '', qte: 1, prix: 0 }
 const EMPTY_CMD = { nom_client: '', telephone: '', table_num: '', lignes: [{ ...EMPTY_LIGNE }], mode_paiement: 'especes', statut: 'en_cours', notes: '' }
 const EMPTY_MENU = { nom: '', description: '', prix: '', categorie: 'plat', disponible: true, photo: '' }
@@ -116,8 +123,9 @@ export default function Restaurant() {
   const [commandes, setCommandes] = useState([])
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading]     = useState(true)
-  const [filter, setFilter]       = useState('tous')
-  const [catFilter, setCatFilter] = useState('tous')
+  const [filter, setFilter]           = useState('tous')
+  const [catFilter, setCatFilter]     = useState('tous')
+  const [sectionFilter, setSectionFilter] = useState('tous')
 
   // Commandes
   const [showFormCmd, setShowFormCmd] = useState(false)
@@ -240,8 +248,13 @@ export default function Restaurant() {
   const caAuj      = cmdAuj.filter(c => c.statut === 'payee').reduce((s, c) => s + (c.montant_total || 0), 0)
   const enCours    = commandes.filter(c => c.statut === 'en_cours').length
 
-  // Menu filtré par catégorie
-  const menuFiltré = catFilter === 'tous' ? menuItems : menuItems.filter(m => m.categorie === catFilter)
+  // Menu filtré par section puis catégorie
+  const menuFiltré = menuItems.filter(m => {
+    if (catFilter !== 'tous' && m.categorie !== catFilter) return false
+    if (sectionFilter === 'food'   && !FOOD_CATS.includes(m.categorie))  return false
+    if (sectionFilter === 'drinks' && !DRINK_CATS.includes(m.categorie)) return false
+    return true
+  })
 
   return (
     <div>
@@ -361,14 +374,34 @@ export default function Restaurant() {
       {/* ── Onglet Menu & Carte ───────────────────────────── */}
       {tab === 'menu' && (
         <>
+          {/* Filtre section (Restauration / Bar) */}
+          <div className="flex gap-2 mb-3">
+            {[['tous', '📋 Tout le menu'], ['food', '🍽️ Restauration'], ['drinks', '🍹 Bar & Boissons']].map(([key, label]) => (
+              <button key={key}
+                onClick={() => { setSectionFilter(key); setCatFilter('tous') }}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors"
+                style={sectionFilter === key
+                  ? { backgroundColor: '#0C3A3D', color: '#fff', borderColor: '#0C3A3D' }
+                  : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Filtres catégorie */}
           <div className="flex flex-wrap gap-2 mb-6">
             <button onClick={() => setCatFilter('tous')}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${catFilter === 'tous' ? 'text-white' : 'hover:opacity-80'}`}
               style={catFilter === 'tous' ? { backgroundColor: 'var(--primary)' } : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
-              Tous ({menuItems.length})
+              Tous ({menuFiltré.length})
             </button>
-            {CATEGORIES.filter(c => menuItems.some(m => m.categorie === c.key)).map(cat => (
+            {CATEGORIES
+              .filter(c => {
+                if (sectionFilter === 'food'   && !FOOD_CATS.includes(c.key))  return false
+                if (sectionFilter === 'drinks' && !DRINK_CATS.includes(c.key)) return false
+                return menuItems.some(m => m.categorie === c.key)
+              })
+              .map(cat => (
               <button key={cat.key} onClick={() => setCatFilter(cat.key)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${catFilter === cat.key ? 'text-white' : 'hover:opacity-80'}`}
                 style={catFilter === cat.key ? { backgroundColor: 'var(--primary)' } : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
@@ -384,7 +417,8 @@ export default function Restaurant() {
               <p className="text-sm" style={{ color: 'var(--text-3)' }}>Ajoutez vos plats, vins et boissons</p>
               <button onClick={openCreateMenu} className="btn-primary mt-4">+ Ajouter au menu</button>
             </div>
-          ) : (
+          ) : catFilter !== 'tous' ? (
+            /* Vue catégorie spécifique — grille simple */
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {menuFiltré.map(item => {
                 const cat = CAT_MAP[item.categorie]
@@ -431,6 +465,73 @@ export default function Restaurant() {
                       </button>
                     </div>
                     </div>{/* end p-4 */}
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            /* Vue "tous" — groupée par section Restauration / Bar */
+            <div className="space-y-8">
+              {SECTIONS_MENU.map(section => {
+                const items = menuFiltré.filter(m => section.cats.includes(m.categorie))
+                if (items.length === 0) return null
+                return (
+                  <div key={section.key}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-xl">{section.emoji}</span>
+                      <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>{section.label}</h3>
+                      <div className="flex-1 h-px" style={{ backgroundColor: 'var(--border-2)' }} />
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-2)', color: 'var(--text-3)' }}>
+                        {items.length} article{items.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {items.map(item => {
+                        const cat = CAT_MAP[item.categorie]
+                        return (
+                          <div key={item.id} className={`card overflow-hidden ${!item.disponible ? 'opacity-50' : ''}`}>
+                            {item.photo && (
+                              <div className="h-36 bg-gray-100 overflow-hidden">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={item.photo} alt={item.nom} className="w-full h-full object-cover" loading="lazy" />
+                              </div>
+                            )}
+                            <div className="p-4">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <span className="text-base">{cat?.emoji}</span>
+                                    <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>{cat?.label}</span>
+                                  </div>
+                                  <h3 className="font-semibold truncate" style={{ color: 'var(--text)' }}>{item.nom}</h3>
+                                </div>
+                                <span className="text-lg font-bold ml-2 flex-shrink-0" style={{ color: 'var(--primary)' }}>
+                                  {formatFCFA(item.prix)}
+                                </span>
+                              </div>
+                              {item.description && (
+                                <p className="text-xs mb-3 line-clamp-2" style={{ color: 'var(--text-3)' }}>{item.description}</p>
+                              )}
+                              {!item.disponible && (
+                                <p className="text-xs font-semibold mb-2" style={{ color: '#DC2626' }}>Indisponible</p>
+                              )}
+                              <div className="flex gap-2 border-t pt-3" style={{ borderColor: 'var(--border-2)' }}>
+                                <button onClick={() => openEditMenu(item)}
+                                  className="flex-1 text-xs font-semibold py-1.5 rounded-lg border hover:opacity-70 transition-opacity"
+                                  style={{ borderColor: 'var(--border)', color: 'var(--text-2)', backgroundColor: 'var(--bg)' }}>
+                                  Modifier
+                                </button>
+                                <button onClick={() => toggleDispo(item)}
+                                  className="text-xs font-semibold py-1.5 px-3 rounded-lg border hover:opacity-70 transition-opacity"
+                                  style={{ borderColor: 'var(--border)', color: item.disponible ? '#D97706' : '#008A05', backgroundColor: 'var(--bg)' }}>
+                                  {item.disponible ? 'Retirer' : 'Remettre'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )
               })}

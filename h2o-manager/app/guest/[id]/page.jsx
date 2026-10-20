@@ -21,6 +21,11 @@ const CATS = [
 const CAT_LABEL = Object.fromEntries(CATS.map(c => [c.key, c.label]))
 const CAT_EMOJI = Object.fromEntries(CATS.map(c => [c.key, c.emoji]))
 
+const SECTIONS_GUEST = [
+  { key: 'food',   label: 'À manger', emoji: '🍽️', cats: ['plat', 'entree', 'dessert'] },
+  { key: 'drinks', label: 'À boire',  emoji: '🍹', cats: ['vin', 'jus', 'boisson', 'autre'] },
+]
+
 function fcfa(n) {
   if (!n) return '0 FCFA'
   return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA'
@@ -49,30 +54,36 @@ function CartBar({ cart, onOpen }) {
 }
 
 // ── Modal validation commande ─────────────────────────────
-function OrderModal({ cart, onClose, onConfirm, type }) {
-  const [nom, setNom] = useState('')
-  const [tel, setTel] = useState('')
-  const [note, setNote] = useState('')
+function OrderModal({ cart, onClose, onConfirm }) {
+  const [nom, setNom]     = useState('')
+  const [note, setNote]   = useState('')
   const [sending, setSending] = useState(false)
-  const [done, setDone] = useState(false)
+  const [result, setResult]   = useState(null) // { id, type } après succès
+  const [erreur, setErreur]   = useState('')
 
   const total = cart.reduce((s, i) => s + i.prix * i.qte, 0)
 
   async function submit() {
     setSending(true)
-    await onConfirm({ nom, tel, note })
-    setSending(false)
-    setDone(true)
+    setErreur('')
+    try {
+      const res = await onConfirm({ nom, note })
+      setResult(res)
+    } catch {
+      setErreur('Erreur lors de l\'envoi. Veuillez réessayer.')
+    } finally {
+      setSending(false)
+    }
   }
 
-  if (done) return (
+  if (result) return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4">
       <div className="w-full max-w-sm bg-white rounded-3xl p-8 text-center shadow-2xl">
         <div className="text-5xl mb-3">✅</div>
         <h2 className="text-xl font-bold text-gray-900 mb-2">Commande reçue !</h2>
         <p className="text-gray-500 text-sm mb-6">Notre équipe prend en charge votre commande.</p>
-        <button onClick={onClose} className="w-full py-3 rounded-xl text-white font-semibold"
-          style={{ backgroundColor: '#E8513A' }}>Fermer</button>
+        <button onClick={() => onClose(result)} className="w-full py-3 rounded-xl text-white font-semibold"
+          style={{ backgroundColor: '#E8513A' }}>Suivre ma commande</button>
       </div>
     </div>
   )
@@ -118,6 +129,10 @@ function OrderModal({ cart, onClose, onConfirm, type }) {
               placeholder="Sans piment, sans gluten…" />
           </div>
         </div>
+
+        {erreur && (
+          <p className="text-red-500 text-sm text-center mb-3 font-medium">{erreur}</p>
+        )}
 
         <button onClick={submit} disabled={sending}
           className="w-full py-4 rounded-2xl text-white font-bold text-base disabled:opacity-50"
@@ -279,28 +294,30 @@ export default function GuestPortal({ params }) {
   }
   function qteOf(itemId) { return cart.find(i => i.id === itemId)?.qte || 0 }
 
-  async function confirmOrder({ nom, tel, note }) {
+  async function confirmOrder({ nom, note }) {
     const lignes = cart.map(i => ({ nom: i.nom, qte: i.qte, prix: i.prix }))
     const montant_total = cart.reduce((s, i) => s + i.prix * i.qte, 0)
     const nom_client = nom || `Duplex ${duplex.code}`
 
     if (view === 'restaurant') {
-      const { data } = await sb.from('commandes_restaurant').insert([{
-        nom_client, telephone: tel || null,
+      const { data, error } = await sb.from('commandes_restaurant').insert([{
+        nom_client,
         table_num: duplex.code,
         lignes, montant_total,
         mode_paiement: 'especes', statut: 'en_cours',
         notes: note || null,
       }]).select('id').single()
+      if (error) throw new Error(error.message)
       setCart([])
       return { id: data?.id, type: 'restaurant' }
     } else {
-      const { data } = await sb.from('ventes').insert([{
-        nom_client, telephone: tel || null,
+      const { data, error } = await sb.from('ventes').insert([{
+        nom_client,
         lignes, montant_total,
         mode_paiement: 'especes', statut: 'en_attente',
         notes: note || null,
       }]).select('id').single()
+      if (error) throw new Error(error.message)
       setCart([])
       return { id: data?.id, type: 'boutique' }
     }
@@ -451,36 +468,54 @@ export default function GuestPortal({ params }) {
                 ))}
               </div>
 
-              {/* Items */}
-              <div className="space-y-3">
-                {menuFiltered.map(item => {
-                  const qte = qteOf(item.id)
+              {/* Items groupés par section */}
+              <div className="space-y-6">
+                {SECTIONS_GUEST.map(section => {
+                  const sectionItems = menuFiltered.filter(m => section.cats.includes(m.categorie))
+                  if (sectionItems.length === 0) return null
                   return (
-                    <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <span className="text-sm">{CAT_EMOJI[item.categorie]}</span>
-                          <span className="text-xs text-gray-400">{CAT_LABEL[item.categorie]}</span>
+                    <div key={section.key}>
+                      {/* En-tête de section — masqué si catFilter est spécifique */}
+                      {catFilter === 'tous' && (
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-base">{section.emoji}</span>
+                          <p className="font-bold text-gray-700 text-sm uppercase tracking-wide">{section.label}</p>
+                          <div className="flex-1 h-px bg-gray-200" />
                         </div>
-                        <p className="font-semibold text-gray-900 truncate">{item.nom}</p>
-                        {item.description && <p className="text-xs text-gray-400 truncate">{item.description}</p>}
-                        <p className="font-bold mt-1" style={{ color: '#E8513A' }}>{fcfa(item.prix)}</p>
-                      </div>
-                      <div className="flex-shrink-0">
-                        {qte === 0 ? (
-                          <button onClick={() => addToCart(item)}
-                            className="w-9 h-9 rounded-full text-white text-xl flex items-center justify-center font-bold active:scale-90 transition-transform"
-                            style={{ backgroundColor: '#E8513A' }}>+</button>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => removeFromCart(item.id)}
-                              className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 text-lg flex items-center justify-center font-bold">−</button>
-                            <span className="w-5 text-center font-bold text-gray-900">{qte}</span>
-                            <button onClick={() => addToCart(item)}
-                              className="w-8 h-8 rounded-full text-white text-lg flex items-center justify-center font-bold"
-                              style={{ backgroundColor: '#E8513A' }}>+</button>
-                          </div>
-                        )}
+                      )}
+                      <div className="space-y-3">
+                        {sectionItems.map(item => {
+                          const qte = qteOf(item.id)
+                          return (
+                            <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className="text-sm">{CAT_EMOJI[item.categorie]}</span>
+                                  <span className="text-xs text-gray-400">{CAT_LABEL[item.categorie]}</span>
+                                </div>
+                                <p className="font-semibold text-gray-900 truncate">{item.nom}</p>
+                                {item.description && <p className="text-xs text-gray-400 truncate">{item.description}</p>}
+                                <p className="font-bold mt-1" style={{ color: '#E8513A' }}>{fcfa(item.prix)}</p>
+                              </div>
+                              <div className="flex-shrink-0">
+                                {qte === 0 ? (
+                                  <button onClick={() => addToCart(item)}
+                                    className="w-9 h-9 rounded-full text-white text-xl flex items-center justify-center font-bold active:scale-90 transition-transform"
+                                    style={{ backgroundColor: '#E8513A' }}>+</button>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    <button onClick={() => removeFromCart(item.id)}
+                                      className="w-8 h-8 rounded-full bg-gray-100 text-gray-700 text-lg flex items-center justify-center font-bold">−</button>
+                                    <span className="w-5 text-center font-bold text-gray-900">{qte}</span>
+                                    <button onClick={() => addToCart(item)}
+                                      className="w-8 h-8 rounded-full text-white text-lg flex items-center justify-center font-bold"
+                                      style={{ backgroundColor: '#E8513A' }}>+</button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )
@@ -616,10 +651,7 @@ export default function GuestPortal({ params }) {
       {cartOpen && (
         <OrderModal
           cart={cart}
-          type={view}
-          onClose={() => setCartOpen(false)}
-          onConfirm={async (info) => {
-            const result = await confirmOrder(info)
+          onClose={(result) => {
             setCartOpen(false)
             if (result?.id) {
               setLastOrderId(result.id)
@@ -627,6 +659,7 @@ export default function GuestPortal({ params }) {
               setView('suivi')
             }
           }}
+          onConfirm={confirmOrder}
         />
       )}
     </div>
