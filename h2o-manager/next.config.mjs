@@ -1,8 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    // @react-pdf/renderer contient du code Node.js natif — ne pas bundler côté client
-    serverComponentsExternalPackages: ['@react-pdf/renderer'],
+    serverComponentsExternalPackages: ['@react-pdf/renderer', 'pdfkit', 'qrcode-generator'],
+  },
+  // pdfkit charge ses polices standard dynamiquement — les inclure dans le bundle Vercel
+  outputFileTracingIncludes: {
+    '/api/factures/*/pdf': [
+      './node_modules/pdfkit/js/standard-fonts/**/*',
+      './node_modules/pdfkit/js/font/**/*',
+    ],
   },
   env: {
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
