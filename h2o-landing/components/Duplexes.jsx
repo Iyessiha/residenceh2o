@@ -73,6 +73,10 @@ export default function Duplexes({ duplexes }) {
                       <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
                       {d.surface}
                     </span>
+                    <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
+                      <BedDouble className="w-3.5 h-3.5 text-teal-600" />
+                      {d.chambres} chambres
+                    </span>
                   </div>
 
                   {/* Highlights */}

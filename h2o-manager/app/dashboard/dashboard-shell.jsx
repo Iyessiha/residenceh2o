@@ -10,6 +10,8 @@ const NAV = [
   { section: 'Hébergement' },
   { href: '/dashboard/reservations', icon: '📅', label: 'Réservations' },
   { href: '/dashboard/duplexes',     icon: '🏠', label: 'Duplexes' },
+  { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
+  { href: '/dashboard/balises',      icon: '📈', label: 'Balises & pixels' },
   { href: '/dashboard/chambres',     icon: '🛏️', label: 'Chambres' },
   { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
 

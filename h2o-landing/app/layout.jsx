@@ -1,5 +1,9 @@
 import './globals.css'
 import InstallPWA from '@/components/InstallPWA'
+import TagManager from '@/components/TagManager'
+import { getBalises } from '@/lib/data'
+
+export const revalidate = 300
 
 export const metadata = {
   metadataBase: new URL('https://residencesh2o.com'),
@@ -69,7 +73,9 @@ const jsonLd = {
   ],
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const balises = await getBalises()
+
   return (
     <html lang="fr">
       <body className="font-sans antialiased selection:bg-teal-500 selection:text-white">
@@ -77,6 +83,7 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <TagManager balises={balises} />
         {children}
         <InstallPWA />
       </body>

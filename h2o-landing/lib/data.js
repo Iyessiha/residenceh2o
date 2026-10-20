@@ -56,7 +56,7 @@ export async function getChambres() {
 // Duplex avec prix, contenu et photos (dans l'ordre du manager).
 export async function getDuplexes() {
   const [rows, photos] = await Promise.all([
-    lire('duplexes', 'select=code,nom,capacite,surface_m2,tarif_nuit,tagline,badge,features&order=code.asc'),
+    lire('duplexes', 'select=code,nom,capacite,chambres,surface_m2,tarif_nuit,tagline,badge,features&order=code.asc'),
     getPhotos(),
   ])
   const source = rows && rows.length ? rows : DUPLEX_FALLBACK
@@ -71,6 +71,7 @@ export async function getDuplexes() {
       tagline: d.tagline || '',
       prix: d.tarif_nuit,
       capacite: `Jusqu'à ${d.capacite} personnes`,
+      chambres: d.chambres ?? 5,
       surface: d.surface_m2 ? `${d.surface_m2} m²` : '',
       badge: d.badge || '',
       badgeClass: BADGE_CLASSES[d.badge] || 'bg-teal-500/90 text-white',
@@ -78,4 +79,10 @@ export async function getDuplexes() {
       images: photosDuplex.length ? photosDuplex : secours,
     }
   })
+}
+
+// Balises et pixels actifs, gérés par les administrateurs dans le manager.
+export async function getBalises() {
+  const rows = await lire('balises_suivi', 'select=id,nom,type,emplacement,code&actif=eq.true&order=created_at.asc')
+  return rows ?? []
 }

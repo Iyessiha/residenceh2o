@@ -5,7 +5,7 @@ import { DUPLEX_STATUT_COLORS, formatFCFA } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
 
 const STATUT_LABELS = { disponible: 'Disponible', occupe: 'Occupé', maintenance: 'Maintenance' }
-const EMPTY = { nom: '', code: '', capacite: 2, surface_m2: '', description: '', tagline: '', badge: '', features: '', tarif_nuit: '', statut: 'disponible' }
+const EMPTY = { nom: '', code: '', capacite: 2, chambres: 5, surface_m2: '', description: '', tagline: '', badge: '', features: '', tarif_nuit: '', statut: 'disponible' }
 
 export default function Duplexes() {
   const supabase = createClient()
@@ -40,6 +40,7 @@ export default function Duplexes() {
       nom:         d.nom         || '',
       code:        d.code        || '',
       capacite:    d.capacite    ?? 2,
+      chambres:    d.chambres    ?? 5,
       surface_m2:  d.surface_m2  ?? '',
       description: d.description || '',
       tagline:     d.tagline     || '',
@@ -56,6 +57,7 @@ export default function Duplexes() {
     const payload = {
       ...form,
       capacite:   parseInt(form.capacite)   || 2,
+      chambres:   parseInt(form.chambres)   || 5,
       tarif_nuit: form.tarif_nuit ? parseInt(form.tarif_nuit) : null,
       surface_m2: form.surface_m2 ? parseInt(form.surface_m2) : null,
       features:   form.features.split('\n').map(f => f.trim()).filter(Boolean),
@@ -178,6 +180,10 @@ export default function Duplexes() {
                 <div>
                   <label className="label">Capacité (pers.)</label>
                   <input className="input" type="number" min="1" value={form.capacite} onChange={e => setForm(p => ({...p, capacite: e.target.value}))} />
+                </div>
+                <div>
+                  <label className="label">Chambres</label>
+                  <input className="input" type="number" min="1" value={form.chambres} onChange={e => setForm(p => ({...p, chambres: e.target.value}))} />
                 </div>
                 <div>
                   <label className="label">Surface (m²)</label>
