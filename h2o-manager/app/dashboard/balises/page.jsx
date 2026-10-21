@@ -1,9 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { FOURNISSEURS, genererCode } from '@/lib/pixels'
 import { Pencil, Trash2, Plus } from 'lucide-react'
 
-const VIDE = { nom: '', type: 'pixel', emplacement: 'head', code: '', actif: true }
+const PERSO = ''  // valeur du sélecteur pour un code libre
+const VIDE = { nom: '', fournisseur: PERSO, identifiant: '', type: 'pixel', emplacement: 'head', code: '', actif: true }
 
 export default function BalisesPage() {
   const supabase = createClient()
@@ -31,12 +33,26 @@ export default function BalisesPage() {
     setBalises(data || [])
   }
 
+  // Construit la ligne à enregistrer : code généré pour un fournisseur connu, code saisi sinon.
+  function preparer() {
+    if (!form.fournisseur) {
+      if (!form.code.trim()) return { erreur: 'Collez le code à installer' }
+      return { ligne: { nom: form.nom, fournisseur: null, identifiant: null, type: form.type, emplacement: form.emplacement, code: form.code, actif: form.actif } }
+    }
+    const { code, erreur } = genererCode(form.fournisseur, form.identifiant)
+    if (erreur) return { erreur }
+    const modele = FOURNISSEURS[form.fournisseur]
+    return { ligne: { nom: form.nom, fournisseur: form.fournisseur, identifiant: form.identifiant.trim(), type: modele.type, emplacement: modele.emplacement, code, actif: form.actif } }
+  }
+
   async function enregistrer() {
+    const { ligne, erreur } = preparer()
+    if (erreur) { setMessage(erreur); return }
     setSaving(true)
     setMessage('')
     const req = editId
-      ? supabase.from('balises_suivi').update(form).eq('id', editId)
-      : supabase.from('balises_suivi').insert([form])
+      ? supabase.from('balises_suivi').update(ligne).eq('id', editId)
+      : supabase.from('balises_suivi').insert([ligne])
     const { error } = await req
     setSaving(false)
     if (error) { setMessage(`Erreur : ${error.message}`); return }
@@ -62,62 +78,87 @@ export default function BalisesPage() {
     return (
       <div className="card p-6 max-w-lg">
         <h1 className="text-lg font-bold text-gray-900 mb-2">Accès réservé</h1>
-        <p className="text-sm text-gray-600">Seuls les administrateurs peuvent gérer les balises et pixels.</p>
+        <p className="text-sm text-gray-600">Seuls les administrateurs peuvent gérer les pixels et balises.</p>
       </div>
     )
   }
+
+  const modele = form?.fournisseur ? FOURNISSEURS[form.fournisseur] : null
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Balises & pixels</h1>
-          <p className="text-gray-500 text-sm">Scripts de suivi (Google, Meta, TikTok…) chargés sur le site public.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Pixels & balises</h1>
+          <p className="text-gray-500 text-sm">Suivi publicitaire et analyse (Meta, Google, TikTok) chargés sur le site public.</p>
         </div>
-        <button onClick={() => { setForm({ ...VIDE }); setEditId(null) }} className="btn-primary flex items-center gap-2">
+        <button onClick={() => { setForm({ ...VIDE }); setEditId(null); setMessage('') }} className="btn-primary flex items-center gap-2">
           <Plus size={16} /> Ajouter
         </button>
       </div>
 
       <div className="mb-4 p-3 rounded-lg bg-amber-50 text-amber-800 text-xs">
-        Le code collé ici s'exécute sur le site public. Ne collez que du code de confiance fourni par le service de suivi.
+        Le code d'un pixel s'exécute sur le site public. Utilisez les identifiants fournis par chaque service ; le code personnalisé doit venir d'une source de confiance.
       </div>
 
       {message && <p className="text-sm text-red-600 mb-4">{message}</p>}
 
       {form && (
         <div className="card p-5 mb-6 space-y-3">
-          <div className="grid sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-1">
-              <label className="label">Nom</label>
-              <input className="input" value={form.nom} onChange={e => setForm(p => ({ ...p, nom: e.target.value }))} placeholder="Meta Pixel" />
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="label">Nom affiché</label>
+              <input className="input" value={form.nom} onChange={e => setForm(p => ({ ...p, nom: e.target.value }))} placeholder="Pixel Meta Duplex" />
             </div>
             <div>
-              <label className="label">Type</label>
-              <select className="input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                <option value="pixel">Pixel</option>
-                <option value="balise">Balise (Google, vérification…)</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Emplacement</label>
-              <select className="input" value={form.emplacement} onChange={e => setForm(p => ({ ...p, emplacement: e.target.value }))}>
-                <option value="head">Dans l'en-tête (head)</option>
-                <option value="body">Fin de page (body)</option>
+              <label className="label">Fournisseur</label>
+              <select className="input" value={form.fournisseur} onChange={e => setForm(p => ({ ...p, fournisseur: e.target.value, identifiant: '' }))}>
+                <option value="">Code personnalisé</option>
+                {Object.entries(FOURNISSEURS).map(([cle, f]) => (
+                  <option key={cle} value={cle}>{f.nom}</option>
+                ))}
               </select>
             </div>
           </div>
-          <div>
-            <label className="label">Code</label>
-            <textarea className="input font-mono text-xs" rows={8} value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} placeholder="<script>…</script>" />
-          </div>
+
+          {modele ? (
+            <div>
+              <label className="label">Identifiant ({modele.exemple})</label>
+              <input className="input font-mono" value={form.identifiant} onChange={e => setForm(p => ({ ...p, identifiant: e.target.value }))} placeholder={modele.exemple} />
+              <p className="text-xs text-gray-500 mt-1">Le code d'installation est généré automatiquement à partir de cet identifiant.</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Type</label>
+                  <select className="input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
+                    <option value="pixel">Pixel</option>
+                    <option value="balise">Balise (vérification, autre)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Emplacement</label>
+                  <select className="input" value={form.emplacement} onChange={e => setForm(p => ({ ...p, emplacement: e.target.value }))}>
+                    <option value="head">Dans l'en-tête (head)</option>
+                    <option value="body">Fin de page (body)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="label">Code</label>
+                <textarea className="input font-mono text-xs" rows={8} value={form.code} onChange={e => setForm(p => ({ ...p, code: e.target.value }))} placeholder="<script>…</script>" />
+              </div>
+            </>
+          )}
+
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input type="checkbox" checked={form.actif} onChange={e => setForm(p => ({ ...p, actif: e.target.checked }))} />
             Actif sur le site
           </label>
           <div className="flex gap-3">
             <button onClick={() => { setForm(null); setEditId(null) }} className="btn-secondary flex-1">Annuler</button>
-            <button onClick={enregistrer} disabled={saving || !form.nom || !form.code.trim()} className="btn-primary flex-1 disabled:opacity-50">
+            <button onClick={enregistrer} disabled={saving || !form.nom} className="btn-primary flex-1 disabled:opacity-50">
               {saving ? 'Enregistrement...' : editId ? 'Mettre à jour' : 'Ajouter'}
             </button>
           </div>
@@ -130,14 +171,19 @@ export default function BalisesPage() {
             <div className="flex-1 min-w-0">
               <p className="font-medium text-gray-900">{b.nom}</p>
               <p className="text-xs text-gray-500">
-                {b.type === 'pixel' ? 'Pixel' : 'Balise'} · {b.emplacement === 'head' ? 'en-tête' : 'fin de page'}
+                {b.fournisseur ? `${FOURNISSEURS[b.fournisseur]?.nom || b.fournisseur} · ${b.identifiant}` : (b.type === 'pixel' ? 'Pixel personnalisé' : 'Balise personnalisée')}
+                {' · '}{b.emplacement === 'head' ? 'en-tête' : 'fin de page'}
               </p>
             </div>
             <label className="flex items-center gap-1 text-xs text-gray-600">
               <input type="checkbox" checked={b.actif} onChange={() => basculer(b)} />
               Actif
             </label>
-            <button onClick={() => { setForm({ nom: b.nom, type: b.type, emplacement: b.emplacement, code: b.code, actif: b.actif }); setEditId(b.id) }} className="p-2 text-gray-500 hover:text-gray-900" aria-label="Modifier">
+            <button onClick={() => {
+              setForm({ nom: b.nom, fournisseur: b.fournisseur || PERSO, identifiant: b.identifiant || '', type: b.type, emplacement: b.emplacement, code: b.code, actif: b.actif })
+              setEditId(b.id)
+              setMessage('')
+            }} className="p-2 text-gray-500 hover:text-gray-900" aria-label="Modifier">
               <Pencil size={16} />
             </button>
             <button onClick={() => supprimer(b)} className="p-2 text-red-600 hover:text-red-800" aria-label="Supprimer">
@@ -145,7 +191,7 @@ export default function BalisesPage() {
             </button>
           </div>
         ))}
-        {balises.length === 0 && <div className="text-center py-10 text-gray-500 text-sm">Aucune balise pour le moment.</div>}
+        {balises.length === 0 && <div className="text-center py-10 text-gray-500 text-sm">Aucun pixel pour le moment.</div>}
       </div>
     </div>
   )
