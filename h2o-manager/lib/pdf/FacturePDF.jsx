@@ -94,13 +94,22 @@ const s = StyleSheet.create({
   footerTxt: { fontSize: 8, color: C.text3, textAlign: 'center', lineHeight: 1.5 },
 })
 
+// Caractères sûrs pour les polices PDF standard : pas d'espace fine insécable
+// (affichée en barre oblique), ni de signe typographique hors WinAnsi.
 function fcfa(n) {
   if (!n && n !== 0) return '—'
-  return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA'
+  return `${String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} FCFA`
 }
+const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
 function fdate(d) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+  const date = new Date(d)
+  return `${String(date.getDate()).padStart(2, '0')} ${MOIS[date.getMonth()]} ${date.getFullYear()}`
+}
+
+const TYPES_LABELS = {
+  sejour: 'Séjour', chambre: 'Chambre', evenement: 'Événement',
+  restauration: 'Restauration', autre: 'Autre',
 }
 
 const STATUT_LABELS = {
@@ -115,7 +124,7 @@ const STATUT_COLORS = {
   impaye:    { border: '#E8513A', text: '#E8513A' },
 }
 
-export function FacturePDF({ facture, guestUrl, logo }) {
+export function FacturePDF({ facture, guestUrl, logo, entreprise }) {
   const sc = STATUT_COLORS[facture.statut] || STATUT_COLORS.brouillon
   const solde = (facture.montant_total || 0) - (facture.montant_paye || 0)
 
@@ -131,17 +140,18 @@ export function FacturePDF({ facture, guestUrl, logo }) {
         {/* ── En-tête ─────────────────────────────────────── */}
         <View style={s.header}>
           <View>
-            {logo && <Image src={{ data: logo, format: 'png' }} style={{ width: 48, height: 48, marginBottom: 6 }} />}
-            <Text style={s.logo}>Les Résidences H₂O</Text>
+            {logo && <Image src={{ data: logo, format: 'png' }} style={{ width: 210, height: 61, marginBottom: 8 }} />}
             <Text style={s.logoSub}>Villa Poton, ancienne route de Bassam, au lac · Côte d'Ivoire</Text>
             <Text style={s.logoSub}>contact@residencesh2o.com · +225 07 49 19 49 52 · WhatsApp 07 05 25 92 34</Text>
             <View style={s.gradient} />
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={s.badge}>FACTURE</Text>
-            <Text style={{ fontSize: 13, fontWeight: 700, color: C.text, marginTop: 8 }}>
-              {facture.numero}
-            </Text>
+            {facture.numero ? (
+              <Text style={{ fontSize: 13, fontWeight: 700, color: C.text, marginTop: 8 }}>
+                N° {facture.numero}
+              </Text>
+            ) : null}
             <View style={[s.statutBox, { borderColor: sc.border }]}>
               <Text style={{ fontSize: 8, fontWeight: 700, color: sc.text }}>
                 {STATUT_LABELS[facture.statut] || facture.statut}
@@ -166,13 +176,16 @@ export function FacturePDF({ facture, guestUrl, logo }) {
             {facture.date_echeance
               ? <Text style={s.infoVal}>Échéance : {fdate(facture.date_echeance)}</Text>
               : null}
-            <Text style={s.infoVal}>Réf. : {facture.numero}</Text>
+            {facture.numero ? <Text style={s.infoVal}>Référence : {facture.numero}</Text> : null}
           </View>
           <View style={s.infoBlock}>
             <Text style={s.infoLabel}>Émis par</Text>
-            <Text style={s.infoValBold}>Les Résidences H₂O</Text>
+            <Text style={s.infoValBold}>Les Résidences H2O</Text>
             <Text style={s.infoVal}>Villa Poton, ancienne route de Bassam</Text>
-            <Text style={s.infoVal}>RCCM · N° IFU à compléter</Text>
+            <Text style={s.infoVal}>Côte d'Ivoire</Text>
+            {entreprise?.rccm ? <Text style={s.infoVal}>RCCM : {entreprise.rccm}</Text> : null}
+            {entreprise?.ifu ? <Text style={s.infoVal}>N° IFU : {entreprise.ifu}</Text> : null}
+            {entreprise?.tva ? <Text style={s.infoVal}>N° TVA : {entreprise.tva}</Text> : null}
           </View>
         </View>
 
@@ -189,7 +202,7 @@ export function FacturePDF({ facture, guestUrl, logo }) {
           <Text style={[s.tableTd, s.col1]}>
             {facture.description || `Prestation — ${facture.type_prestation}`}
           </Text>
-          <Text style={[s.tableTd, s.col2]}>{facture.type_prestation}</Text>
+          <Text style={[s.tableTd, s.col2]}>{TYPES_LABELS[facture.type_prestation] || facture.type_prestation}</Text>
           <Text style={[s.tableTd, s.col3]}>{fcfa(facture.montant_total)}</Text>
         </View>
 
@@ -201,7 +214,7 @@ export function FacturePDF({ facture, guestUrl, logo }) {
           </View>
           <View style={s.totRow}>
             <Text style={s.totLabel}>Acompte / déjà payé</Text>
-            <Text style={[s.totVal, { color: C.success }]}>− {fcfa(facture.montant_paye)}</Text>
+            <Text style={[s.totVal, { color: C.success }]}>- {fcfa(facture.montant_paye)}</Text>
           </View>
           <View style={s.totSolde}>
             <Text style={s.totBold}>
@@ -229,10 +242,10 @@ export function FacturePDF({ facture, guestUrl, logo }) {
         <View style={s.footer}>
           <View style={s.footerLine}>
             <Text style={s.footerTxt}>
-              Les Résidences H₂O — Villa Poton, ancienne route de Bassam, au lac, Côte d'Ivoire
+              Les Résidences H2O — Villa Poton, ancienne route de Bassam, au lac, Côte d'Ivoire
             </Text>
             <Text style={s.footerTxt}>
-              Cette facture a été générée automatiquement par H2O Manager · MonWe Infinity LLC
+              Merci de votre confiance.
             </Text>
             <Text style={s.footerTxt}>
               Toute reproduction ou modification non autorisée est interdite.
