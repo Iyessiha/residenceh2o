@@ -218,7 +218,7 @@ export function FacturePDF({ facture, guestUrl, logo, entreprise }) {
           </View>
           <View style={s.totSolde}>
             <Text style={s.totBold}>
-              {solde <= 0 ? 'Solde (payé intégralement)' : 'Solde restant dû'}
+              Reste à payer
             </Text>
             <Text style={solde <= 0 ? s.soldePaye : s.totBoldVal}>
               {fcfa(Math.max(solde, 0))}
