@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { FacturePDF } from '@/lib/pdf/FacturePDF'
 import React from 'react'
+// pdfkit charge ses polices standard par un require dynamique, que Vercel ne suit pas :
+// on les importe ici pour qu'elles soient incluses dans le bundle de la route.
+import 'pdfkit/standard-fonts/Helvetica'
+import 'pdfkit/standard-fonts/HelveticaBold'
+import 'pdfkit/standard-fonts/HelveticaOblique'
+import 'pdfkit/standard-fonts/HelveticaBoldOblique'
 
 /**
  * POST /api/factures/[id]/pdf
