@@ -42,7 +42,7 @@ export default function Footer() {
             <p className="text-white text-sm font-semibold mb-3">Navigation</p>
             <div className="flex flex-col gap-1.5 text-sm">
               <Link href="/residences" className="hover:text-white transition-colors">Villas</Link>
-              <Link href="/#chambres" className="hover:text-white transition-colors">Chambres</Link>
+              <Link href="/chambres" className="hover:text-white transition-colors">Chambres</Link>
               <Link href="/restaurant" className="hover:text-white transition-colors">Restaurant & bar</Link>
               <Link href="/services" className="hover:text-white transition-colors">Services</Link>
               <Link href="/#evenements" className="hover:text-white transition-colors">Événements</Link>

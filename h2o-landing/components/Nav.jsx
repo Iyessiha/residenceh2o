@@ -6,7 +6,7 @@ import { Phone, Calendar, Menu, X, Home, Zap, Package, Image as ImageIcon, Info,
 
 const NAV_LINKS = [
   { href: '/residences', label: 'Villas', icon: Home },
-  { href: '/#chambres', label: 'Chambres', icon: Package },
+  { href: '/chambres', label: 'Chambres', icon: Package },
   { href: '/restaurant', label: 'Restaurant', icon: UtensilsCrossed },
   { href: '/services', label: 'Services', icon: Zap },
   { href: '/gallery', label: 'Galerie', icon: ImageIcon },

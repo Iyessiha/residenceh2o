@@ -9,26 +9,24 @@ const NAV = [
 
   { section: 'Hébergement' },
   { href: '/dashboard/reservations', icon: '📅', label: 'Réservations' },
-  { href: '/dashboard/duplexes',     icon: '🏠', label: 'Duplexes' },
-  { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
-  { href: '/dashboard/balises',      icon: '📈', label: 'Balises & pixels' },
+  { href: '/dashboard/duplexes',     icon: '🏠', label: 'Villas' },
   { href: '/dashboard/chambres',     icon: '🛏️', label: 'Chambres' },
   { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
 
   { section: 'Services' },
   { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant & Bar', badge: 'restaurant' },
   { href: '/dashboard/boutique',     icon: '🛍️', label: 'Boutique',          badge: 'boutique' },
+  { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
   { href: '/dashboard/assistance',   icon: '🔔', label: 'Assistance',        badge: 'assistance' },
 
-  { section: 'Événements' },
-  { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
+  { section: 'Contenu' },
+  { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
 
   { section: 'Finance' },
   { href: '/dashboard/facturation',  icon: '🧾', label: 'Facturation' },
   { href: '/dashboard/rapports',     icon: '📈', label: 'Rapports' },
 
   { section: 'Gestion' },
-  { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
   { href: '/dashboard/equipe',       icon: '👨‍👩‍👧', label: 'Équipe' },
   { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
 ]

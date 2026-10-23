@@ -85,7 +85,7 @@ export default function Chambres({ chambres }) {
             Disponibilités et tarifs confirmés par notre équipe dans les 24 h.
           </p>
           <Link
-            href="#contact"
+            href="/#contact"
             className="inline-flex items-center gap-2 bg-slate-900 hover:bg-teal-600 text-white font-bold text-sm px-8 py-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5"
           >
             <span>Demander une chambre</span>
@@ -97,7 +97,7 @@ export default function Chambres({ chambres }) {
   )
 }
 
-function ChambreCard({ chambre, variant }) {
+export function ChambreCard({ chambre, variant }) {
   const isVip = variant === 'vip'
   const occupied = chambre.statut === 'occupee'
   const titre = chambre.nom.replace(` · ${chambre.duplex_nom}`, '')
@@ -171,7 +171,7 @@ function ChambreCard({ chambre, variant }) {
             </span>
           ) : (
             <Link
-              href="#contact"
+              href="/#contact"
               className={`inline-flex items-center gap-1 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow hover:shadow-md ${
                 isVip
                   ? 'bg-amber-600 hover:bg-amber-700 text-white'

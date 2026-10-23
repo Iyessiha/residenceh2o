@@ -4,6 +4,18 @@ import { createClient } from '@/lib/supabase'
 import { formatFCFA, formatDateShort, STATUT_COLORS, STATUT_LABELS } from '@/lib/utils'
 import Link from 'next/link'
 
+// Raccourcis affichés en haut du tableau de bord
+const ACTIONS_RAPIDES = [
+  { href: '/dashboard/reservations?new=1', icon: '📅', label: 'Nouvelle réservation' },
+  { href: '/dashboard/facturation', icon: '🧾', label: 'Nouvelle facture' },
+  { href: '/dashboard/restaurant', icon: '🍽️', label: 'Restaurant & bar' },
+  { href: '/dashboard/evenements', icon: '🎪', label: 'Ajouter un événement' },
+  { href: '/dashboard/clients', icon: '👥', label: 'Ajouter un client' },
+  { href: '/dashboard/chambres', icon: '🛏️', label: 'Gérer les chambres' },
+  { href: '/dashboard/boutique', icon: '🛍️', label: 'Vente boutique' },
+  { href: '/dashboard/assistance', icon: '🔔', label: "Demandes d'assistance" },
+]
+
 export default function Dashboard() {
   const supabase = createClient()
   const [stats,    setStats]    = useState({ occupation: 0, sejours: 0, revenu: 0, totalDuplexes: 0 })
@@ -89,6 +101,16 @@ export default function Dashboard() {
         <Link href="/dashboard/reservations?new=1" className="btn-primary">
           + Nouvelle réservation
         </Link>
+      </div>
+
+      {/* Actions rapides */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        {ACTIONS_RAPIDES.map(a => (
+          <Link key={a.href} href={a.href} className="card p-4 flex items-center gap-3 hover:shadow-md transition-shadow">
+            <span className="text-2xl">{a.icon}</span>
+            <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{a.label}</span>
+          </Link>
+        ))}
       </div>
 
       {/* KPI Cards */}
