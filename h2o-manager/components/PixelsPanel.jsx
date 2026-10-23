@@ -7,7 +7,7 @@ import { Pencil, Trash2, Plus } from 'lucide-react'
 const PERSO = ''  // valeur du sélecteur pour un code libre
 const VIDE = { nom: '', fournisseur: PERSO, identifiant: '', type: 'pixel', emplacement: 'head', code: '', actif: true }
 
-export default function BalisesPage() {
+export default function PixelsPanel() {
   const supabase = createClient()
   const [admin, setAdmin] = useState(null)      // null = en chargement
   const [balises, setBalises] = useState([])
@@ -89,7 +89,7 @@ export default function BalisesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pixels & balises</h1>
+          <h2 className="text-lg font-semibold text-gray-900">Pixels & balises</h2>
           <p className="text-gray-500 text-sm">Suivi publicitaire et analyse (Meta, Google, TikTok) chargés sur le site public.</p>
         </div>
         <button onClick={() => { setForm({ ...VIDE }); setEditId(null); setMessage('') }} className="btn-primary flex items-center gap-2">

@@ -63,7 +63,7 @@ export default function Hero() {
           <Link href="#contact" className="btn-primary text-center text-lg">
             Réserver un duplex
           </Link>
-          <Link href="#chambres" className="btn-outline text-center text-lg">
+          <Link href="/chambres" className="btn-outline text-center text-lg">
             Voir les chambres
           </Link>
         </div>

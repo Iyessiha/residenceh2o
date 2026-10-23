@@ -7,7 +7,7 @@ import FeaturedGallery from '@/components/FeaturedGallery'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
 import BookingWidget from '@/components/BookingWidget'
-import Chambres from '@/components/Chambres'
+import ChambresApercu from '@/components/ChambresApercu'
 import { Star, ArrowRight, Quote, Shield, Compass, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { getDuplexes, getPhotos, getChambres } from '@/lib/data'
@@ -25,7 +25,7 @@ export default async function Home() {
         <Hero />
         <HostBadge />
         <Duplexes duplexes={duplexes} />
-        <Chambres chambres={chambres} />
+        <ChambresApercu chambres={chambres} />
         <Events />
 
         {/* Featured Gallery Section */}

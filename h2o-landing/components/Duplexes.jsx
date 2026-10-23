@@ -19,7 +19,7 @@ export default function Duplexes({ duplexes }) {
             Deux villas duplex entières, au bord du lac : jardin, terrasse et toit-terrasse, cuisine équipée et parking pour deux voitures.
           </p>
           <Link
-            href="#chambres"
+            href="/chambres"
             className="inline-flex items-center gap-2 mt-5 text-sm font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-4 py-2 rounded-full transition-colors"
           >
             <BedDouble className="w-4 h-4" />

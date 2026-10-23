@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import PixelsPanel from '@/components/PixelsPanel'
 
 export default function Parametres() {
   const supabase = createClient()
@@ -121,6 +122,11 @@ export default function Parametres() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Pixels & balises */}
+      <div className="card p-6 mt-6">
+        <PixelsPanel />
       </div>
     </div>
   )

@@ -12,6 +12,7 @@ export default async function sitemap() {
     'gallery',
     'faq',
     'restaurant',
+    'chambres',
   ].map(route => ({
     url: `${baseUrl}${route ? '/' + route : ''}`,
     lastModified: new Date().toISOString(),
