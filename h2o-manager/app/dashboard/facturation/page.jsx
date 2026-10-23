@@ -88,7 +88,7 @@ export default function Facturation() {
     const guestUrl = facture.reservation_id
       ? `${window.location.origin}/guest/${facture.reservation_id}`
       : null
-    const { data: entreprise } = await supabase.from('entreprise').select('rccm, ifu, tva').eq('id', 1).maybeSingle()
+    const { data: entreprise } = await supabase.from('entreprise').select('rccm, ifu, tva, tva_taux, taxes').eq('id', 1).maybeSingle()
     const res = await fetch(`/api/factures/${facture.id}/pdf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

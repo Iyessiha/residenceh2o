@@ -107,6 +107,22 @@ function fdate(d) {
   return `${String(date.getDate()).padStart(2, '0')} ${MOIS[date.getMonth()]} ${date.getFullYear()}`
 }
 
+// Ventilation d'un montant TTC : HT, puis chaque taxe calculée sur le HT.
+// Le HT est ajusté pour que HT + taxes = TTC au franc près. null si aucune taxe.
+function ventilation(ttc, entreprise) {
+  const taxes = []
+  if (Number(entreprise?.tva_taux) > 0) taxes.push({ nom: 'TVA', taux: Number(entreprise.tva_taux) })
+  ;(entreprise?.taxes || []).forEach((t) => {
+    if (Number(t.taux) > 0) taxes.push({ nom: t.nom, taux: Number(t.taux) })
+  })
+  if (taxes.length === 0) return null
+  const tauxTotal = taxes.reduce((somme, t) => somme + t.taux, 0)
+  const htEstime = Math.round(ttc / (1 + tauxTotal / 100))
+  const detail = taxes.map((t) => ({ ...t, montant: Math.round((htEstime * t.taux) / 100) }))
+  const ht = ttc - detail.reduce((somme, t) => somme + t.montant, 0)
+  return { ht, taxes: detail }
+}
+
 const TYPES_LABELS = {
   sejour: 'Séjour', chambre: 'Chambre', evenement: 'Événement',
   restauration: 'Restauration', autre: 'Autre',
@@ -127,6 +143,7 @@ const STATUT_COLORS = {
 export function FacturePDF({ facture, guestUrl, logo, entreprise }) {
   const sc = STATUT_COLORS[facture.statut] || STATUT_COLORS.brouillon
   const solde = (facture.montant_total || 0) - (facture.montant_paye || 0)
+  const ventil = ventilation(facture.montant_total || 0, entreprise)
 
   return (
     <Document
@@ -208,18 +225,35 @@ export function FacturePDF({ facture, guestUrl, logo, entreprise }) {
 
         {/* ── Totaux ───────────────────────────────────────── */}
         <View style={s.totaux}>
-          <View style={s.totRow}>
-            <Text style={s.totLabel}>Total</Text>
-            <Text style={s.totVal}>{fcfa(facture.montant_total)}</Text>
-          </View>
+          {ventil ? (
+            <>
+              <View style={s.totRow}>
+                <Text style={s.totLabel}>Montant HT</Text>
+                <Text style={s.totVal}>{fcfa(ventil.ht)}</Text>
+              </View>
+              {ventil.taxes.map((t) => (
+                <View key={t.nom} style={s.totRow}>
+                  <Text style={s.totLabel}>{t.nom} ({t.taux} %)</Text>
+                  <Text style={s.totVal}>{fcfa(t.montant)}</Text>
+                </View>
+              ))}
+              <View style={s.totRow}>
+                <Text style={[s.totLabel, { fontWeight: 700, color: C.text }]}>Total TTC</Text>
+                <Text style={[s.totVal, { fontWeight: 700 }]}>{fcfa(facture.montant_total)}</Text>
+              </View>
+            </>
+          ) : (
+            <View style={s.totRow}>
+              <Text style={s.totLabel}>Total</Text>
+              <Text style={s.totVal}>{fcfa(facture.montant_total)}</Text>
+            </View>
+          )}
           <View style={s.totRow}>
             <Text style={s.totLabel}>Déjà réglé</Text>
             <Text style={[s.totVal, { color: C.success }]}>{fcfa(facture.montant_paye || 0)}</Text>
           </View>
           <View style={s.totSolde}>
-            <Text style={s.totBold}>
-              Reste à payer
-            </Text>
+            <Text style={s.totBold}>Reste à payer</Text>
             <Text style={solde <= 0 ? s.soldePaye : s.totBoldVal}>
               {fcfa(Math.max(solde, 0))}
             </Text>
