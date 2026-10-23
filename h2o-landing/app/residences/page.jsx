@@ -154,6 +154,22 @@ export default async function ResidencesPage() {
                     </td>
                   ))}
                 </tr>
+                <tr className="border-b border-gray-200 bg-white">
+                  <td className="py-4 px-4 font-semibold text-gray-700">Surface</td>
+                  {residences.map(r => (
+                    <td key={r.slug} className="text-center py-4 px-4 text-gray-600">
+                      {r.surface || '—'}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <td className="py-4 px-4 font-semibold text-gray-700">Pontoon</td>
+                  {residences.map(r => (
+                    <td key={r.slug} className="text-center py-4 px-4">
+                      {r.features.some(f => f.includes('Pontoon')) ? '✓' : '—'}
+                    </td>
+                  ))}
+                </tr>
               </tbody>
             </table>
           </div>

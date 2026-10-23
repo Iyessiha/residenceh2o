@@ -36,7 +36,7 @@ function construireFaq(duplexes) {
   },
   {
     question: 'Y a-t-il un parking ?',
-    answer: 'Oui, chaque villa dispose d\'un parking pour 2 voitures. La résidence est surveillée par caméras, avec un agent de sécurité.',
+    answer: 'Oui, le parking est gratuit, avec 2 places par villa. La résidence est surveillée par caméras, avec un agent de sécurité.',
   },
   {
     question: 'Le Wi-Fi est-il inclus ?',
@@ -52,7 +52,7 @@ function construireFaq(duplexes) {
   },
   {
     question: 'Peut-on organiser un mariage ou un événement ?',
-    answer: "Oui. Un espace événementiel est disponible sur place, avec une terrasse à manger, un bar climatisé et la grande piscine commune. Demandez un devis sur mesure.",
+    answer: "Oui. Un espace événementiel accueille jusqu'à 200 invités, avec accès au pontoon, une terrasse à manger, un bar climatisé et la grande piscine commune, et service traiteur clé en main. Demandez un devis sur mesure.",
   },
   {
     question: 'Peut-on privatiser la residence ?',

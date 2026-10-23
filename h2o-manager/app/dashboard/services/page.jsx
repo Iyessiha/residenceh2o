@@ -3,9 +3,9 @@ import { useState } from 'react'
 import { Upload, X, Edit, Plus } from 'lucide-react'
 
 const SERVICES = [
-  { id: 'piscine', nom: '🏊 Piscine privée', desc: 'Piscine privée dans chaque villa, jusqu\'à 10 personnes' },
+  { id: 'piscine', nom: '🏊 Piscine privée', desc: 'Piscine privée et pontoon dans chaque villa, jusqu\'à 10 personnes' },
   { id: 'restaurant', nom: '🍽️ Restaurant & bar', desc: 'Petit déjeuner inclus, carte de volailles, poissons et boissons' },
-  { id: 'events', nom: '🎉 Espace événementiel', desc: 'Espace événementiel au bord du lac, bar climatisé 10–15 pers.' },
+  { id: 'events', nom: '🎉 Espace événementiel', desc: 'Espace événementiel au bord du lac, jusqu\'à 200 invités, pontoon, bar climatisé 10–15 pers.' },
   { id: 'menage', nom: '🧹 Ménage & buanderie', desc: 'Ménage quotidien inclus, ménage 2× par semaine pour les longs séjours, buanderie et repassage' },
   { id: 'securite', nom: '🛡️ Sécurité', desc: 'Caméras de surveillance, agent de sécurité, groupe électrogène' },
   { id: 'connectivite', nom: '📶 Wi-Fi 5G & TV', desc: 'Wi-Fi 5G, TV salon et chambre, enceinte Bluetooth, télécommandes' },

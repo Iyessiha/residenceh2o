@@ -7,7 +7,7 @@ export const revalidate = 300
 
 export const metadata = {
   title: 'Galerie Photos | Les Résidences H₂O',
-  description: 'Découvrez les Résidences H₂O en images : villas, piscines privées et espace événementiel à Villa Poton.',
+  description: 'Découvrez les Résidences H₂O en images : villas, piscines privées, pontoon et espace événementiel à Villa Poton.',
 }
 
 export default async function GalleryPage() {
@@ -24,7 +24,7 @@ export default async function GalleryPage() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-4xl sm:text-5xl font-bold mb-4">Galerie Photos</h1>
-            <p className="text-xl text-white/90">Découvrez les villas, les piscines privées et le cadre au bord du lac des Résidences H₂O</p>
+            <p className="text-xl text-white/90">Découvrez les villas, les piscines privées le pontoon et le cadre au bord du lac des Résidences H₂O</p>
           </div>
         </section>
 

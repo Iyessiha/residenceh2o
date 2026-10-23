@@ -14,6 +14,7 @@ const VILLA_FEATURES = [
   'Buanderie externe',
   'Service repassage',
   '2 toilettes visiteurs',
+  'Pontoon',
 ]
 
 export const DUPLEX_FALLBACK = [
@@ -22,7 +23,7 @@ export const DUPLEX_FALLBACK = [
     nom: 'Villa 1',
     capacite: 10,
     chambres: 5,
-    surface_m2: null,
+    surface_m2: 80,
     tarif_nuit: 350000,
     tarif_journee: 250000,
     tagline: 'Duplex complet avec piscine privée, jardin et toit-terrasse',
@@ -35,7 +36,7 @@ export const DUPLEX_FALLBACK = [
     nom: 'Villa 2',
     capacite: 10,
     chambres: 5,
-    surface_m2: null,
+    surface_m2: 100,
     tarif_nuit: 350000,
     tarif_journee: 250000,
     tagline: 'Duplex complet avec piscine privée, jardin et toit-terrasse',
@@ -69,7 +70,7 @@ export const CHAMBRES_FALLBACK = DUPLEX_FALLBACK.flatMap((duplex) =>
     capacite: 2,
     statut: 'disponible',
     description: `${c.lit}, 2 personnes maximum. Petit déjeuner inclus pour la formule nuit.`,
-    features: [c.lit, ...EQUIPEMENTS_CHAMBRE],
+    features: [c.lit, 'Lit king size', 'Climatisation', ...EQUIPEMENTS_CHAMBRE],
   }))
 )
 

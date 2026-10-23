@@ -11,9 +11,9 @@ export const metadata = {
     default: 'Les Résidences H₂O — Villas avec piscine privée à Villa Poton',
     template: '%s | Les Résidences H₂O',
   },
-  description: "Villas duplex entières avec piscine privée, jardin et toit-terrasse, et chambres à la nuit à Villa Poton, ancienne route de Bassam, au lac — 10 min de la plage, 30 min de l'aéroport et d'Abidjan. Séjour, restaurant, événement.",
+  description: "Villas duplex entières avec piscine privée, pontoon, jardin et toit-terrasse, et chambres à la nuit à Villa Poton, ancienne route de Bassam, au lac — 10 min de la plage, 30 min de l'aéroport et d'Abidjan. Séjour, restaurant, événement.",
   keywords: [
-    'villa Poton', 'villa piscine privée Côte d\'Ivoire', 'duplex piscine privée',
+    'villa Poton', 'villa piscine privée Côte d\'Ivoire', 'duplex piscine privée', 'duplex pontoon',
     'location villa lac Abidjan', 'chambre à louer à la nuit', 'chambre VVIP',
     'espace événementiel au bord du lac', 'restaurant au bord du lac', 'location vacances lagune',
   ],
@@ -21,7 +21,7 @@ export const metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
   openGraph: {
     title: 'Les Résidences H₂O — Villas avec piscine privée à Villa Poton',
-    description: 'Séjours d\'exception au bord du lac. Chaque villa a sa propre piscine privée, son jardin et son toit-terrasse.',
+    description: 'Séjours d\'exception au bord du lac. Chaque villa a sa propre piscine privée, son pontoon, son jardin et son toit-terrasse.',
     url: 'https://residencesh2o.com',
     siteName: 'Les Résidences H₂O',
     locale: 'fr_CI',
@@ -30,7 +30,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Les Résidences H₂O — Duplexes avec piscine privée',
-    description: 'Séjours d\'exception à Villa Poton. Piscine privée, jardin, toit-terrasse.',
+    description: 'Séjours d\'exception à Villa Poton. Piscine privée, pontoon, jardin, toit-terrasse.',
   },
   alternates: { canonical: 'https://residencesh2o.com' },
 }
@@ -42,7 +42,7 @@ const jsonLd = {
       '@type': 'LodgingBusiness',
       '@id': 'https://residencesh2o.com/#lodging',
       name: 'Les Résidences H₂O',
-      description: 'Villas duplex entières avec piscine privée à Villa Poton, et chambres à la nuit. Restaurant, espace événementiel, sécurité, Wi-Fi 5G.',
+      description: 'Villas duplex entières avec piscine privée et pontoon à Villa Poton, et chambres à la nuit. Restaurant, espace événementiel jusqu’à 200 invités, parking gratuit, sécurité, Wi-Fi 5G.',
       url: 'https://residencesh2o.com',
       telephone: '+2250749194952',
       email: 'contact@residencesh2o.com',
@@ -54,6 +54,9 @@ const jsonLd = {
       geo: { '@type': 'GeoCoordinates', latitude: 5.20, longitude: -3.73 },
       amenityFeature: [
         { '@type': 'LocationFeatureSpecification', name: 'Piscine privée par villa', value: true },
+        { '@type': 'LocationFeatureSpecification', name: 'Pontoon', value: true },
+        { '@type': 'LocationFeatureSpecification', name: 'Parking gratuit', value: true },
+        { '@type': 'LocationFeatureSpecification', name: 'Climatisation', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Restaurant sur place', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Wi-Fi 5G', value: true },
         { '@type': 'LocationFeatureSpecification', name: 'Parking 2 voitures par villa', value: true },

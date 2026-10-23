@@ -11,7 +11,7 @@ export const metadata = {
 // Mêmes engagements que le bloc « HostBadge » de la landing.
 const values = [
   { icon: ShieldCheck, title: 'Établissement sécurisé', desc: 'Résidence surveillée par caméras, avec agent de sécurité et groupe électrogène.' },
-  { icon: Award, title: 'Une piscine par villa', desc: 'Chaque villa dispose de sa piscine privée.' },
+  { icon: Award, title: 'Standing 5 étoiles', desc: 'Une piscine privée pour chaque villa, sans vis-à-vis.' },
   { icon: KeyRound, title: 'Accueil personnalise', desc: "Une conciergerie dediee et des horaires d'arrivee flexibles." },
 ]
 
@@ -40,7 +40,7 @@ export default function AboutPage() {
                   Les Résidences H₂O
                 </h2>
                 <p className="text-lg leading-relaxed mb-4" style={{ color: 'var(--text-2)' }}>
-                  Les Résidences H₂O proposent deux villas duplex entières, chacune avec sa piscine privée, son jardin, sa terrasse et son toit-terrasse.
+                  Les Résidences H₂O proposent deux villas duplex entières, chacune avec sa piscine privée, son pontoon, son jardin, sa terrasse et son toit-terrasse.
                 </p>
                 <p className="text-lg leading-relaxed" style={{ color: 'var(--text-2)' }}>
                   {"Nous sommes situés à Villa Poton, ancienne route de Bassam, au bord du lac — à 10 minutes de la plage, 30 minutes de l'aéroport et d'Abidjan."}

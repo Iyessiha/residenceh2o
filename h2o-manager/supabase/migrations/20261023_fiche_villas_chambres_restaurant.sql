@@ -13,14 +13,14 @@ alter table duplexes alter column surface_m2 drop not null;
 -- ── Villas : Villa 1 et Villa 2 ─────────────────────────────
 -- Nuit complète 24/24 (petit déjeuner inclus) et matinée (demi-journée).
 insert into duplexes (code, nom, capacite, chambres, surface_m2, tarif_nuit, tarif_journee, description, statut, tagline, badge, features) values
-  ('D-1', 'Villa 1', 10, 5, null, 350000, 250000,
+  ('D-1', 'Villa 1', 10, 5, 80, 350000, 250000,
    'Villa 1 : piscine privée, jardin, terrasse, toit-terrasse et parking pour 2 voitures', 'disponible',
    'Duplex complet avec piscine privée, jardin et toit-terrasse', 'Duplex complet',
-   array['Piscine privée','Jardin','Terrasse','Toit-terrasse','Parking 2 voitures','Cuisine équipée','Buanderie externe','Service repassage','2 toilettes visiteurs']),
-  ('D-2', 'Villa 2', 10, 5, null, 350000, 250000,
+   array['Piscine privée','Jardin','Terrasse','Toit-terrasse','Parking 2 voitures','Cuisine équipée','Buanderie externe','Service repassage','2 toilettes visiteurs', 'Pontoon']),
+  ('D-2', 'Villa 2', 10, 5, 100, 350000, 250000,
    'Villa 2 : piscine privée, jardin, terrasse, toit-terrasse et parking pour 2 voitures', 'disponible',
    'Duplex complet avec piscine privée, jardin et toit-terrasse', 'Duplex complet',
-   array['Piscine privée','Jardin','Terrasse','Toit-terrasse','Parking 2 voitures','Cuisine équipée','Buanderie externe','Service repassage','2 toilettes visiteurs'])
+   array['Piscine privée','Jardin','Terrasse','Toit-terrasse','Parking 2 voitures','Cuisine équipée','Buanderie externe','Service repassage','2 toilettes visiteurs', 'Pontoon'])
 on conflict (code) do update set
   nom = excluded.nom,
   capacite = excluded.capacite,
@@ -60,19 +60,19 @@ from duplexes d
 cross join (values
   ('Chambre VVIP',          'VVIP',       'vvip',          90000, 70000,
    'Lit 3 places, 2 personnes maximum. Petit déjeuner inclus pour la formule nuit.',
-   array['Lit 3 places', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire']),
+   array['Lit 3 places', 'Lit king size', 'Climatisation', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire']),
   ('Chambre VIP',           'VIP',        'vip',           80000, 60000,
    'Lit 3 places, 2 personnes maximum. Petit déjeuner inclus pour la formule nuit.',
-   array['Lit 3 places', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire']),
+   array['Lit 3 places', 'Lit king size', 'Climatisation', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire']),
   ('Chambre Standard 1',    'STD1',       'standard',      70000, 50000,
    'Lit 2 places, 2 personnes maximum. Petit déjeuner inclus pour la formule nuit.',
-   array['Lit 2 places', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire']),
+   array['Lit 2 places', 'Lit king size', 'Climatisation', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire']),
   ('Chambre Standard 2',    'STD2',       'standard',      70000, 50000,
    'Lit 2 places, 2 personnes maximum. Petit déjeuner inclus pour la formule nuit.',
-   array['Lit 2 places', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire']),
+   array['Lit 2 places', 'Lit king size', 'Climatisation', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire']),
   ('Chambre non autonome',  'NA',         'non_autonome',  40000, 20000,
    'Lit 2 places, 2 personnes maximum. Petit déjeuner inclus pour la formule nuit.',
-   array['Lit 2 places', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire'])
+   array['Lit 2 places', 'Lit king size', 'Climatisation', 'TV', 'Salle d''eau', 'Table de bureau', 'Armoire'])
 ) as c(nom, code, type, tarif_nuit, tarif_journee, description, features)
 where d.code in ('D-1', 'D-2');
 

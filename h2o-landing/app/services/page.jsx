@@ -9,6 +9,11 @@ export const metadata = {
 
 // Services et équipements de la fiche officielle (connectivité, sécurité, politique maison, ménage).
 const services = [
+  { icon: '⚓', title: 'Pontoon', description: 'Un pontoon face à la lagune, pour les couchers de soleil.' },
+  { icon: '🎪', title: 'Espace événementiel', description: "Jusqu'à 200 invités, avec service traiteur clé en main." },
+  { icon: '🚗', title: 'Parking gratuit', description: 'Un parking gratuit pour tous nos hôtes.' },
+  { icon: '❄️', title: 'Climatisation', description: 'Climatisation dans les chambres.' },
+  { icon: '🛏️', title: 'Lit king size', description: 'Lit king size dans les chambres.' },
   { icon: '📶', title: 'Wi-Fi 5G', description: 'Wi-Fi 5G dans les villas.' },
   { icon: '📺', title: 'TV salon + chambre', description: 'Télévision dans le salon et dans chaque chambre.' },
   { icon: '🔊', title: 'Enceinte Bluetooth', description: 'Enceinte Bluetooth dans la villa.' },

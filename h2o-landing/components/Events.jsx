@@ -34,8 +34,8 @@ export default function Events() {
             </h2>
 
             <p className="text-white/80 text-base sm:text-lg mb-8 leading-relaxed">
-              Donnez une dimension inoubliable à vos célébrations. Notre espace événementiel accueille vos invités
-              <strong className="text-white font-semibold"> au bord du lac</strong>, à Villa Poton, avec la piscine et la terrasse à manger pour prolonger la fête.
+              Donnez une dimension inoubliable à vos célébrations. Notre espace événementiel accueille jusqu'à
+              <strong className="text-white font-semibold"> 200 invités</strong> au bord du lac, à Villa Poton, avec pontoon direct et service traiteur clé en main.
             </p>
 
             <div className="space-y-3 mb-10">
@@ -80,7 +80,7 @@ export default function Events() {
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
-                <span className="text-xs font-semibold text-white/90">Espace événementiel au bord du lac</span>
+                <span className="text-xs font-semibold text-white/90">Espace événementiel jusqu'à 200 personnes</span>
               </div>
             </div>
 
@@ -92,7 +92,7 @@ export default function Events() {
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
-                <span className="text-xs font-semibold text-white/90">Piscine privée & terrasse</span>
+                <span className="text-xs font-semibold text-white/90">Pontoon privé & coucher de soleil</span>
               </div>
             </div>
 
