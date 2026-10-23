@@ -38,7 +38,7 @@ on conflict (code) do update set
 -- et passé en maintenance : le site n'affiche que les duplex disponibles ou occupés.
 delete from duplexes d
 where d.code = 'D-3'
-  and not exists (select 1 from reservations r where r.duplex_id = d.id);
+  and not exists (select 1 from reservations r where r.duplex_id::text = d.id::text);
 
 update duplexes set statut = 'maintenance' where code = 'D-3';
 
