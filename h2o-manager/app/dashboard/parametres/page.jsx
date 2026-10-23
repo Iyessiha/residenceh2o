@@ -40,6 +40,11 @@ export default function Parametres() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Paramètres</h1>
 
+      {/* Informations légales et taxes */}
+      <div className="mb-6">
+        <InfosLegales />
+      </div>
+
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Account info */}
         <div className="card p-6">
@@ -123,11 +128,6 @@ export default function Parametres() {
             ))}
           </div>
         </div>
-      </div>
-
-      {/* Informations légales */}
-      <div className="mt-6">
-        <InfosLegales />
       </div>
 
       {/* Pixels & balises */}
