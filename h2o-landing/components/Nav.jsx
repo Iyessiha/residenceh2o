@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Phone, Calendar, Menu, X, Home, Zap, Package, Image as ImageIcon, Info, HelpCircle } from 'lucide-react'
+import { Phone, Calendar, Menu, X, Home, Zap, Package, Image as ImageIcon, Info, HelpCircle, UtensilsCrossed } from 'lucide-react'
 
 const NAV_LINKS = [
-  { href: '/residences', label: 'Duplexes', icon: Home },
+  { href: '/residences', label: 'Villas', icon: Home },
   { href: '/#chambres', label: 'Chambres', icon: Package },
+  { href: '/restaurant', label: 'Restaurant', icon: UtensilsCrossed },
   { href: '/services', label: 'Services', icon: Zap },
   { href: '/gallery', label: 'Galerie', icon: ImageIcon },
   { href: '/about', label: 'À Propos', icon: Info },
@@ -47,7 +48,7 @@ export default function Nav() {
                 Résidences <span style={{ color: '#7FB8B5' }}>H₂O</span>
               </span>
               <span className="text-[9px] sm:text-[10px] uppercase tracking-widest text-white/50 font-medium">
-                Modeste Beach
+                Villa Poton
               </span>
             </div>
           </Link>
@@ -69,7 +70,7 @@ export default function Nav() {
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {/* WhatsApp Button - Hidden on small mobile */}
             <a
-              href="https://wa.me/2250749194952?text=Bonjour%2C%20je%20souhaite%20des%20informations"
+              href="https://wa.me/2250705259234?text=Bonjour%2C%20je%20souhaite%20des%20informations"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden sm:flex items-center gap-2 text-white/70 hover:text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg border border-white/10 hover:border-white/30 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all"
@@ -127,7 +128,7 @@ export default function Nav() {
               Réserver maintenant
             </Link>
             <a
-              href="https://wa.me/2250749194952?text=Bonjour"
+              href="https://wa.me/2250705259234?text=Bonjour"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full text-center py-3 rounded-lg bg-white/10 border border-white/15 text-white text-sm font-medium flex items-center justify-center gap-2 hover:bg-white/15 hover:border-white/30 transition-all"

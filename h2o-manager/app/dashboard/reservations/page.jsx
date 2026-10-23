@@ -396,7 +396,7 @@ export default function Reservations() {
                         <option value="">— Choisir —</option>
                         {chambres.map(c => (
                           <option key={c.id} value={String(c.id)}>
-                            {c.type === 'vip' ? '★ ' : ''}{c.nom}{c.tarif_nuit ? ` — ${new Intl.NumberFormat('fr-FR').format(c.tarif_nuit)} FCFA/nuit` : ''}
+                            {c.type === 'vvip' || c.type === 'vip' ? '★ ' : ''}{c.nom}{c.tarif_nuit ? ` — ${new Intl.NumberFormat('fr-FR').format(c.tarif_nuit)} FCFA/nuit` : ''}
                             {c.statut === 'occupee' ? ' (occupée)' : ''}
                           </option>
                         ))}

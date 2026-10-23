@@ -16,31 +16,35 @@ function construireFaq(duplexes) {
   return [
   {
     question: 'Où se trouvent les Résidences H₂O ?',
-    answer: "À Modeste Beach, route de Grand-Bassam : à 10 minutes de la plage, à 30 minutes de l'aéroport et du Plateau d'Abidjan.",
+    answer: "À Villa Poton, ancienne route de Bassam, au bord du lac : à 10 minutes de la plage, à 30 minutes de l'aéroport et du Plateau d'Abidjan.",
   },
   {
     question: 'Combien coûte un séjour ?',
-    answer: `Les tarifs sont par nuit et par duplex : ${duplexes.map(d => `${d.nom} ${formatFCFA(d.prix)}`).join(', ')}. Le séjour minimum est de 2 nuits.`,
+    answer: `Les villas se louent à la nuit complète 24/24 ou à la matinée : ${duplexes.map(d => `${d.nom} ${formatFCFA(d.prix)} la nuit (matinée ${formatFCFA(d.prixJournee)})`).join(', ')}. Le séjour minimum est de 2 nuits.`,
   },
   {
-    question: 'Combien de personnes peuvent séjourner dans chaque duplex ?',
+    question: 'Peut-on louer une seule chambre ?',
+    answer: 'Oui, les chambres se louent à la nuit avec petit déjeuner, à partir de 40 000 FCFA, ou à la journée. Chaque chambre accueille 2 personnes maximum.',
+  },
+  {
+    question: 'Combien de personnes peuvent séjourner dans chaque villa ?',
     answer: duplexes.map(d => `${d.nom} : ${d.capacite.toLowerCase()}.`).join(' '),
   },
   {
-    question: 'Chaque duplex a-t-il sa propre piscine ?',
-    answer: 'Oui, chaque duplex dispose de sa piscine privée, sans vis-à-vis.',
+    question: 'Chaque villa a-t-elle sa propre piscine ?',
+    answer: 'Oui, chaque villa dispose de sa piscine privée. La piscine n\'est pas surveillée par un maître nageur.',
   },
   {
     question: 'Y a-t-il un parking ?',
-    answer: 'Oui, le parking est gratuit. La résidence est sécurisée 24h/24 avec gardiennage.',
+    answer: 'Oui, chaque villa dispose d\'un parking pour 2 voitures. La résidence est surveillée par caméras, avec un agent de sécurité.',
   },
   {
     question: 'Le Wi-Fi est-il inclus ?',
-    answer: 'Oui, le Wi-Fi haut débit est disponible dans les duplexes.',
+    answer: 'Oui, le Wi-Fi 5G est disponible dans les villas, avec TV dans le salon et dans chaque chambre.',
   },
   {
     question: 'Y a-t-il un restaurant sur place ?',
-    answer: 'Oui, un restaurant est disponible sur place. Pour connaître ses horaires, écrivez-nous sur WhatsApp.',
+    answer: 'Oui, un restaurant et un bar sont sur place, avec petit déjeuner inclus dans le séjour. Consultez la carte sur la page Restaurant.',
   },
   {
     question: 'Comment réserver ?',
@@ -48,11 +52,11 @@ function construireFaq(duplexes) {
   },
   {
     question: 'Peut-on organiser un mariage ou un événement ?',
-    answer: "Oui. La pergola peut accueillir jusqu'a 200 invites, avec acces au pontoon et service traiteur cle en main. Demandez un devis sur mesure.",
+    answer: "Oui. Un espace événementiel est disponible sur place, avec une terrasse à manger, un bar climatisé et la grande piscine commune. Demandez un devis sur mesure.",
   },
   {
     question: 'Peut-on privatiser la residence ?',
-    answer: "Oui, la privatisation totale est possible sur reservation. L'hebergement des invites est inclus dans nos duplexes.",
+    answer: "Oui, la privatisation totale est possible sur reservation. L'hebergement des invites se fait dans nos villas et chambres.",
   },
   {
     question: "Accueillez-vous des seminaires d'entreprise ?",
@@ -94,7 +98,7 @@ export default async function FAQPage() {
             <p className="mb-6">Écrivez-nous sur WhatsApp ou envoyez votre demande depuis le formulaire de réservation.</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <a
-                href="https://wa.me/2250749194952?text=Bonjour%2C%20j%27ai%20une%20question%20sur%20les%20R%C3%A9sidences%20H2O"
+                href="https://wa.me/2250705259234?text=Bonjour%2C%20j%27ai%20une%20question%20sur%20les%20R%C3%A9sidences%20H2O"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block px-8 py-3 bg-white font-bold rounded-lg hover:bg-gray-100 transition-colors"

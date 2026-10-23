@@ -1,13 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async redirects() {
-    // « Chambres » n'existe plus : les hébergements sont les trois duplexes.
+    // Les hébergements sont les deux villas (Villa 1, Villa 2) et les chambres à la nuit.
     return [
       { source: '/rooms', destination: '/residences', permanent: true },
-      // Anciennes adresses des duplex (avant l'alignement sur le manager)
-      { source: '/residences/deluxe', destination: '/residences/duplex-lac', permanent: true },
-      { source: '/residences/jardin', destination: '/residences/duplex-jardin', permanent: true },
-      { source: '/residences/presidential', destination: '/residences/duplex-signature', permanent: true },
+      // Anciennes adresses des duplex (avant la fiche « Villa 1 / Villa 2 »)
+      { source: '/residences/deluxe', destination: '/residences/villa-1', permanent: true },
+      { source: '/residences/jardin', destination: '/residences/villa-2', permanent: true },
+      { source: '/residences/presidential', destination: '/residences', permanent: true },
+      { source: '/residences/duplex-lac', destination: '/residences/villa-1', permanent: true },
+      { source: '/residences/duplex-jardin', destination: '/residences/villa-2', permanent: true },
+      { source: '/residences/duplex-signature', destination: '/residences', permanent: true },
     ]
   },
   images: {

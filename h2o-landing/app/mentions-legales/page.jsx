@@ -3,7 +3,7 @@ import Footer from '@/components/Footer'
 
 export const metadata = {
   title: 'Mentions légales | Les Résidences H₂O',
-  description: 'Mentions légales du site residencesh2o.com — Les Résidences H₂O, Modeste Beach, Grand-Bassam, Côte d\'Ivoire.',
+  description: 'Mentions légales du site residencesh2o.com — Les Résidences H₂O, Villa Poton, ancienne route de Bassam, Côte d\'Ivoire.',
 }
 
 export default function MentionsLegalesPage() {
@@ -26,7 +26,7 @@ export default function MentionsLegalesPage() {
               <ul>
                 <li><strong>Raison sociale :</strong> Les Résidences H₂O</li>
                 <li><strong>Statut :</strong> Établissement d'hébergement touristique</li>
-                <li><strong>Adresse :</strong> Route de Grand-Bassam, Modeste Beach, Grand-Bassam, Côte d'Ivoire</li>
+                <li><strong>Adresse :</strong> Villa Poton, ancienne route de Bassam, au lac, Côte d'Ivoire</li>
                 <li><strong>Téléphone :</strong> +225 07 49 19 49 52</li>
                 <li><strong>E-mail :</strong> contact@residencesh2o.com</li>
               </ul>

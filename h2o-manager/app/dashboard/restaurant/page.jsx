@@ -17,6 +17,9 @@ const PAIEMENTS = { especes: 'Espèces', mobile_money: 'Mobile Money', carte: 'C
 const CATEGORIES = [
   { key: 'plat',     label: 'Plats',            emoji: '🍽️' },
   { key: 'entree',   label: 'Entrées',           emoji: '🥗' },
+  { key: 'petit_dejeuner', label: 'Petit déjeuner', emoji: '☕' },
+  { key: 'accompagnement', label: 'Accompagnements', emoji: '🍟' },
+  { key: 'piscine',  label: 'Piscine (accès externe)', emoji: '🏊' },
   { key: 'dessert',  label: 'Desserts',          emoji: '🍮' },
   { key: 'vin',      label: 'Vins & Cocktails',  emoji: '🍷' },
   { key: 'jus',      label: 'Jus & Smoothies',   emoji: '🧃' },
@@ -25,7 +28,7 @@ const CATEGORIES = [
 ]
 const CAT_MAP = Object.fromEntries(CATEGORIES.map(c => [c.key, c]))
 
-const FOOD_CATS   = ['plat', 'entree', 'dessert']
+const FOOD_CATS   = ['plat', 'entree', 'dessert', 'petit_dejeuner', 'accompagnement']
 const DRINK_CATS  = ['vin', 'jus', 'boisson', 'autre']
 const SECTIONS_MENU = [
   { key: 'food',   label: 'Restauration',   emoji: '🍽️', cats: FOOD_CATS },
@@ -72,7 +75,7 @@ function LignesEditor({ lignes, menuItems, onChange }) {
                     className="text-xs px-2 py-1 rounded-lg border transition-opacity hover:opacity-70"
                     style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text-2)' }}
                   >
-                    {item.nom} — {formatFCFA(item.prix)}
+                    {item.nom} — {item.prix_libelle || formatFCFA(item.prix)}
                   </button>
                 ))}
               </div>
@@ -443,7 +446,7 @@ export default function Restaurant() {
                         <h3 className="font-semibold truncate" style={{ color: 'var(--text)' }}>{item.nom}</h3>
                       </div>
                       <span className="text-lg font-bold ml-2 flex-shrink-0" style={{ color: 'var(--primary)' }}>
-                        {formatFCFA(item.prix)}
+                        {item.prix_libelle || formatFCFA(item.prix)}
                       </span>
                     </div>
                     {item.description && (
@@ -506,7 +509,7 @@ export default function Restaurant() {
                                   <h3 className="font-semibold truncate" style={{ color: 'var(--text)' }}>{item.nom}</h3>
                                 </div>
                                 <span className="text-lg font-bold ml-2 flex-shrink-0" style={{ color: 'var(--primary)' }}>
-                                  {formatFCFA(item.prix)}
+                                  {item.prix_libelle || formatFCFA(item.prix)}
                                 </span>
                               </div>
                               {item.description && (

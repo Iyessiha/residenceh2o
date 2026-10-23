@@ -5,13 +5,13 @@ import { ShieldCheck, Award, KeyRound } from 'lucide-react'
 
 export const metadata = {
   title: 'À Propos | Les Résidences H₂O',
-  description: "Les Résidences H2O : duplexes avec piscine privée à Modeste Beach, Grand-Bassam — 10 min de la plage, 30 min de l'aéroport et d'Abidjan."
+  description: "Les Résidences H2O : villas duplex avec piscine privée à Villa Poton, ancienne route de Bassam, au lac — 10 min de la plage, 30 min de l'aéroport et d'Abidjan."
 }
 
 // Mêmes engagements que le bloc « HostBadge » de la landing.
 const values = [
-  { icon: ShieldCheck, title: 'Établissement vérifié', desc: 'Résidence privée sécurisée 24h/24 avec gardiennage et parking.' },
-  { icon: Award, title: 'Standing 5 étoiles', desc: 'Une piscine privée pour chaque duplex, sans vis-à-vis.' },
+  { icon: ShieldCheck, title: 'Établissement sécurisé', desc: 'Résidence surveillée par caméras, avec agent de sécurité et groupe électrogène.' },
+  { icon: Award, title: 'Une piscine par villa', desc: 'Chaque villa dispose de sa piscine privée.' },
   { icon: KeyRound, title: 'Accueil personnalise', desc: "Une conciergerie dediee et des horaires d'arrivee flexibles." },
 ]
 
@@ -27,7 +27,7 @@ export default function AboutPage() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-4xl sm:text-5xl font-bold mb-4">Notre Résidence</h1>
-            <p className="text-xl text-white/90">Des duplexes au bord de la lagune, à Modeste Beach</p>
+            <p className="text-xl text-white/90">Deux villas duplex au bord du lac, à Villa Poton</p>
           </div>
         </section>
 
@@ -40,10 +40,10 @@ export default function AboutPage() {
                   Les Résidences H₂O
                 </h2>
                 <p className="text-lg leading-relaxed mb-4" style={{ color: 'var(--text-2)' }}>
-                  Les Résidences H₂O proposent des duplexes meublés, chacun avec sa piscine privée, un pontoon ou une vue sur la lagune.
+                  Les Résidences H₂O proposent deux villas duplex entières, chacune avec sa piscine privée, son jardin, sa terrasse et son toit-terrasse.
                 </p>
                 <p className="text-lg leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  {"Nous sommes situés route de Grand-Bassam, à Modeste Beach — à 10 minutes de la plage, 30 minutes de l'aéroport et d'Abidjan."}
+                  {"Nous sommes situés à Villa Poton, ancienne route de Bassam, au bord du lac — à 10 minutes de la plage, 30 minutes de l'aéroport et d'Abidjan."}
                 </p>
               </div>
             </div>

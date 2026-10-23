@@ -4,21 +4,26 @@ import Link from 'next/link'
 
 export const metadata = {
   title: 'Services | Les Résidences H₂O',
-  description: 'Piscine privée, pontoon, restaurant, pergola événementielle et conciergerie : les services des Résidences H₂O à Modeste Beach.'
+  description: 'Wi-Fi 5G, TV, piscine privée, sécurité, ménage et équipements des villas des Résidences H₂O à Villa Poton, au bord du lac.'
 }
 
-// Uniquement les services présentés sur la landing.
+// Services et équipements de la fiche officielle (connectivité, sécurité, politique maison, ménage).
 const services = [
-  { icon: '🏊', title: 'Piscine privée', description: 'Chaque duplex a sa propre piscine privée, sans vis-à-vis.' },
-  { icon: '⚓', title: 'Pontoon', description: 'Un pontoon face à la lagune, pour les couchers de soleil.' },
-  { icon: '🛁', title: 'Jacuzzi chauffé', description: 'Disponible dans le Duplex Signature.' },
-  { icon: '🍽️', title: 'Restaurant', description: 'Un restaurant sur place. Horaires à demander via WhatsApp.' },
-  { icon: '🎪', title: 'Pergola evenementielle', description: "Jusqu'a 200 invites, avec service traiteur cle en main." },
-  { icon: '🥂', title: 'Privatisation', description: 'Privatisation totale possible sur réservation.' },
-  { icon: '🚗', title: 'Parking gratuit', description: 'Un parking gratuit pour tous nos hôtes.' },
-  { icon: '🛡️', title: 'Sécurité 24h/24', description: 'Résidence sécurisée avec gardiennage permanent.' },
-  { icon: '📶', title: 'Wi-Fi haut débit', description: 'Disponible dans les duplexes.' },
-  { icon: '🛎️', title: 'Conciergerie', description: "Une conciergerie dediee et des horaires d'arrivee flexibles." },
+  { icon: '📶', title: 'Wi-Fi 5G', description: 'Wi-Fi 5G dans les villas.' },
+  { icon: '📺', title: 'TV salon + chambre', description: 'Télévision dans le salon et dans chaque chambre.' },
+  { icon: '🔊', title: 'Enceinte Bluetooth', description: 'Enceinte Bluetooth dans la villa.' },
+  { icon: '🎛️', title: 'Télécommande', description: 'Télécommande pour le salon et pour la chambre.' },
+  { icon: '📹', title: 'Caméras de surveillance', description: 'Résidence surveillée par caméras.' },
+  { icon: '🛡️', title: 'Agent de sécurité', description: 'Un agent de sécurité sur place.' },
+  { icon: '⚡', title: 'Groupe électrogène', description: 'Groupe électrogène sur place.' },
+  { icon: '🍽️', title: 'Table à manger', description: 'Table à manger pour 8 personnes dans le salon.' },
+  { icon: '🏊', title: 'Piscine privée', description: "Jusqu'à 10 personnes dans la piscine privée de la villa." },
+  { icon: '🧹', title: 'Ménage', description: 'Ménage 2 fois par semaine pour les longs séjours.' },
+  { icon: '🏡', title: 'Ménage quotidien', description: 'Chaque jour : salon, cuisine, piscine et terrasse, inclus.' },
+  { icon: '👕', title: 'Buanderie & repassage', description: 'Buanderie externe et service repassage, disponibles.' },
+  { icon: '🐕', title: 'Chiens acceptés', description: 'Les chiens sont acceptés dans les villas.' },
+  { icon: '🏷️', title: 'Nom de la villa', description: 'Le nom de la villa peut être choisi par le client.' },
+  { icon: '⚠️', title: 'Piscine sans maître nageur', description: "La piscine privée n'est pas surveillée par un maître nageur." },
 ]
 
 export default function ServicesPage() {
@@ -33,7 +38,7 @@ export default function ServicesPage() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-4xl sm:text-5xl font-bold mb-4">Nos Services</h1>
-            <p className="text-xl text-white/90">Piscine privée, pontoon et conciergerie au bord de la lagune</p>
+            <p className="text-xl text-white/90">Piscine privée, ménage, sécurité et connectivité dans chaque villa</p>
           </div>
         </section>
 
@@ -63,14 +68,14 @@ export default function ServicesPage() {
                 Prêt à vivre l'expérience ?
               </h2>
               <p className="text-lg mb-8" style={{ color: 'var(--text-2)' }}>
-                Choisissez votre duplex et réservez votre séjour à Modeste Beach
+                Choisissez votre villa et réservez votre séjour à Villa Poton
               </p>
               <Link
                 href="/#contact"
                 className="inline-block px-8 py-3 text-white font-bold rounded-lg transition-all"
                 style={{ backgroundColor: 'var(--primary)' }}
               >
-                Réserver un duplex
+                Réserver une villa
               </Link>
             </div>
           </div>

@@ -86,13 +86,13 @@ export default async function Home() {
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 {
-                  text: "Avoir sa propre piscine face à la lagune sans aucun regard indiscret est un luxe rare, à 10 minutes de la plage et à 30 minutes d'Abidjan. Le pontoon au coucher du soleil est magique.",
+                  text: "Avoir sa propre piscine au bord du lac sans aucun regard indiscret est un luxe rare, à 10 minutes de la plage et à 30 minutes d'Abidjan. La vue sur le lac au coucher du soleil est magique.",
                   author: "Dr. Stéphane Kouassi",
                   role: "Week-end en amoureux",
                   date: "Séjour en Octobre 2026"
                 },
                 {
-                  text: "Nous avons célébré les 30 ans de ma femme sous la pergola. L'organisation, le traiteur et l'hébergement de notre famille dans les duplex étaient tout simplement parfaits.",
+                  text: "Nous avons célébré les 30 ans de ma femme dans l'espace événementiel. L'organisation et l'hébergement de notre famille dans les villas étaient tout simplement parfaits.",
                   author: "Aïcha & Patrick Diallo",
                   role: "Événement privé",
                   date: "Séjour en Septembre 2026"

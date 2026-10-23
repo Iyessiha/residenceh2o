@@ -7,8 +7,8 @@ import Footer from '@/components/Footer'
 import { MapPin, Users } from 'lucide-react'
 
 export const metadata = {
-  title: 'Nos Duplexes | Les Résidences H₂O',
-  description: 'Trois duplexes meublés avec piscine privée, pontoon ou vue lagune à Modeste Beach, route de Grand-Bassam.',
+  title: 'Nos Villas | Les Résidences H₂O',
+  description: 'Deux villas duplex entières avec piscine privée, jardin et toit-terrasse, à Villa Poton, ancienne route de Bassam, au lac.',
 }
 
 export const revalidate = 300
@@ -23,8 +23,8 @@ export default async function ResidencesPage() {
       {/* Hero */}
       <section className="gradient-sig text-white pt-32 pb-16 sm:pt-40 sm:pb-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Nos Duplexes</h1>
-          <p className="text-xl text-white/80">Trois duplexes meublés, chacun avec sa piscine privée</p>
+          <h1 className="text-4xl sm:text-5xl font-bold mb-4">Nos Villas</h1>
+          <p className="text-xl text-white/80">Deux villas duplex complètes, chacune avec sa piscine privée</p>
         </div>
       </section>
 
@@ -58,7 +58,7 @@ export default async function ResidencesPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <MapPin size={16} className="text-teal-600" />
-                      Modeste Beach
+                      Villa Poton
                     </div>
                   </div>
 
@@ -78,7 +78,7 @@ export default async function ResidencesPage() {
                     </div>
                     <span className="text-white font-bold px-4 py-2 rounded-lg transition group-hover:opacity-90"
                       style={{ backgroundColor: 'var(--primary)' }}>
-                      Voir le duplex
+                      Voir la villa
                     </span>
                   </div>
                 </div>
@@ -91,7 +91,7 @@ export default async function ResidencesPage() {
       {/* Comparison */}
       <section className="bg-gray-50 py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Comparaison des duplexes</h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Comparaison des villas</h2>
 
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -107,7 +107,7 @@ export default async function ResidencesPage() {
               </thead>
               <tbody>
                 <tr className="border-b border-gray-200 bg-white">
-                  <td className="py-4 px-4 font-semibold text-gray-700">Prix par nuit</td>
+                  <td className="py-4 px-4 font-semibold text-gray-700">Nuit complète 24/24</td>
                   {residences.map(r => (
                     <td key={r.slug} className="text-center py-4 px-4 font-bold" style={{ color: 'var(--h2o-lagune)' }}>
                       {formatFCFA(r.prix)}
@@ -115,6 +115,14 @@ export default async function ResidencesPage() {
                   ))}
                 </tr>
                 <tr className="border-b border-gray-200 bg-gray-50">
+                  <td className="py-4 px-4 font-semibold text-gray-700">Matinée</td>
+                  {residences.map(r => (
+                    <td key={r.slug} className="text-center py-4 px-4 text-gray-600">
+                      {r.prixJournee ? formatFCFA(r.prixJournee) : '—'}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-b border-gray-200 bg-white">
                   <td className="py-4 px-4 font-semibold text-gray-700">Capacité</td>
                   {residences.map(r => (
                     <td key={r.slug} className="text-center py-4 px-4 text-gray-600">
@@ -122,11 +130,11 @@ export default async function ResidencesPage() {
                     </td>
                   ))}
                 </tr>
-                <tr className="border-b border-gray-200 bg-white">
-                  <td className="py-4 px-4 font-semibold text-gray-700">Surface</td>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <td className="py-4 px-4 font-semibold text-gray-700">Chambres</td>
                   {residences.map(r => (
                     <td key={r.slug} className="text-center py-4 px-4 text-gray-600">
-                      {r.surface}
+                      {r.chambres}
                     </td>
                   ))}
                 </tr>
@@ -139,10 +147,10 @@ export default async function ResidencesPage() {
                   ))}
                 </tr>
                 <tr className="border-b border-gray-200 bg-white">
-                  <td className="py-4 px-4 font-semibold text-gray-700">Pontoon</td>
+                  <td className="py-4 px-4 font-semibold text-gray-700">Toit-terrasse</td>
                   {residences.map(r => (
                     <td key={r.slug} className="text-center py-4 px-4">
-                      {r.features.some(f => f.includes('Pontoon')) ? '✓' : '—'}
+                      {r.features.some(f => f.includes('Toit-terrasse')) ? '✓' : '—'}
                     </td>
                   ))}
                 </tr>

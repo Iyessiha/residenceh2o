@@ -114,7 +114,7 @@ export default function Rapports() {
               <div className="space-y-3">
                 {[
                   { label: 'Séjours duplexes', value: data.revenuSejour, color: 'bg-teal-500' },
-                  { label: 'Événements / Pergola', value: data.revenuEvenement, color: 'bg-purple-500' },
+                  { label: 'Événements', value: data.revenuEvenement, color: 'bg-purple-500' },
                   { label: 'Autres', value: data.revenuTotal - data.revenuSejour - data.revenuEvenement, color: 'bg-gray-300' },
                 ].map(item => {
                   const pct = data.revenuTotal ? Math.round((item.value / data.revenuTotal) * 100) : 0

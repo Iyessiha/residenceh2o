@@ -7,7 +7,7 @@ export const revalidate = 300
 
 export const metadata = {
   title: 'Galerie Photos | Les Résidences H₂O',
-  description: 'Découvrez les Résidences H₂O en images : duplexes, piscines privées, pontoon et pergola à Modeste Beach.',
+  description: 'Découvrez les Résidences H₂O en images : villas, piscines privées et espace événementiel à Villa Poton.',
 }
 
 export default async function GalleryPage() {
@@ -24,7 +24,7 @@ export default async function GalleryPage() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-4xl sm:text-5xl font-bold mb-4">Galerie Photos</h1>
-            <p className="text-xl text-white/90">Découvrez les duplexes, les piscines privées et le pontoon des Résidences H₂O</p>
+            <p className="text-xl text-white/90">Découvrez les villas, les piscines privées et le cadre au bord du lac des Résidences H₂O</p>
           </div>
         </section>
 
@@ -42,7 +42,7 @@ export default async function GalleryPage() {
               Prêt à venir ?
             </h2>
             <p className="text-lg mb-8" style={{ color: 'var(--text-2)' }}>
-              Choisissez votre duplex et réservez votre séjour à Modeste Beach
+              Choisissez votre villa et réservez votre séjour à Villa Poton
             </p>
             <a
               href="/#contact"
