@@ -22,7 +22,7 @@ export default function PolitiqueConfidentialitePage() {
           <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-10">
 
             <Article titre="1. Responsable du traitement">
-              <p>Les Résidences H₂O, Route de Grand-Bassam, Modeste Beach, Grand-Bassam, Côte d'Ivoire — contact@residencesh2o.com</p>
+              <p>Les Résidences H₂O, Villa Poton, ancienne route de Bassam, au lac, Côte d'Ivoire — contact@residencesh2o.com</p>
             </Article>
 
             <Article titre="2. Données collectées">

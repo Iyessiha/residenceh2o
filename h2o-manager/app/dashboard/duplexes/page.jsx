@@ -5,7 +5,7 @@ import { DUPLEX_STATUT_COLORS, formatFCFA } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
 
 const STATUT_LABELS = { disponible: 'Disponible', occupe: 'Occupé', maintenance: 'Maintenance' }
-const EMPTY = { nom: '', code: '', capacite: 2, chambres: 5, surface_m2: '', description: '', tagline: '', badge: '', features: '', tarif_nuit: '', statut: 'disponible' }
+const EMPTY = { nom: '', code: '', capacite: 2, chambres: 5, surface_m2: '', description: '', tagline: '', badge: '', features: '', tarif_nuit: '', tarif_journee: '', statut: 'disponible' }
 
 export default function Duplexes() {
   const supabase = createClient()
@@ -47,6 +47,7 @@ export default function Duplexes() {
       badge:       d.badge       || '',
       features:    (d.features || []).join('\n'),
       tarif_nuit:  d.tarif_nuit  ?? '',
+      tarif_journee: d.tarif_journee ?? '',
       statut:      d.statut      || 'disponible',
     })
     setShowForm(true)
@@ -59,6 +60,7 @@ export default function Duplexes() {
       capacite:   parseInt(form.capacite)   || 2,
       chambres:   parseInt(form.chambres)   || 5,
       tarif_nuit: form.tarif_nuit ? parseInt(form.tarif_nuit) : null,
+      tarif_journee: form.tarif_journee ? parseInt(form.tarif_journee) : null,
       surface_m2: form.surface_m2 ? parseInt(form.surface_m2) : null,
       features:   form.features.split('\n').map(f => f.trim()).filter(Boolean),
       updated_at: new Date().toISOString(),
@@ -173,7 +175,7 @@ export default function Duplexes() {
                 </div>
                 <div>
                   <label className="label">Nom *</label>
-                  <input className="input" value={form.nom} onChange={e => setForm(p => ({...p, nom: e.target.value}))} placeholder="Duplex Lac" />
+                  <input className="input" value={form.nom} onChange={e => setForm(p => ({...p, nom: e.target.value}))} placeholder="Villa 1" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -191,8 +193,12 @@ export default function Duplexes() {
                 </div>
               </div>
               <div>
-                <label className="label">Tarif / nuit (FCFA)</label>
-                <input className="input" type="number" value={form.tarif_nuit} onChange={e => setForm(p => ({...p, tarif_nuit: e.target.value}))} placeholder="120000" />
+                <label className="label">Tarif nuit 24/24 (FCFA)</label>
+                <input className="input" type="number" value={form.tarif_nuit} onChange={e => setForm(p => ({...p, tarif_nuit: e.target.value}))} placeholder="350000" />
+              </div>
+              <div>
+                <label className="label">Tarif matinée (FCFA)</label>
+                <input className="input" type="number" value={form.tarif_journee} onChange={e => setForm(p => ({...p, tarif_journee: e.target.value}))} placeholder="250000" />
               </div>
               <div>
                 <label className="label">Description</label>

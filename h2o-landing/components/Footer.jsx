@@ -11,8 +11,9 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-1">
             <p className="font-serif text-white text-lg font-bold mb-2">Les Résidences H₂O</p>
             <p className="text-sm leading-relaxed">
-              Route de Grand-Bassam<br />
-              Modeste Beach, Côte d'Ivoire
+              Villa Poton<br />
+              Ancienne route de Bassam, au lac<br />
+              Côte d'Ivoire
             </p>
             <p className="text-sm mt-3">
               À 10 min de la plage · 30 min de l'aéroport et d'Abidjan
@@ -26,12 +27,12 @@ export default function Footer() {
               <a href="tel:+2250749194952" className="hover:text-white transition-colors">+225 07 49 19 49 52</a>
               <a href="mailto:contact@residencesh2o.com" className="hover:text-white transition-colors">contact@residencesh2o.com</a>
               <a
-                href="https://wa.me/2250749194952"
+                href="https://wa.me/2250705259234"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-white transition-colors"
               >
-                WhatsApp
+                WhatsApp · 07 05 25 92 34
               </a>
             </div>
           </div>
@@ -40,8 +41,9 @@ export default function Footer() {
           <div>
             <p className="text-white text-sm font-semibold mb-3">Navigation</p>
             <div className="flex flex-col gap-1.5 text-sm">
-              <Link href="/residences" className="hover:text-white transition-colors">Duplexes</Link>
+              <Link href="/residences" className="hover:text-white transition-colors">Villas</Link>
               <Link href="/#chambres" className="hover:text-white transition-colors">Chambres</Link>
+              <Link href="/restaurant" className="hover:text-white transition-colors">Restaurant & bar</Link>
               <Link href="/services" className="hover:text-white transition-colors">Services</Link>
               <Link href="/#evenements" className="hover:text-white transition-colors">Événements</Link>
               <Link href="/gallery" className="hover:text-white transition-colors">Galerie</Link>

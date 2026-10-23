@@ -93,7 +93,7 @@ export default function Contact({ duplexes, chambres = [] }) {
 
             <div className="space-y-4">
               <a
-                href="https://wa.me/2250749194952?text=Bonjour%2C%20je%20souhaite%20réserver%20un%20duplex%20aux%20Résidences%20H2O"
+                href="https://wa.me/2250705259234?text=Bonjour%2C%20je%20souhaite%20réserver%20un%20duplex%20aux%20Résidences%20H2O"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold transition-colors"
@@ -104,12 +104,12 @@ export default function Contact({ duplexes, chambres = [] }) {
 
               <div className="bg-white rounded-xl p-5 border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Téléphone</p>
-                <p className="font-semibold text-teal-900">+225 0749194952</p>
+                <p className="font-semibold text-teal-900">+225 07 49 19 49 52</p>
               </div>
 
               <div className="bg-white rounded-xl p-5 border border-gray-100">
                 <p className="text-sm text-gray-500 mb-1">Localisation</p>
-                <p className="font-semibold text-teal-900">Route de Grand-Bassam, Modeste Beach</p>
+                <p className="font-semibold text-teal-900">Villa Poton — Ancienne route de Bassam, au lac</p>
                 <p className="text-sm text-gray-500">{"À 10 min de la plage · 30 min de l'aéroport et d'Abidjan"}</p>
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function Contact({ duplexes, chambres = [] }) {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 sm:py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
                     <option value="sejour">Séjour en duplex</option>
                     <option value="chambre">Chambre à la nuit</option>
-                    <option value="evenement">Événement / Pergola</option>
+                    <option value="evenement">Événement / espace événementiel</option>
                     <option value="renseignement">Simple renseignement</option>
                   </select>
                 </div>
@@ -210,7 +210,7 @@ export default function Contact({ duplexes, chambres = [] }) {
                         <option value="">— Pas de préférence —</option>
                         {chambres.filter(c => c.statut !== 'occupee').map((c, i) => (
                           <option key={i} value={c.nom}>
-                            {c.type === 'vip' ? '★ ' : ''}{c.nom}{c.tarif_nuit ? ` — ${new Intl.NumberFormat('fr-FR').format(c.tarif_nuit)} FCFA/nuit` : ''}
+                            {c.type === 'vvip' || c.type === 'vip' ? '★ ' : ''}{c.nom}{c.tarif_nuit ? ` — ${new Intl.NumberFormat('fr-FR').format(c.tarif_nuit)} FCFA/nuit` : ''}
                           </option>
                         ))}
                       </select>

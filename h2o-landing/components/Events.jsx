@@ -27,15 +27,15 @@ export default function Events() {
             </span>
 
             <h2 className="font-serif text-3xl sm:text-5xl font-bold tracking-tight text-white mb-6 leading-tight">
-              La Pergola & le Pontoon : <br />
+              Un espace événementiel : <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C8E6E5] to-[#F5D9A8]">
                 un décor féerique sur l'eau
               </span>
             </h2>
 
             <p className="text-white/80 text-base sm:text-lg mb-8 leading-relaxed">
-              Donnez une dimension inoubliable à vos célébrations. Notre espace événementiel modulable accueille jusqu'à 
-              <strong className="text-white font-semibold"> 200 invités</strong> dans un cadre lagunaire majestueux, avec pontoon direct et service traiteur clé en main.
+              Donnez une dimension inoubliable à vos célébrations. Notre espace événementiel accueille jusqu'à
+              <strong className="text-white font-semibold"> 200 invités</strong> au bord du lac, à Villa Poton, avec pontoon direct et service traiteur clé en main.
             </p>
 
             <div className="space-y-3 mb-10">
@@ -60,7 +60,7 @@ export default function Events() {
               </Link>
 
               <a
-                href="https://wa.me/2250749194952?text=Bonjour%2C%20je%20souhaite%20un%20devis%20pour%20un%20%C3%A9v%C3%A9nement%20aux%20R%C3%A9sidences%20H2O"
+                href="https://wa.me/2250705259234?text=Bonjour%2C%20je%20souhaite%20un%20devis%20pour%20un%20%C3%A9v%C3%A9nement%20aux%20R%C3%A9sidences%20H2O"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/15 text-white/90 text-sm font-medium px-5 py-3.5 rounded-xl border border-white/15 transition-all"
@@ -75,31 +75,31 @@ export default function Events() {
             <div className="relative h-64 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group">
               <Image
                 src="/images/gallery/IMG_2870.jpg"
-                alt="Pergola H2O au bord de l'eau"
+                alt="Espace événementiel H2O au bord du lac"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
-                <span className="text-xs font-semibold text-white/90">Espace Pergola jusqu'à 200 personnes</span>
+                <span className="text-xs font-semibold text-white/90">Espace événementiel jusqu'à 200 personnes</span>
               </div>
             </div>
 
             <div className="relative h-64 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group mt-6">
               <Image
                 src="/images/gallery/IMG_2877.jpg"
-                alt="Pontoon et ambiance lounge"
+                alt="Piscine privée et terrasse"
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
-                <span className="text-xs font-semibold text-white/90">Pontoon privé & Coucher de soleil</span>
+                <span className="text-xs font-semibold text-white/90">Pontoon privé & coucher de soleil</span>
               </div>
             </div>
 
             <div className="col-span-2 p-6 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-white">Privatisation totale possible</p>
-                <p className="text-xs text-white/60">Hébergement des invités inclus dans nos duplexes</p>
+                <p className="text-xs text-white/60">Hébergement des invités dans nos villas et chambres</p>
               </div>
               <span className="px-3 py-1.5 rounded-full bg-[#D98A3A]/20 border border-[#D98A3A]/30 text-[#F5D9A8] text-xs font-semibold">
                 Sur réservation

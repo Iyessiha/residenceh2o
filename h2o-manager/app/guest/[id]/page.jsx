@@ -607,7 +607,7 @@ export default function GuestPortal({ params }) {
 
           <div className="pt-2 pb-4 text-center">
             <p className="text-xs text-gray-400">
-              {duplex.code} · Résidences H₂O, Modeste Beach
+              {duplex.code} · Résidences H₂O, Villa Poton
             </p>
           </div>
         </div>

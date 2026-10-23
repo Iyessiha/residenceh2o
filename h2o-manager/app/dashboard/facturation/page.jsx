@@ -239,7 +239,7 @@ export default function Facturation() {
                 <label className="label">Type de prestation</label>
                 <select className="input" value={form.type_prestation} onChange={e => setForm(p => ({...p, type_prestation: e.target.value}))}>
                   <option value="sejour">Séjour duplex</option>
-                  <option value="evenement">Événement / Pergola</option>
+                  <option value="evenement">Événement / espace événementiel</option>
                   <option value="restauration">Restauration</option>
                   <option value="autre">Autre</option>
                 </select>

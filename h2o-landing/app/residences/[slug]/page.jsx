@@ -15,7 +15,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const residence = (await getDuplexes()).find(r => r.slug === params.slug)
-  if (!residence) return { title: 'Duplex non trouvé' }
+  if (!residence) return { title: 'Villa non trouvée' }
 
   return {
     title: `${residence.nom} | Les Résidences H₂O`,
@@ -31,9 +31,9 @@ export default async function ResidencePage({ params }) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Duplex non trouvé</h1>
+          <h1 className="text-2xl font-bold mb-4">Villa non trouvée</h1>
           <Link href="/residences" className="text-teal-600 hover:text-teal-700">
-            Retour aux duplexes
+            Retour aux villas
           </Link>
         </div>
       </main>
@@ -76,22 +76,27 @@ export default async function ResidencePage({ params }) {
               </div>
               <div className="flex items-center gap-2">
                 <MapPin size={18} />
-                Modeste Beach, Grand-Bassam
+                Villa Poton, ancienne route de Bassam
               </div>
-              <div className="flex items-center gap-2">
-                Surface : {residence.surface}
-              </div>
+              {residence.surface && (
+                <div className="flex items-center gap-2">
+                  Surface : {residence.surface}
+                </div>
+              )}
             </div>
           </div>
           <div className="md:text-right">
             <div className="text-3xl font-bold mb-1" style={{ color: 'var(--h2o-lagune)' }}>{formatFCFA(residence.prix)}</div>
-            <p className="text-gray-600 text-sm mb-4">par nuit · minimum 2 nuits</p>
+            <p className="text-gray-600 text-sm mb-1">par nuit complète 24/24 · petit déjeuner inclus</p>
+            {residence.prixJournee && (
+              <p className="text-gray-600 text-sm mb-4">Matinée : {formatFCFA(residence.prixJournee)}</p>
+            )}
             <Link
               href="/#contact"
               className="inline-block px-8 py-3 text-white font-bold rounded-lg transition hover:opacity-90"
               style={{ backgroundColor: 'var(--primary)' }}
             >
-              Réserver ce duplex
+              Réserver cette villa
             </Link>
           </div>
         </div>
@@ -140,7 +145,7 @@ export default async function ResidencePage({ params }) {
 
         {/* Other residences */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Nos autres duplexes</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Nos autres villas</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {residences
               .filter(r => r.slug !== residence.slug)

@@ -3,8 +3,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatFCFA } from '@/lib/utils'
 
-const TYPE_LABELS  = { standard: 'Standard', vip: 'VIP' }
-const TYPE_COLORS  = { standard: 'bg-blue-100 text-blue-700', vip: 'bg-amber-100 text-amber-700' }
+const TYPE_LABELS  = { vvip: 'VVIP', vip: 'VIP', standard: 'Standard', non_autonome: 'Non autonome' }
+const TYPE_COLORS  = { vvip: 'bg-amber-200 text-amber-800', vip: 'bg-amber-100 text-amber-700', standard: 'bg-blue-100 text-blue-700', non_autonome: 'bg-gray-100 text-gray-600' }
 const STATUT_LABELS = { disponible: 'Disponible', occupee: 'Occupée', maintenance: 'Maintenance' }
 const STATUT_COLORS = {
   disponible:  'bg-green-100 text-green-700',
@@ -13,7 +13,7 @@ const STATUT_COLORS = {
 }
 
 const EMPTY = {
-  duplex_id: '', nom: '', code: '', type: 'standard', tarif_nuit: 60000,
+  duplex_id: '', nom: '', code: '', type: 'standard', tarif_nuit: 70000, tarif_journee: 50000,
   statut: 'disponible', capacite: 1, description: '', features: '',
 }
 
@@ -54,7 +54,8 @@ export default function Chambres() {
       nom:         c.nom         || '',
       code:        c.code        || '',
       type:        c.type        || 'standard',
-      tarif_nuit:  c.tarif_nuit  ?? 60000,
+      tarif_nuit:  c.tarif_nuit  ?? 70000,
+      tarif_journee: c.tarif_journee ?? 0,
       statut:      c.statut      || 'disponible',
       capacite:    c.capacite    ?? 1,
       description: c.description || '',
@@ -72,7 +73,8 @@ export default function Chambres() {
       nom:         form.nom,
       code:        form.code || null,
       type:        form.type,
-      tarif_nuit:  parseInt(form.tarif_nuit) || 60000,
+      tarif_nuit:  parseInt(form.tarif_nuit) || 70000,
+      tarif_journee: parseInt(form.tarif_journee) || 0,
       statut:      form.statut,
       capacite:    parseInt(form.capacite) || 1,
       description: form.description || null,
@@ -117,7 +119,7 @@ export default function Chambres() {
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Chambres</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-3)' }}>
-            Chambres standard et VIP dans les duplexes
+            Chambres VVIP, VIP, standard et non autonomes dans les villas
           </p>
         </div>
         <button onClick={openCreate} className="btn-primary">+ Ajouter une chambre</button>
@@ -157,7 +159,7 @@ export default function Chambres() {
         </select>
 
         {/* Type */}
-        {['tous', 'standard', 'vip'].map(t => (
+        {['tous', 'vvip', 'vip', 'standard', 'non_autonome'].map(t => (
           <button key={t} onClick={() => setFilterType(t)}
             className={`px-3 py-1.5 rounded-full text-xs font-semibold ${filterType === t ? 'text-white' : 'border hover:opacity-80'}`}
             style={filterType === t ? { backgroundColor: 'var(--primary)' } : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
@@ -293,8 +295,10 @@ export default function Chambres() {
                 <div>
                   <label className="label">Type</label>
                   <select className="input" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                    <option value="standard">Standard</option>
+                    <option value="vvip">VVIP</option>
                     <option value="vip">VIP</option>
+                    <option value="standard">Standard</option>
+                    <option value="non_autonome">Non autonome</option>
                   </select>
                 </div>
                 <div>
@@ -310,6 +314,10 @@ export default function Chambres() {
                 <div>
                   <label className="label">Tarif / nuit (FCFA)</label>
                   <input className="input" type="number" min="0" value={form.tarif_nuit} onChange={e => setForm(p => ({ ...p, tarif_nuit: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="label">Tarif journée (FCFA)</label>
+                  <input className="input" type="number" min="0" value={form.tarif_journee} onChange={e => setForm(p => ({ ...p, tarif_journee: e.target.value }))} />
                 </div>
                 <div>
                   <label className="label">Capacité (pers.)</label>

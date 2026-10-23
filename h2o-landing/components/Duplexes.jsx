@@ -13,10 +13,10 @@ export default function Duplexes({ duplexes }) {
             Hébergements d'exception
           </span>
           <h2 className="font-serif text-3xl sm:text-5xl font-bold text-slate-900 mb-4 tracking-tight">
-            Chaque duplex a sa propre piscine privée
+            Chaque villa a sa propre piscine privée
           </h2>
           <p className="text-slate-600 text-base sm:text-lg">
-            Aucun voisin de bassin, aucun compromis. Une intimité totale conçue pour les couples, familles et séjours de prestige.
+            Deux villas duplex entières, au bord du lac : jardin, terrasse et toit-terrasse, cuisine équipée et parking pour deux voitures.
           </p>
           <Link
             href="#chambres"
@@ -60,7 +60,7 @@ export default function Duplexes({ duplexes }) {
               <div className="p-6 flex-1 flex flex-col justify-between">
                 <div>
                   <h3 className="font-serif text-2xl font-bold text-slate-900 group-hover:text-teal-600 transition-colors mb-1.5">
-                    {d.name}
+                    {d.nom}
                   </h3>
                   <p className="text-slate-500 text-sm mb-5 leading-relaxed">{d.tagline}</p>
 
@@ -69,10 +69,12 @@ export default function Duplexes({ duplexes }) {
                       <Users className="w-3.5 h-3.5 text-teal-600" />
                       {d.capacite}
                     </span>
-                    <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
-                      <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
-                      {d.surface}
-                    </span>
+                    {d.surface && (
+                      <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
+                        <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
+                        {d.surface}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60">
                       <BedDouble className="w-3.5 h-3.5 text-teal-600" />
                       {d.chambres} chambres
@@ -95,11 +97,16 @@ export default function Duplexes({ duplexes }) {
                 {/* Footer Pricing & CTA */}
                 <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
                   <div>
-                    <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold">À partir de</span>
+                    <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Nuit complète 24/24</span>
                     <div className="flex items-baseline gap-1">
                       <span className="text-lg sm:text-xl font-bold text-slate-900">{formatFCFA(d.prix)}</span>
-                      <span className="text-xs text-slate-500">{d.period}</span>
+                      <span className="text-xs text-slate-500">/ nuit</span>
                     </div>
+                    {d.prixJournee && (
+                      <span className="block text-xs text-slate-500 mt-0.5">
+                        Matinée : {formatFCFA(d.prixJournee)}
+                      </span>
+                    )}
                   </div>
 
                   <Link

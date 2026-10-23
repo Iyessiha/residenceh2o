@@ -1,11 +1,11 @@
 import Link from 'next/link'
 
 const AMENITIES = [
-  { icon: '🏠', label: 'Duplex privé' },
+  { icon: '🏠', label: 'Villa entière' },
   { icon: '🛏️', label: 'Chambre seule' },
   { icon: '🏊', label: 'Piscine privée' },
   { icon: '🍽', label: 'Restaurant' },
-  { icon: '🎪', label: 'Pergola events' },
+  { icon: '🎪', label: 'Espace événementiel' },
 ]
 
 export default function Hero() {
@@ -34,27 +34,27 @@ export default function Hero() {
         {/* Location badge */}
         <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-white/80 text-sm mb-8">
           <span>✦</span>
-          <span>Modeste Beach · Route de Grand-Bassam</span>
+          <span>Villa Poton · Ancienne route de Bassam, au lac</span>
         </div>
 
         {/* Headline */}
         <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
-          Duplex entier ou chambre seule —<br />
-          <span className="text-teal-400">le luxe lagunaire à votre mesure</span>
+          Villa entière ou chambre seule —<br />
+          <span className="text-teal-400">le luxe au bord du lac à votre mesure</span>
         </h1>
 
         <p className="text-white/70 text-lg sm:text-xl max-w-2xl mx-auto mb-4">
-          Louez un duplex complet avec piscine privée et pontoon, ou réservez une chambre à la nuit dès <span className="text-white font-semibold">60 000 FCFA</span>.
+          Louez une villa duplex complète avec piscine privée, ou réservez une chambre à la nuit dès <span className="text-white font-semibold">40 000 FCFA</span>.
           À 10 min de la plage · 30 min de l'aéroport et d'Abidjan.
         </p>
 
         {/* Option pills */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
           <span className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-white/80 text-sm">
-            🏠 Duplex entier — piscine privée incluse
+            🏠 Villa entière — 350 000 FCFA la nuit
           </span>
           <span className="inline-flex items-center gap-1.5 bg-amber-500/20 backdrop-blur-sm border border-amber-400/30 rounded-full px-4 py-1.5 text-amber-200 text-sm font-medium">
-            🛏️ Chambre à la nuit — dès 60 000 FCFA
+            🛏️ Chambre à la nuit — dès 40 000 FCFA
           </span>
         </div>
 
@@ -80,10 +80,9 @@ export default function Hero() {
 
         {/* SEO keywords — invisibles visuellement, indexés par les moteurs */}
         <p className="sr-only">
-          hôtel Modeste Beach · resort Grand-Bassam · duplex piscine Côte d'Ivoire ·
-          chambre à louer Grand-Bassam · chambre hôtel Bassam · location chambre nuit Abidjan ·
-          résidence meublée Bassam · villa piscine privée Abidjan · location vacances lagune ·
-          salle mariage Grand-Bassam · chambre VIP Côte d'Ivoire
+          villa Poton · villa piscine privée Côte d'Ivoire · duplex piscine privée ·
+          chambre à louer à la nuit · chambre VIP · chambre VVIP · location villa Abidjan ·
+          location vacances au bord du lac · espace événementiel · restaurant au bord du lac
         </p>
       </div>
 

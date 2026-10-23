@@ -4,12 +4,12 @@ const BADGES = [
   {
     icon: ShieldCheck,
     label: 'Etablissement verifie',
-    desc: 'Residence privee securisee 24h/24 avec gardiennage et parking',
+    desc: 'Residence privee securisee 24h/24 avec caméras, agent de sécurité et groupe électrogène',
   },
   {
     icon: Award,
-    label: 'Duplex ou chambre seule',
-    desc: "Louez le duplex entier avec piscine privee, ou une chambre a la nuit des 60 000 FCFA",
+    label: 'Villa ou chambre seule',
+    desc: "Louez la villa duplex entière avec piscine privée, ou une chambre à la nuit dès 40 000 FCFA",
   },
   {
     icon: KeyRound,

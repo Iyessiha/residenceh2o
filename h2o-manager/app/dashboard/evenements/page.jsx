@@ -49,7 +49,7 @@ export default function Evenements() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Événements</h1>
-          <p className="text-gray-500 text-sm">Pergola & Espaces — Mariages, Anniversaires, Séminaires...</p>
+          <p className="text-gray-500 text-sm">Espace événementiel — Mariages, Anniversaires, Séminaires...</p>
         </div>
         <button onClick={() => { setForm(EMPTY); setShowForm(true) }} className="btn-primary">+ Nouvel événement</button>
       </div>
@@ -208,7 +208,7 @@ export default function Evenements() {
                 </div>
                 <div><label className="label">Espace</label>
                   <select className="input" value={form.espace} onChange={e => setForm(p => ({...p, espace: e.target.value}))}>
-                    <option value="pergola">Pergola</option>
+                    <option value="pergola">Espace événementiel</option>
                     <option value="jardins">Jardins</option>
                     <option value="full_site">Site complet</option>
                   </select>

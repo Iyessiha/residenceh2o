@@ -47,7 +47,7 @@ export async function getPhotos() {
 export async function getChambres() {
   const rows = await lire(
     'chambres',
-    'select=nom,duplex_nom,type,tarif_nuit,capacite,statut,description,features&order=type.asc,nom.asc'
+    'select=nom,duplex_nom,type,tarif_nuit,tarif_journee,capacite,statut,description,features&order=type.asc,nom.asc'
   )
   const source = rows && rows.length ? rows : CHAMBRES_FALLBACK
   return source.filter((c) => c.statut !== 'maintenance')
@@ -56,7 +56,7 @@ export async function getChambres() {
 // Duplex avec prix, contenu et photos (dans l'ordre du manager).
 export async function getDuplexes() {
   const [rows, photos] = await Promise.all([
-    lire('duplexes', 'select=code,nom,capacite,chambres,surface_m2,tarif_nuit,tagline,badge,features&order=code.asc'),
+    lire('duplexes', 'select=code,nom,capacite,chambres,surface_m2,tarif_nuit,tarif_journee,tagline,badge,features&statut=neq.maintenance&order=code.asc'),
     getPhotos(),
   ])
   const source = rows && rows.length ? rows : DUPLEX_FALLBACK
@@ -70,6 +70,7 @@ export async function getDuplexes() {
       nom: d.nom,
       tagline: d.tagline || '',
       prix: d.tarif_nuit,
+      prixJournee: d.tarif_journee || null,
       capacite: `Jusqu'à ${d.capacite} personnes`,
       chambres: d.chambres ?? 5,
       surface: d.surface_m2 ? `${d.surface_m2} m²` : '',
@@ -79,6 +80,16 @@ export async function getDuplexes() {
       images: photosDuplex.length ? photosDuplex : secours,
     }
   })
+}
+
+// Carte du restaurant, gérée dans le manager (table menu_restaurant).
+// Renvoie null si Supabase ne répond pas : la page restaurant reprend alors MENU_FALLBACK.
+export async function getMenu() {
+  const rows = await lire(
+    'menu_restaurant',
+    'select=id,nom,description,prix,prix_libelle,categorie,section,ordre&disponible=eq.true&order=ordre.asc,nom.asc'
+  )
+  return rows && rows.length ? rows : null
 }
 
 // Balises et pixels actifs, gérés par les administrateurs dans le manager.

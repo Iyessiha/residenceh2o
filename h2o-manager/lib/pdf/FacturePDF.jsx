@@ -132,8 +132,8 @@ export function FacturePDF({ facture, guestUrl }) {
         <View style={s.header}>
           <View>
             <Text style={s.logo}>Les Résidences H₂O</Text>
-            <Text style={s.logoSub}>Route de Grand-Bassam, Modeste Beach · Côte d'Ivoire</Text>
-            <Text style={s.logoSub}>contact@residencesh2o.com · +225 0749194952</Text>
+            <Text style={s.logoSub}>Villa Poton, ancienne route de Bassam, au lac · Côte d'Ivoire</Text>
+            <Text style={s.logoSub}>contact@residencesh2o.com · +225 07 49 19 49 52 · WhatsApp 07 05 25 92 34</Text>
             <View style={s.gradient} />
           </View>
           <View style={{ alignItems: 'flex-end' }}>
@@ -170,7 +170,7 @@ export function FacturePDF({ facture, guestUrl }) {
           <View style={s.infoBlock}>
             <Text style={s.infoLabel}>Émis par</Text>
             <Text style={s.infoValBold}>Les Résidences H₂O</Text>
-            <Text style={s.infoVal}>Modeste Beach, Grand-Bassam</Text>
+            <Text style={s.infoVal}>Villa Poton, ancienne route de Bassam</Text>
             <Text style={s.infoVal}>RCCM · N° IFU à compléter</Text>
           </View>
         </View>
@@ -228,7 +228,7 @@ export function FacturePDF({ facture, guestUrl }) {
         <View style={s.footer}>
           <View style={s.footerLine}>
             <Text style={s.footerTxt}>
-              Les Résidences H₂O — Route de Grand-Bassam, Modeste Beach, Côte d'Ivoire
+              Les Résidences H₂O — Villa Poton, ancienne route de Bassam, au lac, Côte d'Ivoire
             </Text>
             <Text style={s.footerTxt}>
               Cette facture a été générée automatiquement par H2O Manager · MonWe Infinity LLC
