@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Check, Users, ArrowRight, Star, Crown, BedDouble } from 'lucide-react'
 import { formatFCFA, EQUIPEMENTS_CHAMBRE } from '@/lib/residences'
 
@@ -108,6 +109,13 @@ export function ChambreCard({ chambre, variant }) {
         ? 'border-amber-200 bg-gradient-to-b from-amber-50/60 to-white shadow-amber-100 shadow-md'
         : 'border-slate-200/70 bg-white shadow-sm'
     }`}>
+
+      {/* Photo */}
+      {chambre.photos?.[0] && (
+        <div className="relative h-44 w-full bg-slate-100">
+          <Image src={chambre.photos[0]} alt={titre} fill className="object-cover" sizes="(max-width: 640px) 100vw, 33vw" />
+        </div>
+      )}
 
       {/* Top band */}
       <div className={`px-5 py-4 flex items-center justify-between ${

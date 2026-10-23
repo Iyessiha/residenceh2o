@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatFCFA } from '@/lib/utils'
+import PhotosEditeur from '@/components/PhotosEditeur'
 
 const TYPE_LABELS  = { vvip: 'VVIP', vip: 'VIP', standard: 'Standard', non_autonome: 'Non autonome' }
 const TYPE_COLORS  = { vvip: 'bg-amber-200 text-amber-800', vip: 'bg-amber-100 text-amber-700', standard: 'bg-blue-100 text-blue-700', non_autonome: 'bg-gray-100 text-gray-600' }
@@ -13,7 +14,7 @@ const STATUT_COLORS = {
 }
 
 const EMPTY = {
-  duplex_id: '', nom: '', code: '', type: 'standard', tarif_nuit: 70000, tarif_journee: 50000,
+  duplex_id: '', nom: '', code: '', type: 'standard', tarif_nuit: 70000, tarif_journee: 50000, photos: [],
   statut: 'disponible', capacite: 1, description: '', features: '',
 }
 
@@ -56,6 +57,7 @@ export default function Chambres() {
       type:        c.type        || 'standard',
       tarif_nuit:  c.tarif_nuit  ?? 70000,
       tarif_journee: c.tarif_journee ?? 0,
+      photos:      c.photos || [],
       statut:      c.statut      || 'disponible',
       capacite:    c.capacite    ?? 1,
       description: c.description || '',
@@ -326,6 +328,10 @@ export default function Chambres() {
               </div>
 
               {/* Description */}
+              <div>
+                <label className="label">Photos</label>
+                <PhotosEditeur table="chambres" id={editId} photos={form.photos || []} onChange={photos => setForm(p => ({...p, photos}))} />
+              </div>
               <div>
                 <label className="label">Description</label>
                 <textarea className="input" rows={2} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder="Vue piscine, lit king size…" />
