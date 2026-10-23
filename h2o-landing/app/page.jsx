@@ -1,6 +1,7 @@
 import Nav from '@/components/Nav'
 import Hero from '@/components/Hero'
 import HostBadge from '@/components/HostBadge'
+import Partenaires from '@/components/Partenaires'
 import Duplexes from '@/components/Duplexes'
 import Events from '@/components/Events'
 import FeaturedGallery from '@/components/FeaturedGallery'
@@ -22,6 +23,7 @@ export default async function Home() {
       <main className="bg-[#FAF8F5]">
         <Hero />
         <HostBadge />
+        <Partenaires />
         <Duplexes duplexes={duplexes} />
         <ChambresApercu chambres={chambres} />
         <Events />

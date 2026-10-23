@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
+import Partenaires from '@/components/Partenaires'
 import { MapPin, Users } from 'lucide-react'
 
 export const metadata = {
@@ -87,6 +88,8 @@ export default async function ResidencesPage() {
           ))}
         </div>
       </section>
+
+      <Partenaires />
 
       {/* Comparison */}
       <section className="bg-gray-50 py-16 sm:py-24">
