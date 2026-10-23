@@ -47,7 +47,7 @@ export async function getPhotos() {
 export async function getChambres() {
   const rows = await lire(
     'chambres',
-    'select=nom,duplex_nom,type,tarif_nuit,tarif_journee,capacite,statut,description,features&order=type.asc,nom.asc'
+    'select=nom,duplex_nom,type,tarif_nuit,tarif_journee,capacite,statut,description,features,photos&order=type.asc,nom.asc'
   )
   const source = rows && rows.length ? rows : CHAMBRES_FALLBACK
   return source.filter((c) => c.statut !== 'maintenance')
@@ -56,7 +56,7 @@ export async function getChambres() {
 // Duplex avec prix, contenu et photos (dans l'ordre du manager).
 export async function getDuplexes() {
   const [rows, photos] = await Promise.all([
-    lire('duplexes', 'select=code,nom,capacite,chambres,surface_m2,tarif_nuit,tarif_journee,tagline,badge,features&statut=neq.maintenance&order=code.asc'),
+    lire('duplexes', 'select=code,nom,capacite,chambres,surface_m2,tarif_nuit,tarif_journee,tagline,badge,features,photos&statut=neq.maintenance&order=code.asc'),
     getPhotos(),
   ])
   const source = rows && rows.length ? rows : DUPLEX_FALLBACK
@@ -77,7 +77,8 @@ export async function getDuplexes() {
       badge: d.badge || '',
       badgeClass: BADGE_CLASSES[d.badge] || 'bg-teal-500/90 text-white',
       features: d.features || [],
-      images: photosDuplex.length ? photosDuplex : secours,
+      // Photos choisies dans le manager en priorité, sinon la galerie, sinon les photos de secours
+      images: d.photos?.length ? d.photos : photosDuplex.length ? photosDuplex : secours,
     }
   })
 }

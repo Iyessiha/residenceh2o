@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { DUPLEX_STATUT_COLORS, formatFCFA } from '@/lib/utils'
 import { QRCodeSVG } from 'qrcode.react'
+import PhotosEditeur from '@/components/PhotosEditeur'
 
 const STATUT_LABELS = { disponible: 'Disponible', occupe: 'Occupé', maintenance: 'Maintenance' }
-const EMPTY = { nom: '', code: '', capacite: 2, chambres: 5, surface_m2: '', description: '', tagline: '', badge: '', features: '', tarif_nuit: '', tarif_journee: '', statut: 'disponible' }
+const EMPTY = { nom: '', code: '', capacite: 2, chambres: 5, surface_m2: '', description: '', tagline: '', badge: '', features: '', tarif_nuit: '', tarif_journee: '', photos: [], statut: 'disponible' }
 
 export default function Duplexes() {
   const supabase = createClient()
@@ -48,6 +49,7 @@ export default function Duplexes() {
       features:    (d.features || []).join('\n'),
       tarif_nuit:  d.tarif_nuit  ?? '',
       tarif_journee: d.tarif_journee ?? '',
+      photos:      d.photos || [],
       statut:      d.statut      || 'disponible',
     })
     setShowForm(true)
@@ -199,6 +201,10 @@ export default function Duplexes() {
               <div>
                 <label className="label">Tarif matinée (FCFA)</label>
                 <input className="input" type="number" value={form.tarif_journee} onChange={e => setForm(p => ({...p, tarif_journee: e.target.value}))} placeholder="250000" />
+              </div>
+              <div>
+                <label className="label">Photos</label>
+                <PhotosEditeur table="duplexes" id={editId} photos={form.photos || []} onChange={photos => setForm(p => ({...p, photos}))} />
               </div>
               <div>
                 <label className="label">Description</label>
