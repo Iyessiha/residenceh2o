@@ -209,12 +209,12 @@ export function FacturePDF({ facture, guestUrl, logo, entreprise }) {
         {/* ── Totaux ───────────────────────────────────────── */}
         <View style={s.totaux}>
           <View style={s.totRow}>
-            <Text style={s.totLabel}>Sous-total</Text>
+            <Text style={s.totLabel}>Total</Text>
             <Text style={s.totVal}>{fcfa(facture.montant_total)}</Text>
           </View>
           <View style={s.totRow}>
-            <Text style={s.totLabel}>Acompte / déjà payé</Text>
-            <Text style={[s.totVal, { color: C.success }]}>- {fcfa(facture.montant_paye)}</Text>
+            <Text style={s.totLabel}>Déjà réglé</Text>
+            <Text style={[s.totVal, { color: C.success }]}>{fcfa(facture.montant_paye || 0)}</Text>
           </View>
           <View style={s.totSolde}>
             <Text style={s.totBold}>

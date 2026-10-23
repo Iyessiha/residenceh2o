@@ -49,6 +49,12 @@ export default function Facturation() {
   }
 
   async function save() {
+    const total = parseInt(form.montant_total) || 0
+    const paye = parseInt(form.montant_paye) || 0
+    if (paye > total) {
+      setSaveError(`Le montant déjà payé (${formatFCFA(paye)}) dépasse le montant total (${formatFCFA(total)}). Vérifiez la saisie.`)
+      return
+    }
     setSaving(true)
     setSaveError('')
     let numero = form.numero
