@@ -10,28 +10,11 @@ import { NextResponse } from 'next/server'
  */
 export async function GET() {
   const supabase = createServiceClient()
-  const year = new Date().getFullYear()
-  const prefix = `FAC-${year}-`
-
-  const { data, error } = await supabase
-    .from('factures')
-    .select('numero')
-    .like('numero', `${prefix}%`)
-    .order('numero', { ascending: false })
-    .limit(1)
+  // Calcul fait dans la base (migration 20261027) : numéros uniques et qui se suivent
+  const { data, error } = await supabase.rpc('prochain_numero_facture')
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
-
-  let next = 1
-  if (data && data.length > 0) {
-    const last = data[0].numero // ex: FAC-2026-007
-    const parts = last.split('-')
-    const lastNum = parseInt(parts[parts.length - 1], 10)
-    if (!isNaN(lastNum)) next = lastNum + 1
-  }
-
-  const numero = `${prefix}${String(next).padStart(3, '0')}`
-  return NextResponse.json({ numero })
+  return NextResponse.json({ numero: data })
 }
