@@ -5,7 +5,8 @@ const nextConfig = {
   },
   // pdfkit charge ses polices standard dynamiquement — les inclure dans le bundle Vercel
   outputFileTracingIncludes: {
-    '/api/factures/*/pdf': [
+    // Route dynamique /api/factures/[id]/pdf : le glob couvre le segment [id]
+    '/api/factures/**': [
       './node_modules/pdfkit/js/standard-fonts/**/*',
       './node_modules/pdfkit/js/font/**/*',
     ],

@@ -6,7 +6,6 @@ import Events from '@/components/Events'
 import FeaturedGallery from '@/components/FeaturedGallery'
 import Contact from '@/components/Contact'
 import Footer from '@/components/Footer'
-import BookingWidget from '@/components/BookingWidget'
 import ChambresApercu from '@/components/ChambresApercu'
 import { Star, ArrowRight, Quote, Shield, Compass, Sparkles } from 'lucide-react'
 import Link from 'next/link'
@@ -20,7 +19,6 @@ export default async function Home() {
   return (
     <>
       <Nav />
-      <BookingWidget duplexes={duplexes} />
       <main className="bg-[#FAF8F5]">
         <Hero />
         <HostBadge />
