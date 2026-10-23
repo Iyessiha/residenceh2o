@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { FacturePDF } from '@/lib/pdf/FacturePDF'
 import React from 'react'
+import { readFile } from 'fs/promises'
+import path from 'path'
 // pdfkit charge ses polices standard par un require dynamique, que Vercel ne suit pas :
 // on les importe ici pour qu'elles soient incluses dans le bundle de la route.
 import 'pdfkit/standard-fonts/Helvetica'
@@ -20,8 +22,10 @@ export async function POST(req) {
     if (!facture || !facture.id) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
     }
+    // Logo lu dans public/ ; le fichier est inclus dans la route via next.config.mjs
+    const logo = await readFile(path.join(process.cwd(), 'public', 'icon-512.png')).catch(() => null)
     const buffer = await renderToBuffer(
-      React.createElement(FacturePDF, { facture, guestUrl: _guestUrl || null })
+      React.createElement(FacturePDF, { facture, guestUrl: _guestUrl || null, logo })
     )
     return new Response(buffer, {
       status: 200,

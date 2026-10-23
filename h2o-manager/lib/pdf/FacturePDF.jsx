@@ -3,7 +3,7 @@
  * Utilisé UNIQUEMENT côté serveur (API route) — ne jamais importer dans un Client Component.
  */
 import {
-  Document, Page, View, Text, StyleSheet, Svg, Rect,
+  Document, Page, View, Text, StyleSheet, Svg, Rect, Image,
 } from '@react-pdf/renderer'
 import qrcode from 'qrcode-generator'
 
@@ -115,7 +115,7 @@ const STATUT_COLORS = {
   impaye:    { border: '#E8513A', text: '#E8513A' },
 }
 
-export function FacturePDF({ facture, guestUrl }) {
+export function FacturePDF({ facture, guestUrl, logo }) {
   const sc = STATUT_COLORS[facture.statut] || STATUT_COLORS.brouillon
   const solde = (facture.montant_total || 0) - (facture.montant_paye || 0)
 
@@ -131,6 +131,7 @@ export function FacturePDF({ facture, guestUrl }) {
         {/* ── En-tête ─────────────────────────────────────── */}
         <View style={s.header}>
           <View>
+            {logo && <Image src={{ data: logo, format: 'png' }} style={{ width: 48, height: 48, marginBottom: 6 }} />}
             <Text style={s.logo}>Les Résidences H₂O</Text>
             <Text style={s.logoSub}>Villa Poton, ancienne route de Bassam, au lac · Côte d'Ivoire</Text>
             <Text style={s.logoSub}>contact@residencesh2o.com · +225 07 49 19 49 52 · WhatsApp 07 05 25 92 34</Text>
