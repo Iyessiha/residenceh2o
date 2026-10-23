@@ -9,6 +9,7 @@ const NAV = [
 
   { section: 'Hébergement' },
   { href: '/dashboard/reservations', icon: '📅', label: 'Réservations' },
+  { href: '/dashboard/calendrier',  icon: '🗓️', label: 'Calendrier' },
   { href: '/dashboard/duplexes',     icon: '🏠', label: 'Villas' },
   { href: '/dashboard/chambres',     icon: '🛏️', label: 'Chambres' },
   { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
