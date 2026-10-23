@@ -51,8 +51,14 @@ export default function Facturation() {
   async function save() {
     setSaving(true)
     setSaveError('')
+    let numero = form.numero
+    if (!numero) {
+      const res = await fetch('/api/factures/next-numero')
+      numero = (await res.json().catch(() => ({}))).numero || ''
+    }
     const payload = {
       ...form,
+      numero,
       montant_total: parseInt(form.montant_total) || 0,
       montant_paye:  parseInt(form.montant_paye)  || 0,
     }
@@ -76,10 +82,11 @@ export default function Facturation() {
     const guestUrl = facture.reservation_id
       ? `${window.location.origin}/guest/${facture.reservation_id}`
       : null
+    const { data: entreprise } = await supabase.from('entreprise').select('rccm, ifu, tva').eq('id', 1).maybeSingle()
     const res = await fetch(`/api/factures/${facture.id}/pdf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...facture, _guestUrl: guestUrl }),
+      body: JSON.stringify({ ...facture, _guestUrl: guestUrl, _entreprise: entreprise }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))

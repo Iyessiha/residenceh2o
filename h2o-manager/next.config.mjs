@@ -9,7 +9,7 @@ const nextConfig = {
     '/api/factures/**': [
       './node_modules/pdfkit/js/standard-fonts/**/*',
       './node_modules/pdfkit/js/font/**/*',
-      './public/icon-512.png',
+      './public/logo-facture.png',
     ],
   },
   async redirects() {
