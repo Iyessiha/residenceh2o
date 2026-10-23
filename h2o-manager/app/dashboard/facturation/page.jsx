@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatDate, formatFCFA } from '@/lib/utils'
 
@@ -17,6 +17,8 @@ export default function Facturation() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [pdfLoading, setPdfLoading] = useState(null)
+  const [apercu, setApercu] = useState(null)   // { facture, url } : facture ouverte en aperçu
+  const iframeRef = useRef(null)
   const [reservations, setReservations] = useState([])
 
   useEffect(() => { load() }, [filterStatut])
@@ -69,30 +71,28 @@ export default function Facturation() {
     load()
   }
 
-  async function downloadPDF(facture) {
+  // Génère le PDF sur le serveur et renvoie son adresse locale
+  async function genererPDF(facture) {
+    const guestUrl = facture.reservation_id
+      ? `${window.location.origin}/guest/${facture.reservation_id}`
+      : null
+    const res = await fetch(`/api/factures/${facture.id}/pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...facture, _guestUrl: guestUrl }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.detail || 'Erreur serveur')
+    }
+    return URL.createObjectURL(await res.blob())
+  }
+
+  async function ouvrirApercu(facture) {
     setPdfLoading(facture.id)
     try {
-      const guestUrl = facture.reservation_id
-        ? `${window.location.origin}/guest/${facture.reservation_id}`
-        : null
-      const res = await fetch(`/api/factures/${facture.id}/pdf`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...facture, _guestUrl: guestUrl }),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.detail || 'Erreur serveur')
-      }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${facture.numero || 'facture'}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
+      const url = await genererPDF(facture)
+      setApercu({ facture, url })
     } catch (err) {
       alert('Impossible de générer le PDF : ' + err.message)
     } finally {
@@ -100,11 +100,44 @@ export default function Facturation() {
     }
   }
 
+  function fermerApercu() {
+    if (apercu) URL.revokeObjectURL(apercu.url)
+    setApercu(null)
+  }
+
+  function telechargerApercu() {
+    const a = document.createElement('a')
+    a.href = apercu.url
+    a.download = `${apercu.facture.numero || 'facture'}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+  }
+
+  function imprimerApercu() {
+    iframeRef.current?.contentWindow?.print()
+  }
+
   const totalPaye = factures.filter(f => f.statut === 'paye').reduce((s, f) => s + (f.montant_total || 0), 0)
   const totalImpaye = factures.filter(f => ['impaye', 'partiel', 'envoye'].includes(f.statut)).reduce((s, f) => s + ((f.montant_total || 0) - (f.montant_paye || 0)), 0)
 
   return (
     <div>
+      {apercu && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+              <p className="font-semibold text-gray-900">Facture {apercu.facture.numero}</p>
+              <button onClick={fermerApercu} className="text-2xl leading-none text-gray-500 hover:text-gray-900" aria-label="Fermer l'aperçu">×</button>
+            </div>
+            <iframe ref={iframeRef} src={apercu.url} title={`Aperçu de la facture ${apercu.facture.numero}`} className="flex-1 w-full" />
+            <div className="flex justify-end gap-3 px-5 py-3 border-t border-gray-200">
+              <button onClick={telechargerApercu} className="btn-secondary">Télécharger</button>
+              <button onClick={imprimerApercu} className="btn-primary">Imprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Facturation & Paiements</h1>
         <button onClick={openNewForm} className="btn-primary">+ Nouvelle facture</button>
@@ -175,20 +208,19 @@ export default function Facturation() {
                         {Object.entries(STATUTS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
                       <button
-                        onClick={() => downloadPDF(f)}
+                        onClick={() => ouvrirApercu(f)}
                         disabled={pdfLoading === f.id}
-                        title="Télécharger PDF"
+                        title="Aperçu et impression"
                         className="flex items-center justify-center w-7 h-7 rounded transition-opacity hover:opacity-70 disabled:opacity-40"
                         style={{ backgroundColor: 'var(--primary-lt)', color: 'var(--primary)' }}
-                        aria-label={`Télécharger PDF de ${f.numero}`}
+                        aria-label={`Aperçu de la facture ${f.numero}`}
                       >
                         {pdfLoading === f.id ? (
                           <span className="text-xs animate-spin">⟳</span>
                         ) : (
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" y1="15" x2="12" y2="3" />
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
                           </svg>
                         )}
                       </button>

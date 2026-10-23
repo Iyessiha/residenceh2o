@@ -31,24 +31,47 @@ const NAV = [
   { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
 ]
 
-function playNotificationSound() {
+// Motifs sonores : notes et espacement entre les notes
+const SONS = {
+  commande: { notes: [880, 880, 880], espace: 0.18 },
+  reservation: { notes: [660, 880, 1100], espace: 0.22 },
+}
+
+let contexteAudio = null
+
+function obtenirContexteAudio() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
-    const times = [0, 0.18, 0.36]
-    times.forEach((t) => {
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.type = 'sine'
-      osc.frequency.value = 880
-      gain.gain.setValueAtTime(0, ctx.currentTime + t)
-      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + t + 0.02)
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.15)
-      osc.start(ctx.currentTime + t)
-      osc.stop(ctx.currentTime + t + 0.15)
-    })
-  } catch {}
+    if (!contexteAudio) contexteAudio = new (window.AudioContext || window.webkitAudioContext)()
+    return contexteAudio
+  } catch {
+    return null
+  }
+}
+
+function sonsActifs() {
+  try { return localStorage.getItem('h2o-sons') !== 'off' } catch { return true }
+}
+
+function playNotificationSound(type = 'commande') {
+  if (!sonsActifs()) return
+  const ctx = obtenirContexteAudio()
+  if (!ctx) return
+  if (ctx.state === 'suspended') ctx.resume()
+  const { notes, espace } = SONS[type] || SONS.commande
+  notes.forEach((frequence, i) => {
+    const t = ctx.currentTime + i * espace
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+    osc.type = 'sine'
+    osc.frequency.value = frequence
+    gain.gain.setValueAtTime(0, t)
+    gain.gain.linearRampToValueAtTime(0.3, t + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
+    osc.start(t)
+    osc.stop(t + 0.15)
+  })
 }
 
 function sendBrowserNotification(title, body) {
@@ -67,8 +90,21 @@ export default function DashboardLayout({ children }) {
   const [installed, setInstalled] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [showIOSTip, setShowIOSTip] = useState(false)
+  const [sons, setSons] = useState(true)
   const isFirstLoad = useRef(true)
   const supabase = createClient()
+
+  // Les navigateurs bloquent le son tant qu'il n'y a pas eu de geste : on débloque au premier clic
+  useEffect(() => {
+    setSons(sonsActifs())
+    const debloquer = () => obtenirContexteAudio()?.resume()
+    window.addEventListener('pointerdown', debloquer, { once: true })
+    window.addEventListener('keydown', debloquer, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', debloquer)
+      window.removeEventListener('keydown', debloquer)
+    }
+  }, [])
 
   // Capturer l'événement d'installation PWA
   useEffect(() => {
@@ -92,6 +128,12 @@ export default function DashboardLayout({ children }) {
     setInstallPrompt(null)
   }
 
+  function basculerSons() {
+    const nouveau = !sons
+    setSons(nouveau)
+    try { localStorage.setItem('h2o-sons', nouveau ? 'on' : 'off') } catch {}
+  }
+
   const loadCounts = useCallback(async () => {
     try {
       const [r, a, b] = await Promise.all([
@@ -109,12 +151,13 @@ export default function DashboardLayout({ children }) {
 
   const handleNewEvent = useCallback((table) => {
     if (isFirstLoad.current) return
-    playNotificationSound()
     const labels = {
       commandes_restaurant: 'Nouvelle commande restaurant',
       demandes_assistance:  'Nouvelle demande d\'assistance',
       ventes:               'Nouvelle vente boutique',
+      reservations:         'Nouvelle demande de réservation',
     }
+    playNotificationSound(table === 'reservations' ? 'reservation' : 'commande')
     sendBrowserNotification('H2O Manager', labels[table] || 'Nouvel événement')
     loadCounts()
   }, [loadCounts])
@@ -135,6 +178,8 @@ export default function DashboardLayout({ children }) {
         () => handleNewEvent('demandes_assistance'))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventes' },
         () => handleNewEvent('ventes'))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reservations' },
+        (payload) => { if (payload.new?.source === 'site_web') handleNewEvent('reservations') })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -196,6 +241,17 @@ export default function DashboardLayout({ children }) {
           )
         })}
       </nav>
+
+      {/* Sons */}
+      <div className="px-2 pb-1">
+        <button
+          onClick={basculerSons}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-white/60 hover:bg-white/5 hover:text-white transition-colors"
+        >
+          <span className="text-base">{sons ? '🔔' : '🔕'}</span>
+          <span className="flex-1 text-left">{sons ? 'Sons activés' : 'Sons coupés'}</span>
+        </button>
+      </div>
 
       {/* Bottom */}
       <div className="px-2 py-4 border-t border-white/10 space-y-1">
