@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { formatDate, formatFCFA, STATUT_COLORS, STATUT_LABELS } from '@/lib/utils'
+import { nomDemarcheur } from '@/lib/demarcheurs'
 import { QRCodeSVG } from 'qrcode.react'
 
 const STATUTS = ['tous', 'en_attente', 'confirme', 'en_sejour', 'cloture', 'annule']
@@ -11,7 +12,7 @@ const EMPTY = {
   nom_client: '', telephone: '', email: '', duplex_id: '',
   date_arrivee: '', date_depart: '', nb_personnes: '',
   montant_total: '', notes: '', statut: 'en_attente',
-  source: 'manuel', type: 'sejour',
+  source: 'manuel', type: 'sejour', demarcheur_id: '',
 }
 const EMPTY_CHAMBRE = { ...EMPTY, type: 'chambre', duplex_id: '' }
 
@@ -22,6 +23,7 @@ export default function Reservations() {
   const [reservations,     setReservations]     = useState([])
   const [duplexes,         setDuplexes]         = useState([])
   const [chambres,         setChambres]         = useState([])
+  const [demarcheurs,      setDemarcheurs]      = useState([])
   const [typeHebergement,  setTypeHebergement]  = useState('duplex')
   const [chambreId,        setChambreId]        = useState('')
   const [filter,           setFilter]           = useState('tous')
@@ -42,7 +44,9 @@ export default function Reservations() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    let q = supabase.from('reservations').select('*').order('date_arrivee', { ascending: false })
+    let q = supabase.from('reservations')
+      .select('*, demarcheur:demarcheurs(id, nom, prenom, taux_commission)')
+      .order('date_arrivee', { ascending: false })
     if (filter !== 'tous') q = q.eq('statut', filter)
     const { data } = await q
     setReservations(data || [])
@@ -56,7 +60,15 @@ export default function Reservations() {
       .then(({ data }) => setDuplexes(data || []))
     supabase.from('chambres').select('id, nom, type, tarif_nuit, statut').order('nom')
       .then(({ data }) => setChambres(data || []))
+    supabase.from('demarcheurs').select('id, nom, prenom, taux_commission').order('nom')
+      .then(({ data }) => setDemarcheurs(data || []))
   }, [])
+
+  // Commission prévisionnelle affichée dans le formulaire (le calcul définitif est fait en base)
+  const demarcheurChoisi = demarcheurs.find(d => d.id === form.demarcheur_id)
+  const commissionApercu = demarcheurChoisi && form.montant_total
+    ? Math.round((parseInt(form.montant_total) || 0) * Number(demarcheurChoisi.taux_commission) / 100)
+    : null
 
   // Calcul auto montant — duplex
   useEffect(() => {
@@ -103,6 +115,7 @@ export default function Reservations() {
       nb_personnes: r.nb_personnes ? String(r.nb_personnes) : '',
       montant_total: r.montant_total ? String(r.montant_total) : '',
       notes: r.notes || '', statut: r.statut, source: r.source, type: r.type,
+      demarcheur_id: r.demarcheur_id || '',
     })
     setTypeHebergement(isChambre ? 'chambre' : 'duplex')
     setChambreId(parsedChambreId)
@@ -153,11 +166,13 @@ export default function Reservations() {
       duplex_id = null
     }
 
+    // La commission (montant × taux / 100) est calculée par le trigger en base : on n'envoie que le démarcheur
     const payload = {
       ...form,
       type,
       duplex_id,
       notes,
+      demarcheur_id: form.demarcheur_id || null,
       nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
       montant_total: form.montant_total ? parseInt(form.montant_total) : null,
       updated_at: new Date().toISOString(),
@@ -186,6 +201,12 @@ export default function Reservations() {
 
   async function updateStatut(id, statut) {
     await supabase.from('reservations').update({ statut, updated_at: new Date().toISOString() }).eq('id', id)
+    load()
+  }
+
+  // Le démarcheur est versé en prestataire : on enregistre le paiement de sa commission
+  async function marquerCommissionPayee(id) {
+    await supabase.from('reservations').update({ commission_statut: 'payee' }).eq('id', id)
     load()
   }
 
@@ -268,6 +289,9 @@ export default function Reservations() {
                   <td className="table-td">
                     <p className="font-medium" style={{ color: 'var(--text)' }}>{r.nom_client}</p>
                     <p className="text-xs" style={{ color: 'var(--text-3)' }}>{r.telephone}</p>
+                    {r.demarcheur && (
+                      <p className="text-xs" style={{ color: 'var(--primary)' }}>Apporté par {nomDemarcheur(r.demarcheur)}</p>
+                    )}
                   </td>
                   <td className="table-td">
                     {r.type === 'chambre'
@@ -279,7 +303,28 @@ export default function Reservations() {
                   </td>
                   <td className="table-td">{formatDate(r.date_arrivee)}</td>
                   <td className="table-td">{formatDate(r.date_depart)}</td>
-                  <td className="table-td">{formatFCFA(r.montant_total)}</td>
+                  <td className="table-td">
+                    {formatFCFA(r.montant_total)}
+                    {r.demarcheur_id && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className="text-xs" style={{ color: 'var(--text-2)' }}>
+                          Commission {formatFCFA(r.commission_montant)}
+                        </span>
+                        {r.commission_statut === 'payee' ? (
+                          <span className="badge bg-green-100 text-green-700">Payée</span>
+                        ) : (
+                          <>
+                            <span className="badge bg-amber-100 text-amber-800">À payer</span>
+                            <button onClick={() => marquerCommissionPayee(r.id)}
+                              className="text-xs font-semibold px-2 py-0.5 rounded text-white transition-opacity hover:opacity-80"
+                              style={{ backgroundColor: 'var(--primary)' }}>
+                              Marquer comme payée
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="table-td">
                     <span className={`badge ${STATUT_COLORS[r.statut]}`}>{STATUT_LABELS[r.statut]}</span>
                   </td>
@@ -439,6 +484,24 @@ export default function Reservations() {
                 <input className="input" type="number" value={form.montant_total}
                   onChange={e => setForm(p => ({ ...p, montant_total: e.target.value }))}
                   placeholder="Sélectionnez hébergement + dates pour calcul auto" />
+              </div>
+
+              <div>
+                <label className="label">
+                  Démarcheur <span className="font-normal" style={{ color: 'var(--text-3)' }}>(optionnel)</span>
+                </label>
+                <select className="input" value={form.demarcheur_id}
+                  onChange={e => setForm(p => ({ ...p, demarcheur_id: e.target.value }))}>
+                  <option value="">Aucun</option>
+                  {demarcheurs.map(d => (
+                    <option key={d.id} value={d.id}>{nomDemarcheur(d)} ({Number(d.taux_commission)} %)</option>
+                  ))}
+                </select>
+                {commissionApercu !== null && (
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>
+                    Commission : {formatFCFA(commissionApercu)} ({Number(demarcheurChoisi.taux_commission)} % du montant) — à payer après versement
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">

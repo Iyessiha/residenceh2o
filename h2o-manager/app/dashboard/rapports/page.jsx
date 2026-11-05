@@ -26,7 +26,7 @@ export default function Rapports() {
     }
 
     const [resvRes, factRes, duplexRes, evtRes] = await Promise.all([
-      supabase.from('reservations').select('statut, montant_total, date_arrivee, date_depart, duplex_id').gte('created_at', from),
+      supabase.from('reservations').select('statut, montant_total, date_arrivee, date_depart, duplex_id, demarcheur_id, commission_montant, commission_statut').gte('created_at', from),
       supabase.from('factures').select('statut, montant_total, type_prestation').gte('created_at', from),
       supabase.from('duplexes').select('code, statut'),
       supabase.from('evenements').select('statut, montant_devis').gte('date_evenement', from),
@@ -59,7 +59,19 @@ export default function Rapports() {
       else byDuplex[r.duplex_id] = 1
     })
 
-    setData({ revenuTotal, revenuSejour, revenuEvenement, totalDuplexes, occupes, nbSejours, nbEvenements, avgDuration, byDuplex })
+    // Commissions des démarcheurs : prestataires, donc une charge de la période
+    const avecDemarcheur = reservations.filter(r => r.demarcheur_id)
+    const commissionsTotal = avecDemarcheur.reduce((s, r) => s + (r.commission_montant || 0), 0)
+    const commissionsVersees = avecDemarcheur.filter(r => r.commission_statut === 'payee').reduce((s, r) => s + (r.commission_montant || 0), 0)
+    const commissions = {
+      total: commissionsTotal,
+      versees: commissionsVersees,
+      dues: commissionsTotal - commissionsVersees,
+      nb: avecDemarcheur.length,
+      net: revenuTotal - commissionsTotal,
+    }
+
+    setData({ revenuTotal, revenuSejour, revenuEvenement, totalDuplexes, occupes, nbSejours, nbEvenements, avgDuration, byDuplex, commissions })
     setLoading(false)
   }
 
@@ -156,6 +168,33 @@ export default function Rapports() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Commissions démarcheurs */}
+          <div className="card p-6 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <h3 className="font-semibold text-gray-800">Commissions démarcheurs</h3>
+              <span className="text-xs text-gray-400">{data.commissions.nb} réservation{data.commissions.nb > 1 ? 's' : ''} apportée{data.commissions.nb > 1 ? 's' : ''}</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Commissions totales</p>
+                <p className="text-lg font-bold text-gray-900">{formatFCFA(data.commissions.total)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Déjà versées</p>
+                <p className="text-lg font-bold text-green-600">{formatFCFA(data.commissions.versees)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Restant à payer</p>
+                <p className="text-lg font-bold text-amber-700">{formatFCFA(data.commissions.dues)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Revenu net après commissions</p>
+                <p className="text-lg font-bold text-gray-900">{formatFCFA(data.commissions.net)}</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-4">Le revenu net = revenus encaissés (factures payées) − commissions des réservations créées sur la période.</p>
           </div>
 
           {/* Export note */}

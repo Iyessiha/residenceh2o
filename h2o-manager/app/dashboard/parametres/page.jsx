@@ -3,16 +3,25 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import PixelsPanel from '@/components/PixelsPanel'
 import InfosLegales from '@/components/InfosLegales'
+import AlertesReglages from '@/components/AlertesReglages'
+
+const LIBELLE_ROLE = { admin: 'Administrateur', gerance: 'Gérance', reception: 'Réception' }
 
 export default function Parametres() {
   const supabase = createClient()
   const [user, setUser] = useState(null)
+  const [role, setRole] = useState(null)
   const [pwForm, setPwForm] = useState({ current: '', nouveau: '', confirm: '' })
   const [pwMsg, setPwMsg] = useState(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getUser().then(async ({ data }) => {
+      setUser(data.user)
+      if (!data.user) return
+      const { data: profil } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+      setRole(profil?.role || null)
+    })
   }, [])
 
   async function changePassword(e) {
@@ -56,7 +65,7 @@ export default function Parametres() {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Rôle</p>
-              <p className="text-gray-900">Administrateur</p>
+              <p className="text-gray-900">{LIBELLE_ROLE[role] || '—'}</p>
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Dernière connexion</p>
@@ -128,6 +137,11 @@ export default function Parametres() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Alertes sonores */}
+      <div className="card p-6 mt-6">
+        <AlertesReglages />
       </div>
 
       {/* Pixels & balises */}

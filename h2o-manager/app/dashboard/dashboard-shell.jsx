@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { afficherNotification, demanderPermissionNotifications } from '@/lib/notifications'
+import { activerSon, sonPret, jouerSon, lireSonsActifs, ecrireSonsActifs } from '@/lib/alertes'
+import { formatFCFA } from '@/lib/utils'
 
 const NAV = [
   { href: '/dashboard', icon: '📊', label: 'Tableau de bord' },
@@ -14,6 +16,8 @@ const NAV = [
   { href: '/dashboard/duplexes',     icon: '🏠', label: 'Villas' },
   { href: '/dashboard/chambres',     icon: '🛏️', label: 'Chambres' },
   { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
+  { href: '/dashboard/entreprises',  icon: '🏢', label: 'Entreprises' },
+  { href: '/dashboard/demarcheurs',  icon: '🤝', label: 'Démarcheurs' },
 
   { section: 'Services' },
   { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant & Bar', badge: 'restaurant' },
@@ -33,57 +37,21 @@ const NAV = [
   { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
 ]
 
-// Motifs sonores : notes et espacement entre les notes
-const SONS = {
-  commande: { notes: [880, 880, 880], espace: 0.18 },
-  reservation: { notes: [660, 880, 1100], espace: 0.22 },
-}
-
-let contexteAudio = null
-
-function obtenirContexteAudio() {
-  try {
-    if (!contexteAudio) contexteAudio = new (window.AudioContext || window.webkitAudioContext)()
-    return contexteAudio
-  } catch {
-    return null
-  }
-}
-
-function sonsActifs() {
-  try { return localStorage.getItem('h2o-sons') !== 'off' } catch { return true }
-}
-
-function playNotificationSound(type = 'commande') {
-  if (!sonsActifs()) return
-  const ctx = obtenirContexteAudio()
-  if (!ctx) return
-  if (ctx.state === 'suspended') ctx.resume()
-  const { notes, espace } = SONS[type] || SONS.commande
-  notes.forEach((frequence, i) => {
-    const t = ctx.currentTime + i * espace
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.type = 'sine'
-    osc.frequency.value = frequence
-    gain.gain.setValueAtTime(0, t)
-    gain.gain.linearRampToValueAtTime(0.3, t + 0.02)
-    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
-    osc.start(t)
-    osc.stop(t + 0.15)
-  })
-}
-
 const ALERTE_DUREE_MS = 8000
+// Sonnerie répétée toutes les 3,5 s tant qu'une alerte n'est pas prise en charge
+const DELAI_SONNERIE_MS = 3500
+// Au-delà de 2 h, une alerte restée sans prise en charge reste dans la liste mais ne sonne plus
+const FENETRE_SONNERIE_MS = 2 * 60 * 60 * 1000
+const LISTE_MAX = 60
 
-const ALERTES = {
-  commandes_restaurant: { titre: 'Nouvelle commande restaurant', href: '/dashboard/restaurant' },
-  demandes_assistance:  { titre: 'Nouvelle demande d\'assistance', href: '/dashboard/assistance' },
-  ventes:               { titre: 'Nouvelle vente boutique', href: '/dashboard/boutique' },
-  reservations:         { titre: 'Nouvelle demande de réservation', href: '/dashboard/reservations' },
+const PAGE_PAR_SOURCE = {
+  reservations: '/dashboard/reservations',
+  commandes_restaurant: '/dashboard/restaurant',
+  ventes: '/dashboard/boutique',
 }
+
+const heure = (iso) => (iso ? new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '')
+const sonPourType = (type) => (type === 'reservation' ? 'reservation' : 'commande')
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname()
@@ -96,26 +64,26 @@ export default function DashboardLayout({ children }) {
   const [isIOS, setIsIOS] = useState(false)
   const [showIOSTip, setShowIOSTip] = useState(false)
   const [sons, setSons] = useState(true)
-  const isFirstLoad = useRef(true)
+  const [sonOk, setSonOk] = useState(false)
+  const [userId, setUserId] = useState(null)
+  const [notifs, setNotifs] = useState([])
+  const [panelOuvert, setPanelOuvert] = useState(false)
   const supabase = createClient()
 
-  // Les navigateurs bloquent le son et les notifications tant qu'il n'y a pas eu de geste :
-  // on débloque au premier clic (et on demande la permission de notification à ce moment-là)
+  // Refs lues par les minuteries et le temps réel (évite les fermetures périmées)
+  const notifsRef = useRef([])
+  const sonsRef = useRef(true)
+  const sonOkRef = useRef(false)
+
+  useEffect(() => { notifsRef.current = notifs }, [notifs])
+  useEffect(() => { sonsRef.current = sons }, [sons])
+  useEffect(() => { sonOkRef.current = sonOk }, [sonOk])
+
   useEffect(() => {
-    setSons(sonsActifs())
-    const debloquer = () => {
-      obtenirContexteAudio()?.resume()
-      demanderPermissionNotifications()
-    }
-    window.addEventListener('pointerdown', debloquer, { once: true })
-    window.addEventListener('keydown', debloquer, { once: true })
-    return () => {
-      window.removeEventListener('pointerdown', debloquer)
-      window.removeEventListener('keydown', debloquer)
-    }
+    setSons(lireSonsActifs())
+    setSonOk(sonPret())
   }, [])
 
-  // Alertes in-app : visibles sur mobile comme sur bureau, même si les notifications système sont refusées
   const retirerAlerte = useCallback((id) => {
     setAlertes(liste => liste.filter(a => a.id !== id))
   }, [])
@@ -151,7 +119,14 @@ export default function DashboardLayout({ children }) {
   function basculerSons() {
     const nouveau = !sons
     setSons(nouveau)
-    try { localStorage.setItem('h2o-sons', nouveau ? 'on' : 'off') } catch {}
+    ecrireSonsActifs(nouveau)
+  }
+
+  // Le bouton doit déclencher la permission de notification pendant le geste utilisateur
+  async function activerAlertesSonores() {
+    demanderPermissionNotifications()
+    const ok = await activerSon()
+    setSonOk(ok)
   }
 
   const loadCounts = useCallback(async () => {
@@ -169,34 +144,77 @@ export default function DashboardLayout({ children }) {
     } catch {}
   }, [supabase])
 
-  const handleNewEvent = useCallback((table) => {
-    if (isFirstLoad.current) return
-    const alerte = ALERTES[table] || { titre: 'Nouvel événement', href: '/dashboard' }
-    playNotificationSound(table === 'reservations' ? 'reservation' : 'commande')
-    ajouterAlerte({ titre: alerte.titre, href: alerte.href })
-    afficherNotification('H2O Manager', { corps: alerte.titre, url: alerte.href, tag: table })
-    loadCounts()
-  }, [loadCounts, ajouterAlerte])
+  const chargerNotifs = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(LISTE_MAX)
+      setNotifs(data || [])
+    } catch {}
+  }, [supabase])
 
+  // Initialisation : utilisateur, notifications existantes, compteurs, temps réel
   useEffect(() => {
-    loadCounts().then(() => { isFirstLoad.current = false })
+    supabase.auth.getUser().then(({ data }) => setUserId(data?.user?.id || null))
+    chargerNotifs()
+    loadCounts()
 
     const channel = supabase
-      .channel('shell_realtime')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'commandes_restaurant' },
-        () => handleNewEvent('commandes_restaurant'))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demandes_assistance' },
-        () => handleNewEvent('demandes_assistance'))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventes' },
-        () => handleNewEvent('ventes'))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'reservations' },
-        (payload) => { if (payload.new?.source === 'site_web') handleNewEvent('reservations') })
+      .channel('notifications_manager')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const n = payload.new
+          setNotifs(liste => (liste.some(x => x.id === n.id) ? liste : [n, ...liste].slice(0, LISTE_MAX)))
+          if (sonsRef.current && sonOkRef.current) jouerSon(sonPourType(n.type))
+          const corps = [n.client_nom, n.service, n.montant ? formatFCFA(n.montant) : null, n.demarcheur_nom ? `démarcheur : ${n.demarcheur_nom}` : null]
+            .filter(Boolean).join(' · ')
+          const href = PAGE_PAR_SOURCE[n.source_table] || '/dashboard'
+          ajouterAlerte({ titre: n.titre, corps, href })
+          afficherNotification(n.titre || 'H2O Manager', { corps, url: href, tag: n.id })
+          loadCounts()
+        } else if (payload.eventType === 'UPDATE') {
+          const n = payload.new
+          setNotifs(liste => liste.map(x => (x.id === n.id ? { ...x, ...n } : x)))
+        }
+      })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totalAttente = counts.restaurant + counts.assistance + counts.boutique
+  // Sonnerie répétée tant qu'une alerte récente n'est pas prise en charge
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!sonsRef.current || !sonOkRef.current) return
+      const maintenant = Date.now()
+      const urgente = notifsRef.current.find(n =>
+        !n.pris_en_charge_par && maintenant - new Date(n.created_at).getTime() < FENETRE_SONNERIE_MS
+      )
+      if (urgente) jouerSon(sonPourType(urgente.type))
+    }, DELAI_SONNERIE_MS)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Ouvrir le panneau : les alertes affichées passent en « lues » (pastille remise à zéro)
+  useEffect(() => {
+    if (!panelOuvert || !userId) return
+    const ids = notifsRef.current.filter(n => !(n.lu_par || []).includes(userId)).map(n => n.id)
+    if (ids.length === 0) return
+    supabase.rpc('h2o_marquer_lues', { p_ids: ids }).then(({ error }) => {
+      if (error) return
+      setNotifs(liste => liste.map(n => (ids.includes(n.id) ? { ...n, lu_par: [...(n.lu_par || []), userId] } : n)))
+    })
+  }, [panelOuvert, userId, notifs.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function prendreEnCharge(n) {
+    const { error } = await supabase.rpc('h2o_prendre_en_charge', { p_id: n.id })
+    if (error) return
+    await chargerNotifs()
+  }
+
+  const nonLues = userId ? notifs.filter(n => !(n.lu_par || []).includes(userId)).length : 0
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -325,19 +343,38 @@ export default function DashboardLayout({ children }) {
             >
               ☰
             </button>
-            {/* Sur mobile la barre latérale est cachée : on affiche le total des demandes en attente */}
-            {totalAttente > 0 && (
-              <Link href="/dashboard" className="md:hidden flex items-center gap-1 text-xs font-semibold text-white px-2 py-0.5 rounded-full" style={{ backgroundColor: '#E8513A' }}>
-                🔔 {totalAttente > 99 ? '99+' : totalAttente}
-              </Link>
-            )}
           </div>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3 text-sm text-gray-500">
+            {!sonOk && (
+              <button
+                onClick={activerAlertesSonores}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 animate-pulse"
+                style={{ backgroundColor: 'var(--primary)' }}
+                title="Les navigateurs bloquent le son tant que l'on n'a pas cliqué sur la page"
+              >
+                <span>🔊</span>
+                <span className="hidden sm:inline">Activer les alertes sonores</span>
+                <span className="sm:hidden">Son</span>
+              </button>
+            )}
+            <button
+              onClick={() => setPanelOuvert(o => !o)}
+              className="relative p-1.5 rounded-lg hover:opacity-70 transition-opacity"
+              aria-label={`Notifications${nonLues ? `, ${nonLues} non lue${nonLues > 1 ? 's' : ''}` : ''}`}
+            >
+              <span className="text-lg">🔔</span>
+              {nonLues > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                  style={{ backgroundColor: '#E8513A' }}>
+                  {nonLues > 99 ? '99+' : nonLues}
+                </span>
+              )}
+            </button>
             {(installPrompt || isIOS) && !installed && (
               <button
                 onClick={handleInstall}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90 animate-pulse"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:opacity-90"
                 style={{ backgroundColor: 'var(--primary)' }}
                 title="Installer H2O Manager sur cet appareil"
               >
@@ -345,7 +382,7 @@ export default function DashboardLayout({ children }) {
                 <span className="hidden sm:inline">Installer l'app</span>
               </button>
             )}
-            <span>📍 Résidences H2O</span>
+            <span className="hidden sm:inline">📍 Résidences H2O</span>
           </div>
         </header>
 
@@ -354,6 +391,69 @@ export default function DashboardLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Panneau des notifications */}
+      {panelOuvert && (
+        <div className="fixed inset-0 z-[58]" onClick={() => setPanelOuvert(false)}>
+          <div
+            className="absolute top-14 right-3 left-3 sm:left-auto sm:w-96 max-h-[75vh] overflow-y-auto rounded-xl shadow-2xl border"
+            style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b sticky top-0" style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border-2)' }}>
+              <p className="font-bold text-sm" style={{ color: 'var(--text)' }}>Notifications</p>
+              <button onClick={() => setPanelOuvert(false)} className="text-xl leading-none" style={{ color: 'var(--text-3)' }} aria-label="Fermer">×</button>
+            </div>
+            {notifs.length === 0 ? (
+              <p className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-3)' }}>Aucune notification</p>
+            ) : (
+              <ul>
+                {notifs.map(n => {
+                  const lue = !userId || (n.lu_par || []).includes(userId)
+                  const prise = !!n.pris_en_charge_par
+                  return (
+                    <li key={n.id} className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-2)', backgroundColor: lue ? 'transparent' : 'rgba(232,81,58,0.07)' }}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+                          {!lue && <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: '#E8513A' }} />}
+                          {n.titre}
+                        </p>
+                        <span className="text-xs whitespace-nowrap" style={{ color: 'var(--text-3)' }}>{heure(n.created_at)}</span>
+                      </div>
+                      <p className="text-sm mt-0.5" style={{ color: 'var(--text-2)' }}>{n.client_nom}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+                        {n.service}{n.montant ? ` · ${formatFCFA(n.montant)}` : ''}
+                      </p>
+                      {n.demarcheur_nom && (
+                        <p className="text-xs" style={{ color: 'var(--primary)' }}>Apporté par {n.demarcheur_nom}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        {prise ? (
+                          <span className="text-xs font-semibold text-green-700">
+                            ✓ Pris en charge{n.pris_en_charge_par === userId ? ' par vous' : ''}{n.pris_en_charge_at ? ` à ${heure(n.pris_en_charge_at)}` : ''}
+                          </span>
+                        ) : (
+                          <button onClick={() => prendreEnCharge(n)}
+                            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white transition-opacity hover:opacity-90"
+                            style={{ backgroundColor: '#E8513A' }}>
+                            Pris en charge
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { setPanelOuvert(false); router.push(PAGE_PAR_SOURCE[n.source_table] || '/dashboard') }}
+                          className="text-xs font-semibold px-3 py-1.5 rounded-lg border transition-opacity hover:opacity-70"
+                          style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}>
+                          Ouvrir
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Alertes temps réel : pile en haut à droite (pleine largeur sur mobile), cliquable */}
       <div className="fixed top-16 right-3 left-3 sm:left-auto sm:w-80 z-[60] flex flex-col gap-2 pointer-events-none">
@@ -369,7 +469,8 @@ export default function DashboardLayout({ children }) {
               className="flex-1 text-left"
             >
               <p className="text-sm font-bold">🔔 {a.titre}</p>
-              <p className="text-xs text-white/70 mt-0.5">Appuyer pour ouvrir</p>
+              {a.corps && <p className="text-xs text-white/80 mt-0.5">{a.corps}</p>}
+              <p className="text-xs text-white/60 mt-0.5">Appuyer pour ouvrir</p>
             </button>
             <button
               onClick={() => retirerAlerte(a.id)}
