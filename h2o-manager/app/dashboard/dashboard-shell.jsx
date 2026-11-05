@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { afficherNotification, demanderPermissionNotifications } from '@/lib/notifications'
 
 const NAV = [
   { href: '/dashboard', icon: '📊', label: 'Tableau de bord' },
@@ -75,11 +76,13 @@ function playNotificationSound(type = 'commande') {
   })
 }
 
-function sendBrowserNotification(title, body) {
-  if (!('Notification' in window)) return
-  if (Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '/icon.svg' })
-  }
+const ALERTE_DUREE_MS = 8000
+
+const ALERTES = {
+  commandes_restaurant: { titre: 'Nouvelle commande restaurant', href: '/dashboard/restaurant' },
+  demandes_assistance:  { titre: 'Nouvelle demande d\'assistance', href: '/dashboard/assistance' },
+  ventes:               { titre: 'Nouvelle vente boutique', href: '/dashboard/boutique' },
+  reservations:         { titre: 'Nouvelle demande de réservation', href: '/dashboard/reservations' },
 }
 
 export default function DashboardLayout({ children }) {
@@ -87,6 +90,7 @@ export default function DashboardLayout({ children }) {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [counts, setCounts] = useState({ restaurant: 0, assistance: 0, boutique: 0 })
+  const [alertes, setAlertes] = useState([])
   const [installPrompt, setInstallPrompt] = useState(null)
   const [installed, setInstalled] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
@@ -95,10 +99,14 @@ export default function DashboardLayout({ children }) {
   const isFirstLoad = useRef(true)
   const supabase = createClient()
 
-  // Les navigateurs bloquent le son tant qu'il n'y a pas eu de geste : on débloque au premier clic
+  // Les navigateurs bloquent le son et les notifications tant qu'il n'y a pas eu de geste :
+  // on débloque au premier clic (et on demande la permission de notification à ce moment-là)
   useEffect(() => {
     setSons(sonsActifs())
-    const debloquer = () => obtenirContexteAudio()?.resume()
+    const debloquer = () => {
+      obtenirContexteAudio()?.resume()
+      demanderPermissionNotifications()
+    }
     window.addEventListener('pointerdown', debloquer, { once: true })
     window.addEventListener('keydown', debloquer, { once: true })
     return () => {
@@ -106,6 +114,17 @@ export default function DashboardLayout({ children }) {
       window.removeEventListener('keydown', debloquer)
     }
   }, [])
+
+  // Alertes in-app : visibles sur mobile comme sur bureau, même si les notifications système sont refusées
+  const retirerAlerte = useCallback((id) => {
+    setAlertes(liste => liste.filter(a => a.id !== id))
+  }, [])
+
+  const ajouterAlerte = useCallback((alerte) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    setAlertes(liste => [...liste.slice(-2), { ...alerte, id }])
+    setTimeout(() => retirerAlerte(id), ALERTE_DUREE_MS)
+  }, [retirerAlerte])
 
   // Capturer l'événement d'installation PWA
   useEffect(() => {
@@ -152,24 +171,15 @@ export default function DashboardLayout({ children }) {
 
   const handleNewEvent = useCallback((table) => {
     if (isFirstLoad.current) return
-    const labels = {
-      commandes_restaurant: 'Nouvelle commande restaurant',
-      demandes_assistance:  'Nouvelle demande d\'assistance',
-      ventes:               'Nouvelle vente boutique',
-      reservations:         'Nouvelle demande de réservation',
-    }
+    const alerte = ALERTES[table] || { titre: 'Nouvel événement', href: '/dashboard' }
     playNotificationSound(table === 'reservations' ? 'reservation' : 'commande')
-    sendBrowserNotification('H2O Manager', labels[table] || 'Nouvel événement')
+    ajouterAlerte({ titre: alerte.titre, href: alerte.href })
+    afficherNotification('H2O Manager', { corps: alerte.titre, url: alerte.href, tag: table })
     loadCounts()
-  }, [loadCounts])
+  }, [loadCounts, ajouterAlerte])
 
   useEffect(() => {
     loadCounts().then(() => { isFirstLoad.current = false })
-
-    // Request notification permission once
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission()
-    }
 
     const channel = supabase
       .channel('shell_realtime')
@@ -185,6 +195,8 @@ export default function DashboardLayout({ children }) {
 
     return () => { supabase.removeChannel(channel) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totalAttente = counts.restaurant + counts.assistance + counts.boutique
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -306,12 +318,20 @@ export default function DashboardLayout({ children }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
         <header className="border-b px-4 sm:px-6 h-14 flex items-center justify-between flex-shrink-0" style={{ backgroundColor: 'var(--bg)', borderColor: 'var(--border-2)' }}>
-          <button
-            className="md:hidden p-1.5 text-gray-500 hover:text-gray-900"
-            onClick={() => setSidebarOpen(true)}
-          >
-            ☰
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="md:hidden p-1.5 text-gray-500 hover:text-gray-900"
+              onClick={() => setSidebarOpen(true)}
+            >
+              ☰
+            </button>
+            {/* Sur mobile la barre latérale est cachée : on affiche le total des demandes en attente */}
+            {totalAttente > 0 && (
+              <Link href="/dashboard" className="md:hidden flex items-center gap-1 text-xs font-semibold text-white px-2 py-0.5 rounded-full" style={{ backgroundColor: '#E8513A' }}>
+                🔔 {totalAttente > 99 ? '99+' : totalAttente}
+              </Link>
+            )}
+          </div>
           <div className="hidden md:block" />
           <div className="flex items-center gap-3 text-sm text-gray-500">
             {(installPrompt || isIOS) && !installed && (
@@ -334,6 +354,34 @@ export default function DashboardLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Alertes temps réel : pile en haut à droite (pleine largeur sur mobile), cliquable */}
+      <div className="fixed top-16 right-3 left-3 sm:left-auto sm:w-80 z-[60] flex flex-col gap-2 pointer-events-none">
+        {alertes.map(a => (
+          <div
+            key={a.id}
+            role="alert"
+            className="pointer-events-auto flex items-start gap-3 rounded-xl px-4 py-3 shadow-lg text-white"
+            style={{ backgroundColor: 'var(--h2o-teal, #0C3A3D)', animation: 'h2o-alerte-in 0.25s ease-out' }}
+          >
+            <button
+              onClick={() => { router.push(a.href); retirerAlerte(a.id) }}
+              className="flex-1 text-left"
+            >
+              <p className="text-sm font-bold">🔔 {a.titre}</p>
+              <p className="text-xs text-white/70 mt-0.5">Appuyer pour ouvrir</p>
+            </button>
+            <button
+              onClick={() => retirerAlerte(a.id)}
+              className="text-white/60 hover:text-white text-lg leading-none"
+              aria-label="Fermer"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+      <style>{`@keyframes h2o-alerte-in { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: none } }`}</style>
     </div>
   )
 }

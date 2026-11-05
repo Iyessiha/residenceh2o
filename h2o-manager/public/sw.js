@@ -1,4 +1,4 @@
-const CACHE = 'h2o-manager-v2'
+const CACHE = 'h2o-manager-v3'
 const PRECACHE = ['/dashboard', '/icon-192.png', '/icon-512.png', '/manifest.json']
 
 self.addEventListener('install', (e) => {
@@ -12,6 +12,21 @@ self.addEventListener('activate', (e) => {
     caches.keys()
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => clients.claim())
+  )
+})
+
+// Clic sur une notification : ouvre le manager (ou ramène l'onglet déjà ouvert) à la bonne page
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close()
+  const url = e.notification.data?.url || '/dashboard'
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      const fenetre = list.find(c => 'focus' in c)
+      if (fenetre) {
+        return fenetre.focus().then(f => (f && 'navigate' in f ? f.navigate(url) : f))
+      }
+      return clients.openWindow(url)
+    })
   )
 })
 
