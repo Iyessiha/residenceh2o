@@ -100,7 +100,7 @@ export default function Facturation() {
     const res = await fetch(`/api/factures/${facture.id}/pdf`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...facture, _guestUrl: guestUrl, _entreprise: entreprise }),
+      body: JSON.stringify({ ...facture, _guestUrl: guestUrl, _factureUrl: `${window.location.origin}/facture/${facture.id}`, _entreprise: entreprise }),
     })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))

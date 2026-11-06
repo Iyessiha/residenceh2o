@@ -140,7 +140,7 @@ const STATUT_COLORS = {
   impaye:    { border: '#E8513A', text: '#E8513A' },
 }
 
-export function FacturePDF({ facture, guestUrl, logo, entreprise }) {
+export function FacturePDF({ facture, guestUrl, factureUrl, logo, entreprise }) {
   const sc = STATUT_COLORS[facture.statut] || STATUT_COLORS.brouillon
   const solde = (facture.montant_total || 0) - (facture.montant_paye || 0)
   const ventil = ventilation(facture.montant_total || 0, entreprise)
@@ -259,6 +259,18 @@ export function FacturePDF({ facture, guestUrl, logo, entreprise }) {
             </Text>
           </View>
         </View>
+
+        {/* ── QR code : récupérer la facture ───────────────── */}
+        {factureUrl ? (
+          <View style={s.qrSection} wrap={false}>
+            <QRCodePDF value={factureUrl} size={72} />
+            <View style={s.qrText}>
+              <Text style={s.qrTitle}>Récupérez votre facture</Text>
+              <Text style={s.qrSub}>Scannez ce QR code pour consulter, télécharger</Text>
+              <Text style={s.qrSub}>ou imprimer votre facture {facture.numero || ''} à tout moment.</Text>
+            </View>
+          </View>
+        ) : null}
 
         {/* ── QR code réservation ──────────────────────────── */}
         {guestUrl ? (

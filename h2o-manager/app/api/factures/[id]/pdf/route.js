@@ -18,14 +18,14 @@ import 'pdfkit/standard-fonts/HelveticaBoldOblique'
  */
 export async function POST(req) {
   try {
-    const { _guestUrl, _entreprise, ...facture } = await req.json()
+    const { _guestUrl, _factureUrl, _entreprise, ...facture } = await req.json()
     if (!facture || !facture.id) {
       return NextResponse.json({ error: 'Données manquantes' }, { status: 400 })
     }
     // Logo horizontal lu dans public/ ; le fichier est inclus dans la route via next.config.mjs
     const logo = await readFile(path.join(process.cwd(), 'public', 'logo-facture.png')).catch(() => null)
     const buffer = await renderToBuffer(
-      React.createElement(FacturePDF, { facture, guestUrl: _guestUrl || null, logo, entreprise: _entreprise || null })
+      React.createElement(FacturePDF, { facture, guestUrl: _guestUrl || null, factureUrl: _factureUrl || null, logo, entreprise: _entreprise || null })
     )
     return new Response(buffer, {
       status: 200,
