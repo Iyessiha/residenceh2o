@@ -21,6 +21,7 @@ const NAV = [
 
   { section: 'Services' },
   { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant & Bar', badge: 'restaurant' },
+  { href: '/dashboard/qr-commande',  icon: '📱', label: 'QR de commande' },
   { href: '/dashboard/boutique',     icon: '🛍️', label: 'Boutique',          badge: 'boutique' },
   { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
   { href: '/dashboard/assistance',   icon: '🔔', label: 'Assistance',        badge: 'assistance' },

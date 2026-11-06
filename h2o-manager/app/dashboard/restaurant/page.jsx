@@ -358,7 +358,10 @@ export default function Restaurant() {
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-3)' }}>Commandes & gestion du menu</p>
         </div>
         {tab === 'commandes' && (
-          <button onClick={openCreateCmd} className="btn-primary">+ Nouvelle commande</button>
+          <div className="flex gap-2">
+            <a href="/dashboard/qr-commande" className="btn-secondary">📱 QR de commande</a>
+            <button onClick={openCreateCmd} className="btn-primary">+ Nouvelle commande</button>
+          </div>
         )}
         {tab === 'menu' && (
           <button onClick={openCreateMenu} className="btn-primary">+ Ajouter au menu</button>
