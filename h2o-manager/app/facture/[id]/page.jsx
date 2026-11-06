@@ -16,6 +16,7 @@ export default function FacturePublique() {
   const [etat, setEtat] = useState('chargement')   // chargement | ok | introuvable | erreur
   const [facture, setFacture] = useState(null)
   const [url, setUrl] = useState(null)
+  const [detail, setDetail] = useState('')   // cause technique, affichée en petit en cas d'erreur
   const iframeRef = useRef(null)
 
   useEffect(() => {
@@ -25,19 +26,20 @@ export default function FacturePublique() {
       if (!UUID.test(id || '')) { setEtat('introuvable'); return }
       try {
         const { data, error } = await sb.rpc('facture_publique', { p_id: id })
-        if (error) throw error
+        if (error) throw new Error(`base de données (${error.code || error.message || 'rpc'})`)
         if (!data?.facture) { if (!annule) setEtat('introuvable'); return }
         const res = await fetch(`/api/factures/${id}/pdf`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...data.facture, _guestUrl: null, _factureUrl: window.location.href, _entreprise: data.entreprise }),
         })
-        if (!res.ok) throw new Error('pdf')
+        if (!res.ok) throw new Error(`génération du PDF (HTTP ${res.status})`)
         blobUrl = URL.createObjectURL(await res.blob())
         if (annule) return
         setFacture(data.facture); setUrl(blobUrl); setEtat('ok')
-      } catch {
-        if (!annule) setEtat('erreur')
+      } catch (e) {
+        console.error('Facture publique :', e)
+        if (!annule) { setDetail(e?.message || 'inconnue'); setEtat('erreur') }
       }
     }
     charger()
@@ -65,7 +67,12 @@ export default function FacturePublique() {
 
         {etat === 'chargement' && <p>Chargement de votre facture…</p>}
         {etat === 'introuvable' && <p>Cette facture est introuvable. Vérifiez le QR code ou demandez-en un nouveau à la réception.</p>}
-        {etat === 'erreur' && <p>Impossible d'afficher la facture pour le moment. Réessayez dans un instant.</p>}
+        {etat === 'erreur' && (
+          <>
+            <p>Impossible d'afficher la facture pour le moment. Réessayez dans un instant.</p>
+            <p style={{ fontSize: 12, color: '#6B7678' }}>Détail technique : {detail}</p>
+          </>
+        )}
 
         {etat === 'ok' && (
           <>
