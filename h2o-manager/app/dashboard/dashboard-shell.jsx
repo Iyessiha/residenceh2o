@@ -16,29 +16,33 @@ const NAV = [
   { href: '/dashboard/calendrier',  icon: '🗓️', label: 'Calendrier' },
   { href: '/dashboard/duplexes',     icon: '🏠', label: 'Villas' },
   { href: '/dashboard/chambres',     icon: '🛏️', label: 'Chambres' },
+
+  { section: 'Clients & partenaires' },
   { href: '/dashboard/clients',      icon: '👥', label: 'Clients' },
   { href: '/dashboard/entreprises',  icon: '🏢', label: 'Entreprises' },
   { href: '/dashboard/demarcheurs',  icon: '🤝', label: 'Démarcheurs' },
 
-  { section: 'Services' },
+  { section: 'Restaurant & ventes' },
   { href: '/dashboard/restaurant',   icon: '🍽️', label: 'Restaurant & Bar', badge: 'restaurant' },
   { href: '/dashboard/qr-commande',  icon: '📱', label: 'QR de commande' },
   { href: '/dashboard/boutique',     icon: '🛍️', label: 'Boutique',          badge: 'boutique' },
+
+  { section: 'Événements & accueil' },
   { href: '/dashboard/evenements',   icon: '🎪', label: 'Événements' },
   { href: '/dashboard/assistance',   icon: '🔔', label: 'Assistance',        badge: 'assistance' },
-
-  { section: 'Contenu' },
-  { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
 
   { section: 'Finance' },
   { href: '/dashboard/facturation',  icon: '🧾', label: 'Facturation' },
   { href: '/dashboard/tresorerie',   icon: '💼', label: 'Trésorerie',     gestion: true },
-  { href: '/dashboard/paie',         icon: '💵', label: 'Fiches de paie', gestion: true },
   { href: '/dashboard/rapports',     icon: '📈', label: 'Rapports' },
 
-  { section: 'Gestion' },
+  { section: 'Ressources humaines', gestion: true },
   { href: '/dashboard/personnel',    icon: '🧑‍💼', label: 'Personnel',      gestion: true },
-  { href: '/dashboard/equipe',       icon: '👨‍👩‍👧', label: 'Équipe' },
+  { href: '/dashboard/paie',         icon: '💵', label: 'Fiches de paie', gestion: true },
+
+  { section: 'Administration' },
+  { href: '/dashboard/equipe',       icon: '👨‍👩‍👧', label: 'Équipe & accès' },
+  { href: '/dashboard/photos',       icon: '🖼️', label: 'Photos' },
   { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
 ]
 
