@@ -23,34 +23,39 @@ export default function Dashboard() {
   const [upcoming, setUpcoming] = useState([])
   const [weekData, setWeekData] = useState([])
   const [loading,  setLoading]  = useState(true)
-  const [cmdResto, setCmdResto] = useState([])
+  const [cmdResto, setCmdResto] = useState([])      // commandes Restaurant & Bar
+  const [ventesBoutique, setVentesBoutique] = useState([])   // ventes Boutique
   const [periodeResto, setPeriodeResto] = useState('mois')   // jour | semaine | mois | tout
+  const [sourceCmd, setSourceCmd] = useState('tous')        // tous | restaurant | boutique
 
   useEffect(() => { loadData() }, [])
 
-  // Commandes Restaurant & Bar de la période choisie (heure locale), les plus récentes d'abord
+  // Commandes Restaurant & Bar et ventes Boutique de la période choisie (heure locale)
   async function loadCommandesResto() {
-    let q = supabase
-      .from('commandes_restaurant')
-      .select('id, nom_client, telephone, table_num, lignes, montant_total, statut, created_at')
-      .order('created_at', { ascending: false })
-      .limit(2000)
     const debut = new Date(); debut.setHours(0, 0, 0, 0)
     if (periodeResto === 'semaine') debut.setDate(debut.getDate() - 6)
     if (periodeResto === 'mois')    debut.setDate(1)
-    if (periodeResto !== 'tout')    q = q.gte('created_at', debut.toISOString())
-    const { data } = await q
-    setCmdResto(data || [])
+    const charger = (table) => {
+      let q = supabase
+        .from(table)
+        .select('id, nom_client, telephone, lignes, montant_total, statut, created_at' + (table === 'commandes_restaurant' ? ', table_num' : ''))
+        .order('created_at', { ascending: false })
+        .limit(2000)
+      if (periodeResto !== 'tout') q = q.gte('created_at', debut.toISOString())
+      return q
+    }
+    const [resto, boutique] = await Promise.all([charger('commandes_restaurant'), charger('ventes')])
+    setCmdResto(resto.data || [])
+    setVentesBoutique(boutique.data || [])
   }
 
-  // Mise à jour en direct : nouvelle commande, modification ou suppression
+  // Mise à jour en direct : nouvelle commande ou vente, modification, suppression
   useEffect(() => {
     loadCommandesResto()
     const channel = supabase
-      .channel('dashboard_commandes_restaurant')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'commandes_restaurant' }, () => {
-        loadCommandesResto()
-      })
+      .channel('dashboard_commandes_ventes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'commandes_restaurant' }, () => loadCommandesResto())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ventes' }, () => loadCommandesResto())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [periodeResto])
@@ -116,19 +121,30 @@ export default function Dashboard() {
   )
 
   const maxCount = Math.max(...weekData.map(d => d.count), 1)
-  const cmdValides = cmdResto.filter(c => c.statut !== 'annulee')
-  const totalResto = cmdValides.reduce((s, c) => s + (c.montant_total || 0), 0)          // chiffre d'affaires
-  const caEncaisse = cmdValides.filter(c => c.statut === 'payee').reduce((s, c) => s + (c.montant_total || 0), 0)
+  // Commandes restaurant + ventes boutique, réunies et triées de la plus récente à la plus ancienne
+  const toutes = [
+    ...cmdResto.map(c => ({ ...c, source: 'restaurant' })),
+    ...ventesBoutique.map(v => ({ ...v, source: 'boutique' })),
+  ].sort((x, y) => (x.created_at < y.created_at ? 1 : -1))
+  const liste = sourceCmd === 'tous' ? toutes : toutes.filter(c => c.source === sourceCmd)
+  const cmdValides = liste.filter(c => c.statut !== 'annulee')
+  const somme = (arr) => arr.reduce((t, c) => t + (c.montant_total || 0), 0)
+  const totalResto = somme(cmdValides)                                            // chiffre d'affaires
+  const caEncaisse = somme(cmdValides.filter(c => c.statut === 'payee'))
   const caAEncaisser = totalResto - caEncaisse
   const panierMoyen = cmdValides.length ? Math.round(totalResto / cmdValides.length) : 0
+  const caRestaurant = somme(toutes.filter(c => c.source === 'restaurant' && c.statut !== 'annulee'))
+  const caBoutique   = somme(toutes.filter(c => c.source === 'boutique'   && c.statut !== 'annulee'))
+  const SOURCES = [['tous', 'Tout'], ['restaurant', '🍽️ Restaurant & Bar'], ['boutique', '🛍️ Boutique']]
   const PERIODES = [['jour', "Aujourd'hui"], ['semaine', '7 jours'], ['mois', 'Ce mois'], ['tout', 'Tout']]
   const libellePeriode = { jour: "aujourd'hui", semaine: 'sur 7 jours', mois: 'ce mois-ci', tout: 'au total' }[periodeResto]
-  const STATUT_RESTO = { en_cours: 'En cours', servie: 'Servie', payee: 'Payée', annulee: 'Annulée' }
+  const STATUT_RESTO = { en_cours: 'En cours', servie: 'Servie', en_attente: 'En attente', payee: 'Payée', annulee: 'Annulée' }
   const STATUT_RESTO_COLORS = {
-    en_cours: 'bg-yellow-100 text-yellow-800',
-    servie:   'bg-blue-100 text-blue-700',
-    payee:    'bg-green-100 text-green-800',
-    annulee:  'bg-gray-100 text-gray-500',
+    en_cours:   'bg-yellow-100 text-yellow-800',
+    en_attente: 'bg-yellow-100 text-yellow-800',
+    servie:     'bg-blue-100 text-blue-700',
+    payee:      'bg-green-100 text-green-800',
+    annulee:    'bg-gray-100 text-gray-500',
   }
   const now = new Date()
   const monthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
@@ -259,20 +275,21 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Restaurant & Bar — toutes les commandes et chiffre d'affaires, par période */}
+      {/* Commandes (Restaurant & Bar + Boutique) et chiffre d'affaires, par période */}
       <div className="card mb-6">
         <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-2)' }}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="font-semibold" style={{ color: 'var(--text)' }}>🍽️ Restaurant & Bar — commandes et chiffre d'affaires</h2>
+              <h2 className="font-semibold" style={{ color: 'var(--text)' }}>🧾 Commandes et chiffre d'affaires</h2>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
                 {cmdValides.length} commande{cmdValides.length > 1 ? 's' : ''} {libellePeriode}
-                {cmdResto.length !== cmdValides.length && ` · ${cmdResto.length - cmdValides.length} annulée${cmdResto.length - cmdValides.length > 1 ? 's' : ''} non comptée${cmdResto.length - cmdValides.length > 1 ? 's' : ''}`}
+                {liste.length !== cmdValides.length && ` · ${liste.length - cmdValides.length} annulée${liste.length - cmdValides.length > 1 ? 's' : ''} non comptée${liste.length - cmdValides.length > 1 ? 's' : ''}`}
               </p>
             </div>
-            <Link href="/dashboard/restaurant" className="text-sm hover:underline" style={{ color: 'var(--primary)' }}>
-              Voir tout →
-            </Link>
+            <div className="flex gap-4 text-sm">
+              <Link href="/dashboard/restaurant" className="hover:underline" style={{ color: 'var(--primary)' }}>Restaurant & Bar →</Link>
+              <Link href="/dashboard/boutique" className="hover:underline" style={{ color: 'var(--primary)' }}>Boutique →</Link>
+            </div>
           </div>
           <div className="flex flex-wrap gap-2 mt-3">
             {PERIODES.map(([key, label]) => (
@@ -284,11 +301,26 @@ export default function Dashboard() {
                 {label}
               </button>
             ))}
+            <span className="w-px mx-1" style={{ backgroundColor: 'var(--border)' }} />
+            {SOURCES.map(([key, label]) => (
+              <button key={key} onClick={() => setSourceCmd(key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${sourceCmd === key ? 'text-white' : 'border hover:opacity-80'}`}
+                style={sourceCmd === key
+                  ? { backgroundColor: '#0C3A3D' }
+                  : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
+                {label}
+              </button>
+            ))}
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
             <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
               <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Chiffre d'affaires</p>
               <p className="text-xl font-bold mt-1" style={{ color: 'var(--text)' }}>{formatFCFA(totalResto)}</p>
+              {sourceCmd === 'tous' && (
+                <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>
+                  Resto {formatFCFA(caRestaurant)} · Boutique {formatFCFA(caBoutique)}
+                </p>
+              )}
             </div>
             <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
               <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Encaissé</p>
@@ -309,6 +341,7 @@ export default function Dashboard() {
             <thead className="sticky top-0" style={{ backgroundColor: 'var(--bg-2)' }}>
               <tr>
                 <th className="table-th">Date / Heure</th>
+                <th className="table-th">Origine</th>
                 <th className="table-th">Client</th>
                 <th className="table-th">Numéro</th>
                 <th className="table-th">Articles</th>
@@ -317,14 +350,17 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {cmdResto.length === 0 ? (
-                <tr><td colSpan={6} className="table-td text-center py-8" style={{ color: 'var(--text-3)' }}>
+              {liste.length === 0 ? (
+                <tr><td colSpan={7} className="table-td text-center py-8" style={{ color: 'var(--text-3)' }}>
                   Aucune commande sur cette période
                 </td></tr>
-              ) : cmdResto.slice(0, 300).map(c => (
-                <tr key={c.id} className="border-t" style={{ borderColor: 'var(--border-2)' }}>
+              ) : liste.slice(0, 300).map(c => (
+                <tr key={`${c.source}-${c.id}`} className="border-t" style={{ borderColor: 'var(--border-2)' }}>
                   <td className="table-td text-xs whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
                     {new Date(c.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td className="table-td text-xs whitespace-nowrap" style={{ color: 'var(--text-2)' }}>
+                    {c.source === 'boutique' ? '🛍️ Boutique' : '🍽️ Resto & Bar'}
                   </td>
                   <td className="table-td font-medium" style={{ color: 'var(--text)' }}>
                     {c.nom_client}
