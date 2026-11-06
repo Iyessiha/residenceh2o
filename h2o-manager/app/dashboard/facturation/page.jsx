@@ -64,7 +64,7 @@ export default function Facturation() {
     }
     const payload = {
       ...form,
-      numero,
+      numero: numero || null,   // vide : la base attribue le numéro
       montant_total: parseInt(form.montant_total) || 0,
       montant_paye:  parseInt(form.montant_paye)  || 0,
     }

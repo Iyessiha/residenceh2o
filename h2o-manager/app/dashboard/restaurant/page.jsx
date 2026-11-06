@@ -256,15 +256,13 @@ export default function Restaurant() {
         return
       }
 
-      const res = await fetch('/api/factures/next-numero')
-      const numero = (await res.json().catch(() => ({}))).numero || ''
       const total = c.montant_total || 0
       const detail = (c.lignes || [])
         .map(l => `${l.nom} × ${l.qte} — ${formatFCFA((parseInt(l.qte) || 0) * (parseInt(l.prix) || 0))}`)
         .join('\n')
       const payee = c.statut === 'payee'
+      // Pas de numéro ici : la base l'attribue (FAC-AAAA-NNN), sans risque de doublon
       const payload = {
-        numero,
         nom_client: c.nom_client,
         telephone: c.telephone || null,
         client_id: c.client_id || null,
