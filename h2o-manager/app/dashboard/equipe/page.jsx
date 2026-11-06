@@ -80,6 +80,13 @@ export default function Equipe() {
     load()
   }
 
+  async function supprimer(s) {
+    if (!window.confirm(`Supprimer ${s.nom} de l'équipe ? Son lien d'accès cessera de fonctionner. Cette action est irréversible.`)) return
+    const { error } = await supabase.from('staff').delete().eq('id', s.id)
+    if (error) { alert('Suppression impossible : ' + error.message); return }
+    load()
+  }
+
   async function copyLink(token) {
     const url = staffUrl(token)
     await navigator.clipboard.writeText(url)
@@ -177,6 +184,13 @@ export default function Equipe() {
                     className="px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-xs"
                   >
                     ✏️
+                  </button>
+                  <button
+                    onClick={() => supprimer(s)}
+                    title="Supprimer ce membre"
+                    className="px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors text-xs"
+                  >
+                    🗑️
                   </button>
                 </div>
               </div>
