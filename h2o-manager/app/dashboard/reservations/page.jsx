@@ -11,7 +11,7 @@ const STATUTS = ['tous', 'en_attente', 'confirme', 'en_sejour', 'cloture', 'annu
 const EMPTY = {
   nom_client: '', telephone: '', email: '', duplex_id: '',
   date_arrivee: '', date_depart: '', nb_personnes: '',
-  montant_total: '', notes: '', statut: 'en_attente',
+  montant_total: '', avance: '', notes: '', statut: 'en_attente',
   source: 'manuel', type: 'sejour', demarcheur_id: '',
 }
 const EMPTY_CHAMBRE = { ...EMPTY, type: 'chambre', duplex_id: '' }
@@ -114,6 +114,7 @@ export default function Reservations() {
       date_arrivee: r.date_arrivee || '', date_depart: r.date_depart || '',
       nb_personnes: r.nb_personnes ? String(r.nb_personnes) : '',
       montant_total: r.montant_total ? String(r.montant_total) : '',
+      avance: r.avance ? String(r.avance) : '',
       notes: r.notes || '', statut: r.statut, source: r.source, type: r.type,
       demarcheur_id: r.demarcheur_id || '',
     })
@@ -148,6 +149,10 @@ export default function Reservations() {
   }
 
   async function save() {
+    if (form.montant_total && (parseInt(form.avance) || 0) > parseInt(form.montant_total)) {
+      alert("L'avance ne peut pas dépasser le montant total.")
+      return
+    }
     setSaving(true)
     try {
     const hasConflict = await checkConflict()
@@ -175,6 +180,7 @@ export default function Reservations() {
       demarcheur_id: form.demarcheur_id || null,
       nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
       montant_total: form.montant_total ? parseInt(form.montant_total) : null,
+      avance: form.avance ? parseInt(form.avance) : 0,
       updated_at: new Date().toISOString(),
     }
 
@@ -205,6 +211,14 @@ export default function Reservations() {
   }
 
   // Le démarcheur est versé en prestataire : on enregistre le paiement de sa commission
+  async function solderReservation(r) {
+    const reste = (r.montant_total || 0) - (r.avance || 0)
+    if (reste <= 0) return
+    if (!window.confirm(`Encaisser le solde de ${formatFCFA(reste)} pour ${r.nom_client} ?`)) return
+    await supabase.from('reservations').update({ avance: r.montant_total, updated_at: new Date().toISOString() }).eq('id', r.id)
+    load()
+  }
+
   async function marquerCommissionPayee(id) {
     await supabase.from('reservations').update({ commission_statut: 'payee' }).eq('id', id)
     load()
@@ -305,6 +319,23 @@ export default function Reservations() {
                   <td className="table-td">{formatDate(r.date_depart)}</td>
                   <td className="table-td">
                     {formatFCFA(r.montant_total)}
+                    {r.montant_total > 0 && (
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                        <span style={{ color: 'var(--text-2)' }}>Avance {formatFCFA(r.avance || 0)}</span>
+                        {(r.montant_total - (r.avance || 0)) > 0 ? (
+                          <>
+                            <span className="badge bg-amber-100 text-amber-800">Reste {formatFCFA(r.montant_total - (r.avance || 0))}</span>
+                            <button onClick={() => solderReservation(r)}
+                              className="font-semibold px-2 py-0.5 rounded text-white transition-opacity hover:opacity-80"
+                              style={{ backgroundColor: 'var(--primary)' }}>
+                              Encaisser le solde
+                            </button>
+                          </>
+                        ) : (
+                          <span className="badge bg-green-100 text-green-700">Soldé</span>
+                        )}
+                      </div>
+                    )}
                     {r.demarcheur_id && (
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <span className="text-xs" style={{ color: 'var(--text-2)' }}>
@@ -485,6 +516,24 @@ export default function Reservations() {
                   onChange={e => setForm(p => ({ ...p, montant_total: e.target.value }))}
                   placeholder="Sélectionnez hébergement + dates pour calcul auto" />
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Avance versée (FCFA)</label>
+                  <input className="input" type="number" min="0" value={form.avance}
+                    onChange={e => setForm(p => ({ ...p, avance: e.target.value }))} placeholder="0" />
+                </div>
+                <div>
+                  <label className="label">Reste à payer (FCFA)</label>
+                  <div className="input flex items-center font-semibold"
+                    style={{ color: (parseInt(form.montant_total) || 0) - (parseInt(form.avance) || 0) > 0 ? '#b45309' : '#15803d' }}>
+                    {formatFCFA(Math.max(0, (parseInt(form.montant_total) || 0) - (parseInt(form.avance) || 0)))}
+                  </div>
+                </div>
+              </div>
+              {(parseInt(form.avance) || 0) > (parseInt(form.montant_total) || 0) && form.montant_total && (
+                <p className="text-xs text-red-600">L'avance dépasse le montant total.</p>
+              )}
 
               <div>
                 <label className="label">
