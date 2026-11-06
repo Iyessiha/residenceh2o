@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { afficherNotification, demanderPermissionNotifications } from '@/lib/notifications'
 import { activerSon, sonPret, jouerSon, lireSonsActifs, ecrireSonsActifs } from '@/lib/alertes'
 import { formatFCFA } from '@/lib/utils'
+import { estGestion } from '@/lib/useRole'
 
 const NAV = [
   { href: '/dashboard', icon: '📊', label: 'Tableau de bord' },
@@ -31,9 +32,12 @@ const NAV = [
 
   { section: 'Finance' },
   { href: '/dashboard/facturation',  icon: '🧾', label: 'Facturation' },
+  { href: '/dashboard/tresorerie',   icon: '💼', label: 'Trésorerie',     gestion: true },
+  { href: '/dashboard/paie',         icon: '💵', label: 'Fiches de paie', gestion: true },
   { href: '/dashboard/rapports',     icon: '📈', label: 'Rapports' },
 
   { section: 'Gestion' },
+  { href: '/dashboard/personnel',    icon: '🧑‍💼', label: 'Personnel',      gestion: true },
   { href: '/dashboard/equipe',       icon: '👨‍👩‍👧', label: 'Équipe' },
   { href: '/dashboard/parametres',   icon: '⚙️', label: 'Paramètres' },
 ]
@@ -67,6 +71,7 @@ export default function DashboardLayout({ children }) {
   const [sons, setSons] = useState(true)
   const [sonOk, setSonOk] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [role, setRole] = useState(null)
   const [notifs, setNotifs] = useState([])
   const [panelOuvert, setPanelOuvert] = useState(false)
   const supabase = createClient()
@@ -158,7 +163,12 @@ export default function DashboardLayout({ children }) {
 
   // Initialisation : utilisateur, notifications existantes, compteurs, temps réel
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data?.user?.id || null))
+    supabase.auth.getUser().then(async ({ data }) => {
+      setUserId(data?.user?.id || null)
+      if (!data?.user) return
+      const { data: profil } = await supabase.from('profiles').select('role').eq('id', data.user.id).maybeSingle()
+      setRole(profil?.role || null)
+    })
     chargerNotifs()
     loadCounts()
 
@@ -238,7 +248,7 @@ export default function DashboardLayout({ children }) {
 
       {/* Nav */}
       <nav className="flex-1 px-2 py-3 overflow-y-auto">
-        {NAV.map((item, i) => {
+        {NAV.filter(item => !item.gestion || estGestion(role)).map((item, i) => {
           if (item.section) {
             return (
               <p key={`s-${i}`}

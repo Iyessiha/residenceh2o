@@ -11,6 +11,12 @@ const nextConfig = {
       './node_modules/pdfkit/js/font/**/*',
       './public/logo-facture.png',
     ],
+    // Bulletins de paie : mêmes polices et même logo
+    '/api/paie/**': [
+      './node_modules/pdfkit/js/standard-fonts/**/*',
+      './node_modules/pdfkit/js/font/**/*',
+      './public/logo-facture.png',
+    ],
   },
   async redirects() {
     return [{ source: '/dashboard/balises', destination: '/dashboard/parametres', permanent: false }]
