@@ -24,17 +24,22 @@ export default function Dashboard() {
   const [weekData, setWeekData] = useState([])
   const [loading,  setLoading]  = useState(true)
   const [cmdResto, setCmdResto] = useState([])
+  const [periodeResto, setPeriodeResto] = useState('mois')   // jour | semaine | mois | tout
 
   useEffect(() => { loadData() }, [])
 
-  // Commandes Restaurant & Bar du jour (heure locale), les plus récentes d'abord
+  // Commandes Restaurant & Bar de la période choisie (heure locale), les plus récentes d'abord
   async function loadCommandesResto() {
-    const debut = new Date(); debut.setHours(0, 0, 0, 0)
-    const { data } = await supabase
+    let q = supabase
       .from('commandes_restaurant')
       .select('id, nom_client, telephone, table_num, lignes, montant_total, statut, created_at')
-      .gte('created_at', debut.toISOString())
       .order('created_at', { ascending: false })
+      .limit(2000)
+    const debut = new Date(); debut.setHours(0, 0, 0, 0)
+    if (periodeResto === 'semaine') debut.setDate(debut.getDate() - 6)
+    if (periodeResto === 'mois')    debut.setDate(1)
+    if (periodeResto !== 'tout')    q = q.gte('created_at', debut.toISOString())
+    const { data } = await q
     setCmdResto(data || [])
   }
 
@@ -48,7 +53,7 @@ export default function Dashboard() {
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [])
+  }, [periodeResto])
 
   async function loadData() {
     const todayStr = new Date().toISOString().split('T')[0]
@@ -112,7 +117,12 @@ export default function Dashboard() {
 
   const maxCount = Math.max(...weekData.map(d => d.count), 1)
   const cmdValides = cmdResto.filter(c => c.statut !== 'annulee')
-  const totalResto = cmdValides.reduce((s, c) => s + (c.montant_total || 0), 0)
+  const totalResto = cmdValides.reduce((s, c) => s + (c.montant_total || 0), 0)          // chiffre d'affaires
+  const caEncaisse = cmdValides.filter(c => c.statut === 'payee').reduce((s, c) => s + (c.montant_total || 0), 0)
+  const caAEncaisser = totalResto - caEncaisse
+  const panierMoyen = cmdValides.length ? Math.round(totalResto / cmdValides.length) : 0
+  const PERIODES = [['jour', "Aujourd'hui"], ['semaine', '7 jours'], ['mois', 'Ce mois'], ['tout', 'Tout']]
+  const libellePeriode = { jour: "aujourd'hui", semaine: 'sur 7 jours', mois: 'ce mois-ci', tout: 'au total' }[periodeResto]
   const STATUT_RESTO = { en_cours: 'En cours', servie: 'Servie', payee: 'Payée', annulee: 'Annulée' }
   const STATUT_RESTO_COLORS = {
     en_cours: 'bg-yellow-100 text-yellow-800',
@@ -249,25 +259,56 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Restaurant & Bar — commandes enregistrées aujourd'hui */}
+      {/* Restaurant & Bar — toutes les commandes et chiffre d'affaires, par période */}
       <div className="card mb-6">
-        <div className="px-5 py-4 border-b flex flex-wrap items-center justify-between gap-2" style={{ borderColor: 'var(--border-2)' }}>
-          <div>
-            <h2 className="font-semibold" style={{ color: 'var(--text)' }}>🍽️ Restaurant & Bar — commandes du jour</h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
-              {cmdValides.length} commande{cmdValides.length > 1 ? 's' : ''} · Total {formatFCFA(totalResto)}
-              {cmdResto.length !== cmdValides.length && ` (${cmdResto.length - cmdValides.length} annulée${cmdResto.length - cmdValides.length > 1 ? 's' : ''} non comptée${cmdResto.length - cmdValides.length > 1 ? 's' : ''})`}
-            </p>
+        <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-2)' }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-semibold" style={{ color: 'var(--text)' }}>🍽️ Restaurant & Bar — commandes et chiffre d'affaires</h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+                {cmdValides.length} commande{cmdValides.length > 1 ? 's' : ''} {libellePeriode}
+                {cmdResto.length !== cmdValides.length && ` · ${cmdResto.length - cmdValides.length} annulée${cmdResto.length - cmdValides.length > 1 ? 's' : ''} non comptée${cmdResto.length - cmdValides.length > 1 ? 's' : ''}`}
+              </p>
+            </div>
+            <Link href="/dashboard/restaurant" className="text-sm hover:underline" style={{ color: 'var(--primary)' }}>
+              Voir tout →
+            </Link>
           </div>
-          <Link href="/dashboard/restaurant" className="text-sm hover:underline" style={{ color: 'var(--primary)' }}>
-            Voir tout →
-          </Link>
+          <div className="flex flex-wrap gap-2 mt-3">
+            {PERIODES.map(([key, label]) => (
+              <button key={key} onClick={() => setPeriodeResto(key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${periodeResto === key ? 'text-white' : 'border hover:opacity-80'}`}
+                style={periodeResto === key
+                  ? { backgroundColor: 'var(--primary)' }
+                  : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
+            <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Chiffre d'affaires</p>
+              <p className="text-xl font-bold mt-1" style={{ color: 'var(--text)' }}>{formatFCFA(totalResto)}</p>
+            </div>
+            <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Encaissé</p>
+              <p className="text-xl font-bold mt-1 text-green-600">{formatFCFA(caEncaisse)}</p>
+            </div>
+            <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>À encaisser</p>
+              <p className="text-xl font-bold mt-1 text-yellow-600">{formatFCFA(caAEncaisser)}</p>
+            </div>
+            <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Panier moyen</p>
+              <p className="text-xl font-bold mt-1" style={{ color: 'var(--text)' }}>{formatFCFA(panierMoyen)}</p>
+            </div>
+          </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-auto max-h-[28rem]">
           <table className="w-full">
-            <thead style={{ backgroundColor: 'var(--bg-2)' }}>
+            <thead className="sticky top-0" style={{ backgroundColor: 'var(--bg-2)' }}>
               <tr>
-                <th className="table-th">Heure</th>
+                <th className="table-th">Date / Heure</th>
                 <th className="table-th">Client</th>
                 <th className="table-th">Numéro</th>
                 <th className="table-th">Articles</th>
@@ -278,12 +319,12 @@ export default function Dashboard() {
             <tbody>
               {cmdResto.length === 0 ? (
                 <tr><td colSpan={6} className="table-td text-center py-8" style={{ color: 'var(--text-3)' }}>
-                  Aucune commande enregistrée aujourd'hui
+                  Aucune commande sur cette période
                 </td></tr>
-              ) : cmdResto.map(c => (
+              ) : cmdResto.slice(0, 300).map(c => (
                 <tr key={c.id} className="border-t" style={{ borderColor: 'var(--border-2)' }}>
                   <td className="table-td text-xs whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
-                    {new Date(c.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(c.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="table-td font-medium" style={{ color: 'var(--text)' }}>
                     {c.nom_client}
