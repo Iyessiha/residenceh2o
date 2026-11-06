@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { formatFCFA } from '@/lib/utils'
@@ -136,6 +136,8 @@ export default function Restaurant() {
   const [editIdCmd, setEditIdCmd]     = useState(null)
   const [savingCmd, setSavingCmd]     = useState(false)
   const [factureLoading, setFactureLoading] = useState(null)
+  const [apercu, setApercu] = useState(null)   // { facture, url } : facture ouverte en aperçu
+  const iframeRef = useRef(null)
 
   // Menu
   const [showFormMenu, setShowFormMenu]   = useState(false)
@@ -215,7 +217,7 @@ export default function Restaurant() {
     loadCommandes()
   }
   // ── Facture d'une commande ──────────────────────────────
-  async function telechargerPDF(facture) {
+  async function ouvrirApercu(facture) {
     const { data: entreprise } = await supabase.from('entreprise').select('rccm, ifu, tva, tva_taux, taxes').eq('id', 1).maybeSingle()
     const res = await fetch(`/api/factures/${facture.id}/pdf`, {
       method: 'POST',
@@ -226,13 +228,20 @@ export default function Restaurant() {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.detail || 'Erreur serveur')
     }
-    const url = URL.createObjectURL(await res.blob())
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${facture.numero || 'facture'}.pdf`
-    document.body.appendChild(a); a.click(); a.remove()
-    setTimeout(() => URL.revokeObjectURL(url), 10000)
+    setApercu({ facture, url: URL.createObjectURL(await res.blob()) })
   }
+
+  function fermerApercu() {
+    if (apercu) URL.revokeObjectURL(apercu.url)
+    setApercu(null)
+  }
+  function telechargerApercu() {
+    const a = document.createElement('a')
+    a.href = apercu.url
+    a.download = `${apercu.facture.numero || 'facture'}.pdf`
+    document.body.appendChild(a); a.click(); a.remove()
+  }
+  function imprimerApercu() { iframeRef.current?.contentWindow?.print() }
 
   async function genererFacture(c) {
     if (c.statut === 'annulee') { window.alert('Cette commande est annulée : aucune facture à générer.'); return }
@@ -243,7 +252,7 @@ export default function Restaurant() {
       const { data: existantes } = await supabase.from('factures').select('*').ilike('description', `%${repere}%`).limit(1)
       if (existantes?.length) {
         const f = existantes[0]
-        if (window.confirm(`La facture ${f.numero} existe déjà pour cette commande. La télécharger à nouveau ?`)) await telechargerPDF(f)
+        await ouvrirApercu(f)
         return
       }
 
@@ -267,8 +276,7 @@ export default function Restaurant() {
       }
       const { data: facture, error } = await supabase.from('factures').insert([payload]).select().single()
       if (error) throw new Error(error.message)
-      await telechargerPDF(facture)
-      window.alert(`Facture ${facture.numero} créée (${formatFCFA(total)}). Retrouvez-la dans Facturation.`)
+      await ouvrirApercu(facture)
     } catch (err) {
       window.alert(`Impossible de générer la facture : ${err.message}`)
     } finally {
@@ -331,6 +339,21 @@ export default function Restaurant() {
 
   return (
     <div>
+      {apercu && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+              <p className="font-semibold text-gray-900">Facture {apercu.facture.numero}</p>
+              <button onClick={fermerApercu} className="text-2xl leading-none text-gray-500 hover:text-gray-900" aria-label="Fermer l'aperçu">×</button>
+            </div>
+            <iframe ref={iframeRef} src={apercu.url} title={`Aperçu de la facture ${apercu.facture.numero}`} className="flex-1 w-full" />
+            <div className="flex justify-end gap-3 px-5 py-3 border-t border-gray-200">
+              <button onClick={telechargerApercu} className="btn-secondary">Télécharger</button>
+              <button onClick={imprimerApercu} className="btn-primary">Imprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Restaurant & Bar</h1>
