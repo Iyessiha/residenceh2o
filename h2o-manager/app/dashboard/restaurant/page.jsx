@@ -135,6 +135,7 @@ export default function Restaurant() {
   const [formCmd, setFormCmd]         = useState(EMPTY_CMD)
   const [editIdCmd, setEditIdCmd]     = useState(null)
   const [savingCmd, setSavingCmd]     = useState(false)
+  const [factureLoading, setFactureLoading] = useState(null)
 
   // Menu
   const [showFormMenu, setShowFormMenu]   = useState(false)
@@ -213,6 +214,68 @@ export default function Restaurant() {
     await supabase.from('commandes_restaurant').update({ statut }).eq('id', id)
     loadCommandes()
   }
+  // ── Facture d'une commande ──────────────────────────────
+  async function telechargerPDF(facture) {
+    const { data: entreprise } = await supabase.from('entreprise').select('rccm, ifu, tva, tva_taux, taxes').eq('id', 1).maybeSingle()
+    const res = await fetch(`/api/factures/${facture.id}/pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...facture, _guestUrl: null, _entreprise: entreprise }),
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.detail || 'Erreur serveur')
+    }
+    const url = URL.createObjectURL(await res.blob())
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${facture.numero || 'facture'}.pdf`
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
+  }
+
+  async function genererFacture(c) {
+    if (c.statut === 'annulee') { window.alert('Cette commande est annulée : aucune facture à générer.'); return }
+    setFactureLoading(c.id)
+    try {
+      // Repère unique dans la description : évite de facturer deux fois la même commande
+      const repere = `Commande restaurant n° ${c.id.slice(0, 8)}`
+      const { data: existantes } = await supabase.from('factures').select('*').ilike('description', `%${repere}%`).limit(1)
+      if (existantes?.length) {
+        const f = existantes[0]
+        if (window.confirm(`La facture ${f.numero} existe déjà pour cette commande. La télécharger à nouveau ?`)) await telechargerPDF(f)
+        return
+      }
+
+      const res = await fetch('/api/factures/next-numero')
+      const numero = (await res.json().catch(() => ({}))).numero || ''
+      const total = c.montant_total || 0
+      const detail = (c.lignes || [])
+        .map(l => `${l.nom} × ${l.qte} — ${formatFCFA((parseInt(l.qte) || 0) * (parseInt(l.prix) || 0))}`)
+        .join('\n')
+      const payee = c.statut === 'payee'
+      const payload = {
+        numero,
+        nom_client: c.nom_client,
+        telephone: c.telephone || null,
+        client_id: c.client_id || null,
+        type_prestation: 'restauration',
+        description: `${repere}${c.table_num ? ` (${c.table_num})` : ''}\n${detail}`,
+        montant_total: total,
+        montant_paye: payee ? total : 0,
+        statut: payee ? 'paye' : 'envoye',
+      }
+      const { data: facture, error } = await supabase.from('factures').insert([payload]).select().single()
+      if (error) throw new Error(error.message)
+      await telechargerPDF(facture)
+      window.alert(`Facture ${facture.numero} créée (${formatFCFA(total)}). Retrouvez-la dans Facturation.`)
+    } catch (err) {
+      window.alert(`Impossible de générer la facture : ${err.message}`)
+    } finally {
+      setFactureLoading(null)
+    }
+  }
+
   // Suppression définitive d'une commande saisie par erreur
   async function deleteCmd(c) {
     if (!window.confirm(`Supprimer définitivement la commande de ${c.nom_client} (${formatFCFA(c.montant_total)}) ? Cette action est irréversible.`)) return
@@ -360,7 +423,7 @@ export default function Restaurant() {
                       <td className="table-td text-xs" style={{ color: 'var(--text-3)' }}>{PAIEMENTS[c.mode_paiement] || c.mode_paiement}</td>
                       <td className="table-td"><span className={`badge ${STATUT_COLORS[c.statut]}`}>{STATUTS[c.statut]}</span></td>
                       <td className="table-td">
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                           <select value={c.statut} onChange={e => updateStatutCmd(c.id, e.target.value)}
                             className="text-xs border rounded px-2 py-1"
                             style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
@@ -369,6 +432,12 @@ export default function Restaurant() {
                           <button onClick={() => openEditCmd(c)} className="text-xs px-2 py-1 border rounded hover:opacity-70"
                             style={{ borderColor: 'var(--border)', color: 'var(--text-2)', backgroundColor: 'var(--bg)' }}>
                             Éditer
+                          </button>
+                          <button onClick={() => genererFacture(c)} disabled={factureLoading === c.id || c.statut === 'annulee'}
+                            title="Générer la facture" aria-label={`Générer la facture de ${c.nom_client}`}
+                            className="text-xs px-2 py-1 border rounded hover:opacity-70 disabled:opacity-40"
+                            style={{ borderColor: 'var(--border)', color: 'var(--primary)', backgroundColor: 'var(--bg)' }}>
+                            {factureLoading === c.id ? '…' : '🧾 Facture'}
                           </button>
                           <button onClick={() => deleteCmd(c)} title="Supprimer la commande" aria-label={`Supprimer la commande de ${c.nom_client}`}
                             className="text-xs px-2 py-1 border rounded hover:opacity-70"
