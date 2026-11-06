@@ -213,6 +213,13 @@ export default function Restaurant() {
     await supabase.from('commandes_restaurant').update({ statut }).eq('id', id)
     loadCommandes()
   }
+  // Suppression définitive d'une commande saisie par erreur
+  async function deleteCmd(c) {
+    if (!window.confirm(`Supprimer définitivement la commande de ${c.nom_client} (${formatFCFA(c.montant_total)}) ? Cette action est irréversible.`)) return
+    const { error } = await supabase.from('commandes_restaurant').delete().eq('id', c.id)
+    if (error) { window.alert(`Suppression impossible : ${error.message}`); return }
+    loadCommandes()
+  }
 
   // ── CRUD Menu ───────────────────────────────────────────
   function openCreateMenu() { setEditIdMenu(null); setFormMenu(EMPTY_MENU); setShowFormMenu(true) }
@@ -362,6 +369,11 @@ export default function Restaurant() {
                           <button onClick={() => openEditCmd(c)} className="text-xs px-2 py-1 border rounded hover:opacity-70"
                             style={{ borderColor: 'var(--border)', color: 'var(--text-2)', backgroundColor: 'var(--bg)' }}>
                             Éditer
+                          </button>
+                          <button onClick={() => deleteCmd(c)} title="Supprimer la commande" aria-label={`Supprimer la commande de ${c.nom_client}`}
+                            className="text-xs px-2 py-1 border rounded hover:opacity-70"
+                            style={{ borderColor: '#FECACA', color: '#DC2626', backgroundColor: 'var(--bg)' }}>
+                            🗑️
                           </button>
                         </div>
                       </td>

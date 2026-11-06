@@ -23,8 +23,32 @@ export default function Dashboard() {
   const [upcoming, setUpcoming] = useState([])
   const [weekData, setWeekData] = useState([])
   const [loading,  setLoading]  = useState(true)
+  const [cmdResto, setCmdResto] = useState([])
 
   useEffect(() => { loadData() }, [])
+
+  // Commandes Restaurant & Bar du jour (heure locale), les plus récentes d'abord
+  async function loadCommandesResto() {
+    const debut = new Date(); debut.setHours(0, 0, 0, 0)
+    const { data } = await supabase
+      .from('commandes_restaurant')
+      .select('id, nom_client, telephone, table_num, lignes, montant_total, statut, created_at')
+      .gte('created_at', debut.toISOString())
+      .order('created_at', { ascending: false })
+    setCmdResto(data || [])
+  }
+
+  // Mise à jour en direct : nouvelle commande, modification ou suppression
+  useEffect(() => {
+    loadCommandesResto()
+    const channel = supabase
+      .channel('dashboard_commandes_restaurant')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'commandes_restaurant' }, () => {
+        loadCommandesResto()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   async function loadData() {
     const todayStr = new Date().toISOString().split('T')[0]
@@ -87,6 +111,15 @@ export default function Dashboard() {
   )
 
   const maxCount = Math.max(...weekData.map(d => d.count), 1)
+  const cmdValides = cmdResto.filter(c => c.statut !== 'annulee')
+  const totalResto = cmdValides.reduce((s, c) => s + (c.montant_total || 0), 0)
+  const STATUT_RESTO = { en_cours: 'En cours', servie: 'Servie', payee: 'Payée', annulee: 'Annulée' }
+  const STATUT_RESTO_COLORS = {
+    en_cours: 'bg-yellow-100 text-yellow-800',
+    servie:   'bg-blue-100 text-blue-700',
+    payee:    'bg-green-100 text-green-800',
+    annulee:  'bg-gray-100 text-gray-500',
+  }
   const now = new Date()
   const monthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
@@ -213,6 +246,61 @@ export default function Dashboard() {
           <p className="text-xs mt-3" style={{ color: 'var(--text-3)' }}>
             Nb. de séjours en cours par jour
           </p>
+        </div>
+      </div>
+
+      {/* Restaurant & Bar — commandes enregistrées aujourd'hui */}
+      <div className="card mb-6">
+        <div className="px-5 py-4 border-b flex flex-wrap items-center justify-between gap-2" style={{ borderColor: 'var(--border-2)' }}>
+          <div>
+            <h2 className="font-semibold" style={{ color: 'var(--text)' }}>🍽️ Restaurant & Bar — commandes du jour</h2>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+              {cmdValides.length} commande{cmdValides.length > 1 ? 's' : ''} · Total {formatFCFA(totalResto)}
+              {cmdResto.length !== cmdValides.length && ` (${cmdResto.length - cmdValides.length} annulée${cmdResto.length - cmdValides.length > 1 ? 's' : ''} non comptée${cmdResto.length - cmdValides.length > 1 ? 's' : ''})`}
+            </p>
+          </div>
+          <Link href="/dashboard/restaurant" className="text-sm hover:underline" style={{ color: 'var(--primary)' }}>
+            Voir tout →
+          </Link>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead style={{ backgroundColor: 'var(--bg-2)' }}>
+              <tr>
+                <th className="table-th">Heure</th>
+                <th className="table-th">Client</th>
+                <th className="table-th">Numéro</th>
+                <th className="table-th">Articles</th>
+                <th className="table-th">Total</th>
+                <th className="table-th">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cmdResto.length === 0 ? (
+                <tr><td colSpan={6} className="table-td text-center py-8" style={{ color: 'var(--text-3)' }}>
+                  Aucune commande enregistrée aujourd'hui
+                </td></tr>
+              ) : cmdResto.map(c => (
+                <tr key={c.id} className="border-t" style={{ borderColor: 'var(--border-2)' }}>
+                  <td className="table-td text-xs whitespace-nowrap" style={{ color: 'var(--text-3)' }}>
+                    {new Date(c.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td className="table-td font-medium" style={{ color: 'var(--text)' }}>
+                    {c.nom_client}
+                    {c.table_num && <span className="text-xs font-normal ml-1" style={{ color: 'var(--text-3)' }}>· {c.table_num}</span>}
+                  </td>
+                  <td className="table-td" style={{ color: 'var(--text-2)' }}>{c.telephone || '—'}</td>
+                  <td className="table-td text-xs" style={{ color: 'var(--text-2)' }}>
+                    {(c.lignes || []).map(l => `${l.nom} ×${l.qte}`).join(', ') || '—'}
+                  </td>
+                  <td className="table-td font-semibold whitespace-nowrap" style={{ color: 'var(--text)' }}>{formatFCFA(c.montant_total)}</td>
+                  <td className="table-td">
+                    <span className={`badge ${STATUT_RESTO_COLORS[c.statut]}`}>{STATUT_RESTO[c.statut] || c.statut}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

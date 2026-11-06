@@ -83,6 +83,14 @@ export default function Facturation() {
     load()
   }
 
+  // Suppression définitive d'une facture saisie par erreur
+  async function supprimerFacture(f) {
+    if (!window.confirm(`Supprimer définitivement la facture ${f.numero} de ${f.nom_client} (${formatFCFA(f.montant_total)}) ? Cette action est irréversible.`)) return
+    const { error } = await supabase.from('factures').delete().eq('id', f.id)
+    if (error) { window.alert(`Suppression impossible : ${error.message}`); return }
+    load()
+  }
+
   // Génère le PDF sur le serveur et renvoie son adresse locale
   async function genererPDF(facture) {
     const guestUrl = facture.reservation_id
@@ -236,6 +244,15 @@ export default function Facturation() {
                             <circle cx="12" cy="12" r="3" />
                           </svg>
                         )}
+                      </button>
+                      <button
+                        onClick={() => supprimerFacture(f)}
+                        title="Supprimer la facture"
+                        className="flex items-center justify-center w-7 h-7 rounded transition-opacity hover:opacity-70"
+                        style={{ backgroundColor: '#FEE2E2', color: '#DC2626' }}
+                        aria-label={`Supprimer la facture ${f.numero}`}
+                      >
+                        🗑️
                       </button>
                     </div>
                   </td>
