@@ -11,6 +11,10 @@ import { NextResponse } from 'next/server'
 export async function GET() {
   const supabase = createServiceClient()
   // Calcul fait dans la base (migration 20261027) : numéros uniques et qui se suivent
+  if (typeof supabase.rpc !== 'function') {
+    // Clé SUPABASE_SERVICE_ROLE_KEY absente sur Vercel : la base attribuera le numéro à l'enregistrement
+    return NextResponse.json({ numero: null })
+  }
   const { data, error } = await supabase.rpc('prochain_numero_facture')
 
   if (error) {

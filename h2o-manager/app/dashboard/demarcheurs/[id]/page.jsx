@@ -37,7 +37,7 @@ export default function FicheDemarcheur() {
 
   async function marquerPayee(r) {
     setSavingId(r.id)
-    await supabase.from('reservations').update({ commission_statut: 'payee' }).eq('id', r.id)
+    { const { error: erreurEcriture } = await supabase.from('reservations').update({ commission_statut: 'payee' }).eq('id', r.id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     setSavingId(null)
     load()
   }

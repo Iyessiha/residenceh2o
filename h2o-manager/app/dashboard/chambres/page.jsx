@@ -90,13 +90,13 @@ export default function Chambres() {
   }
 
   async function updateStatut(id, statut) {
-    await supabase.from('chambres').update({ statut, updated_at: new Date().toISOString() }).eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('chambres').update({ statut, updated_at: new Date().toISOString() }).eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 
   async function confirmDelete() {
     setDeleting(true)
-    await supabase.from('chambres').delete().eq('id', deleteId)
+    { const { error: erreurEcriture } = await supabase.from('chambres').delete().eq('id', deleteId); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     setDeleteId(null); setDeleting(false); load()
   }
 

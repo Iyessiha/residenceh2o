@@ -66,9 +66,9 @@ export default function Equipe() {
       token: form.token || genToken(),
     }
     if (editId) {
-      await supabase.from('staff').update(payload).eq('id', editId)
+      { const { error: erreurEcriture } = await supabase.from('staff').update(payload).eq('id', editId); if (erreurEcriture) { setSaving(false); window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     } else {
-      await supabase.from('staff').insert(payload)
+      { const { error: erreurEcriture } = await supabase.from('staff').insert(payload); if (erreurEcriture) { setSaving(false); window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     }
     setSaving(false)
     setShowForm(false)
@@ -76,7 +76,7 @@ export default function Equipe() {
   }
 
   async function toggleActif(s) {
-    await supabase.from('staff').update({ actif: !s.actif }).eq('id', s.id)
+    { const { error: erreurEcriture } = await supabase.from('staff').update({ actif: !s.actif }).eq('id', s.id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 
@@ -166,22 +166,10 @@ export default function Equipe() {
                   <p className="text-xs text-gray-500 mb-3">📞 {s.telephone}</p>
                 )}
 
-                {/* Lien staff */}
-                <div className="bg-gray-50 rounded-lg px-3 py-2 mb-3">
-                  <p className="text-xs text-gray-400 mb-1 font-medium uppercase tracking-wide">Lien favori</p>
-                  <p className="text-xs text-gray-600 break-all font-mono">/staff/{s.token}</p>
-                </div>
-
                 <div className="flex gap-2">
                   <button
-                    onClick={() => copyLink(s.token)}
-                    className="flex-1 text-xs py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors font-medium"
-                  >
-                    {copied === s.token ? '✓ Copié !' : '📋 Copier le lien'}
-                  </button>
-                  <button
                     onClick={() => openEdit(s)}
-                    className="px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-xs"
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors text-xs font-medium"
                   >
                     ✏️
                   </button>

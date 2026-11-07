@@ -101,7 +101,7 @@ export default function Reservations() {
     setNouvelleOpt(EMPTY_OPT); chargerCatalogue()
   }
   async function retirerDuCatalogue(id) {
-    await supabase.from('options_sejour').delete().eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('options_sejour').delete().eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     chargerCatalogue()
   }
   function ajouterOption(valeur) {
@@ -199,8 +199,19 @@ export default function Reservations() {
   }
 
   async function checkConflict() {
-    // Chambre : pas de vérification de conflit
-    if (typeHebergement === 'chambre') return false
+    // Chambre : même contrôle que pour une villa, sur la chambre choisie
+    if (typeHebergement === 'chambre') {
+      const ch = chambres.find(c => String(c.id) === String(chambreId))
+      if (!ch || !form.date_arrivee || !form.date_depart || form.date_arrivee >= form.date_depart) return false
+      let q = supabase.from('reservations').select('id, nom_client, date_arrivee, date_depart')
+        .eq('chambre_id', ch.id).not('statut', 'in', '("annule","cloture")')
+        .lt('date_arrivee', form.date_depart).gt('date_depart', form.date_arrivee)
+      if (editId) q = q.neq('id', editId)
+      const { data: occupee } = await q.limit(1)
+      if (occupee?.length > 0) { setConflict(occupee[0]); return true }
+      setConflict(null)
+      return false
+    }
 
     // Journée : bloquée par un séjour de nuit qui occupe la villa ce jour-là, ou par une autre journée aux heures qui se chevauchent
     if (estJournee) {
@@ -281,6 +292,7 @@ export default function Reservations() {
       let notes = form.notes
       let type = form.type
       let duplex_id = form.duplex_id || null
+      let chambre_id = null   // la chambre choisie doit aussi être reliée à la réservation (calendrier, conflits)
 
       if (typeHebergement === 'chambre') {
         const ch = chambres.find(c => String(c.id) === String(chambreId))
@@ -289,6 +301,7 @@ export default function Reservations() {
         notes = chambreNom ? `Chambre souhaitée : ${chambreNom}${notesBase ? '\n' + notesBase : ''}` : notesBase
         type = 'chambre'
         duplex_id = null
+        chambre_id = ch ? ch.id : null
       } else if (type === 'chambre') {
         type = 'sejour'
       }
@@ -335,6 +348,8 @@ export default function Reservations() {
       }
       // Démarcheur, avance et entreprise sont facultatifs : ces colonnes ne sont envoyées que si elles servent,
       // une réservation ordinaire s'enregistre donc même si la base n'a pas encore ces colonnes.
+      if (typeHebergement === 'chambre') payload.chambre_id = chambre_id
+      else if (editId) payload.chambre_id = null
       if (demarcheur_id || origine.demarcheur) payload.demarcheur_id = demarcheur_id || null
       if (estJournee || origine.journee) {
         payload.mode_sejour = estJournee ? 'journee' : 'nuit'
@@ -371,7 +386,7 @@ export default function Reservations() {
   }
 
   async function updateStatut(id, statut) {
-    await supabase.from('reservations').update({ statut, updated_at: new Date().toISOString() }).eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('reservations').update({ statut, updated_at: new Date().toISOString() }).eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 
@@ -380,18 +395,18 @@ export default function Reservations() {
     const reste = (r.montant_total || 0) - (r.avance || 0)
     if (reste <= 0) return
     if (!window.confirm(`Encaisser le solde de ${formatFCFA(reste)} pour ${r.nom_client} ?`)) return
-    await supabase.from('reservations').update({ avance: r.montant_total, updated_at: new Date().toISOString() }).eq('id', r.id)
+    { const { error: erreurEcriture } = await supabase.from('reservations').update({ avance: r.montant_total, updated_at: new Date().toISOString() }).eq('id', r.id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 
   async function marquerCommissionPayee(id) {
-    await supabase.from('reservations').update({ commission_statut: 'payee' }).eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('reservations').update({ commission_statut: 'payee' }).eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 
   async function confirmDelete() {
     if (!deleteId) return
-    await supabase.from('reservations').delete().eq('id', deleteId)
+    { const { error: erreurEcriture } = await supabase.from('reservations').delete().eq('id', deleteId); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     setDeleteId(null); load()
   }
 

@@ -39,7 +39,7 @@ export default function Assistance() {
   }, [load])
 
   async function updateStatut(id, statut) {
-    await supabase.from('demandes_assistance').update({ statut }).eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('demandes_assistance').update({ statut }).eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 

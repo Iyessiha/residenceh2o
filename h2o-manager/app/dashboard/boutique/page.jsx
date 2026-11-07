@@ -183,7 +183,7 @@ export default function Boutique() {
     setSavingV(false)
   }
   async function updateStatutVente(id, statut) {
-    await supabase.from('ventes').update({ statut }).eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('ventes').update({ statut }).eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     loadVentes()
   }
 
@@ -203,7 +203,7 @@ export default function Boutique() {
     setSavingA(false)
   }
   async function toggleActif(a) {
-    await supabase.from('articles').update({ actif: !a.actif }).eq('id', a.id)
+    { const { error: erreurEcriture } = await supabase.from('articles').update({ actif: !a.actif }).eq('id', a.id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     loadArticles()
   }
 

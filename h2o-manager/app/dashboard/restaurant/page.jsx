@@ -213,7 +213,7 @@ export default function Restaurant() {
     setSavingCmd(false)
   }
   async function updateStatutCmd(id, statut) {
-    await supabase.from('commandes_restaurant').update({ statut }).eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('commandes_restaurant').update({ statut }).eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     loadCommandes()
   }
   // ── Facture d'une commande ──────────────────────────────
@@ -317,7 +317,7 @@ export default function Restaurant() {
     setSavingMenu(false)
   }
   async function toggleDispo(m) {
-    await supabase.from('menu_restaurant').update({ disponible: !m.disponible }).eq('id', m.id)
+    { const { error: erreurEcriture } = await supabase.from('menu_restaurant').update({ disponible: !m.disponible }).eq('id', m.id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     loadMenu()
   }
 

@@ -33,7 +33,7 @@ function Kpi({ titre, valeur, detail, couleur, className = '' }) {
   return (
     <div className={`card p-4 ${className}`}>
       <p className="text-xs font-semibold uppercase tracking-wide" style={texte3}>{titre}</p>
-      <p className="text-2xl font-bold mt-1 leading-tight" style={{ color: couleur || 'var(--text)' }}>{valeur}</p>
+      <p className="text-xl sm:text-2xl lg:text-xl 2xl:text-2xl font-bold mt-1 leading-tight" style={{ color: couleur || 'var(--text)' }}>{valeur}</p>
       {detail && <p className="text-xs mt-1" style={texte3}>{detail}</p>}
     </div>
   )
@@ -249,7 +249,7 @@ export default function Dashboard() {
           detail={`${stats.occupees} / ${stats.total} villa${stats.total > 1 ? 's' : ''} occupée${stats.occupees > 1 ? 's' : ''}`} />
         <Kpi titre="Séjours en cours" valeur={stats.sejours} couleur="#2563EB" detail="Clients présents" className={gestion ? '' : 'col-span-2 lg:col-span-1'} />
         {gestion && (
-          <Link href="/dashboard/tresorerie" className="block col-span-2 lg:col-span-1 min-w-0">
+          <Link href="/dashboard/tresorerie" className="block min-w-0">
             <Kpi titre="Dépenses" valeur={treso ? formatFCFA(treso.depenses) : '…'} couleur="#DC2626" className="h-full"
               detail={treso ? (treso.nbDepenses > 0 ? `${treso.nbDepenses} dépense${treso.nbDepenses > 1 ? 's' : ''} ${LIBELLE_PERIODE[periode]}` : `Aucune dépense ${LIBELLE_PERIODE[periode]}`) : null} />
           </Link>

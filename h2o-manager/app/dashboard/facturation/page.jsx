@@ -79,7 +79,7 @@ export default function Facturation() {
   }
 
   async function updateStatut(id, statut) {
-    await supabase.from('factures').update({ statut }).eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('factures').update({ statut }).eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 

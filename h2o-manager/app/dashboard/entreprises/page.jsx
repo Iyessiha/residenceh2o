@@ -59,7 +59,7 @@ export default function Entreprises() {
       ? `Supprimer l'entreprise ${e.nom} ? Ses ${n} client(s) restent, sans entreprise rattachée.`
       : `Supprimer l'entreprise ${e.nom} ?`
     if (!confirm(msg)) return
-    await supabase.from('entreprises').delete().eq('id', e.id)
+    { const { error: erreurEcriture } = await supabase.from('entreprises').delete().eq('id', e.id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 

@@ -31,13 +31,13 @@ export default function Evenements() {
   async function save() {
     setSaving(true)
     const payload = { ...form, nb_invites: form.nb_invites ? parseInt(form.nb_invites) : null, montant_devis: form.montant_devis ? parseInt(form.montant_devis) : null, acompte: form.acompte ? parseInt(form.acompte) : null }
-    await supabase.from('evenements').insert([payload])
+    { const { error: erreurEcriture } = await supabase.from('evenements').insert([payload]); if (erreurEcriture) { setSaving(false); window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     setShowForm(false); setForm(EMPTY); load()
     setSaving(false)
   }
 
   async function updateStatut(id, statut) {
-    await supabase.from('evenements').update({ statut }).eq('id', id)
+    { const { error: erreurEcriture } = await supabase.from('evenements').update({ statut }).eq('id', id); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     load()
   }
 

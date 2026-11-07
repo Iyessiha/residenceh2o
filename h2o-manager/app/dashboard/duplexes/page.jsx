@@ -69,9 +69,9 @@ export default function Duplexes() {
     }
 
     if (editId) {
-      await supabase.from('duplexes').update(payload).eq('id', editId)
+      { const { error: erreurEcriture } = await supabase.from('duplexes').update(payload).eq('id', editId); if (erreurEcriture) { setSaving(false); window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     } else {
-      await supabase.from('duplexes').insert([payload])
+      { const { error: erreurEcriture } = await supabase.from('duplexes').insert([payload]); if (erreurEcriture) { setSaving(false); window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     }
 
     setShowForm(false)
@@ -83,7 +83,7 @@ export default function Duplexes() {
 
   async function confirmDelete() {
     setDeleting(true)
-    await supabase.from('duplexes').delete().eq('id', deleteId)
+    { const { error: erreurEcriture } = await supabase.from('duplexes').delete().eq('id', deleteId); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
     setDeleteId(null)
     setDeleting(false)
     load()
