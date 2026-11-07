@@ -11,10 +11,14 @@ const STATUTS = ['tous', 'en_attente', 'confirme', 'en_sejour', 'cloture', 'annu
 const EMPTY = {
   nom_client: '', telephone: '', email: '', duplex_id: '',
   date_arrivee: '', date_depart: '', nb_personnes: '',
-  montant_total: '', avance: '', notes: '', statut: 'en_attente',
+  montant_hebergement: '', avance: '', notes: '', statut: 'en_attente',
+  mode_sejour: 'nuit', heure_arrivee: '09:00', heure_depart: '18:00',
   source: 'manuel', type: 'sejour', demarcheur_id: '', entreprise_id: '',
 }
 const NOUVEAU = '__nouveau__'
+const EMPTY_OPT = { nom: '', prix: '' }
+const LIBRE = '__libre__'
+const hhmm = (t) => (t || '').slice(0, 5)
 const EMPTY_DEM = { prenom: '', nom: '', telephone: '', taux: '10' }
 const EMPTY_ENT = { nom: '', contact: '', adresse: '' }
 const EMPTY_CHAMBRE = { ...EMPTY, type: 'chambre', duplex_id: '' }
@@ -33,7 +37,12 @@ export default function Reservations() {
   const [nouveauDem,       setNouveauDem]       = useState(EMPTY_DEM)
   const [nouvelleEnt,      setNouvelleEnt]      = useState(EMPTY_ENT)
   const [erreur,           setErreur]           = useState('')
-  const [origine,          setOrigine]          = useState({ entreprise: false, avance: false, demarcheur: false })
+  const [origine,          setOrigine]          = useState({ entreprise: false, avance: false, demarcheur: false, journee: false, options: false })
+  const [lignesOptions,    setLignesOptions]    = useState([])   // [{ nom, prix, qte }]
+  const [catalogue,        setCatalogue]        = useState([])
+  const [showCatalogue,    setShowCatalogue]    = useState(false)
+  const [nouvelleOpt,      setNouvelleOpt]      = useState(EMPTY_OPT)
+  const [erreurCatalogue,  setErreurCatalogue]  = useState('')
   const [typeHebergement,  setTypeHebergement]  = useState('duplex')
   const [chambreId,        setChambreId]        = useState('')
   const [filter,           setFilter]           = useState('tous')
@@ -69,49 +78,83 @@ export default function Reservations() {
   useEffect(() => { load() }, [load])
 
   useEffect(() => {
-    supabase.from('duplexes').select('id, code, nom, tarif_nuit').order('code')
+    supabase.from('duplexes').select('id, code, nom, tarif_nuit, tarif_journee').order('code')
       .then(({ data }) => setDuplexes(data || []))
-    supabase.from('chambres').select('id, nom, type, tarif_nuit, statut').order('nom')
+    supabase.from('chambres').select('id, nom, type, tarif_nuit, tarif_journee, statut').order('nom')
       .then(({ data }) => setChambres(data || []))
     supabase.from('demarcheurs').select('id, nom, prenom, taux_commission').order('nom')
       .then(({ data }) => setDemarcheurs(data || []))
     supabase.from('entreprises').select('id, nom, contact, adresse').order('nom')
       .then(({ data }) => setEntreprises(data || []))
+    chargerCatalogue()
   }, [])
+
+  async function chargerCatalogue() {
+    const { data, error } = await supabase.from('options_sejour').select('id, nom, prix').eq('actif', true).order('nom')
+    setCatalogue(error ? [] : (data || []))
+  }
+  async function ajouterAuCatalogue() {
+    setErreurCatalogue('')
+    if (!nouvelleOpt.nom.trim()) { setErreurCatalogue("Indiquez le nom de l'option."); return }
+    const { error } = await supabase.from('options_sejour').insert([{ nom: nouvelleOpt.nom.trim(), prix: parseInt(nouvelleOpt.prix) || 0 }])
+    if (error) { setErreurCatalogue(/options_sejour/.test(error.message) ? "Table des options absente : exécutez le SQL « 20261110_reservations_journee_options » dans Supabase." : error.message); return }
+    setNouvelleOpt(EMPTY_OPT); chargerCatalogue()
+  }
+  async function retirerDuCatalogue(id) {
+    await supabase.from('options_sejour').delete().eq('id', id)
+    chargerCatalogue()
+  }
+  function ajouterOption(valeur) {
+    if (!valeur) return
+    if (valeur === LIBRE) { setLignesOptions(l => [...l, { nom: '', prix: '', qte: '1' }]); return }
+    const o = catalogue.find(x => x.id === valeur)
+    if (o) setLignesOptions(l => [...l, { nom: o.nom, prix: String(o.prix), qte: '1' }])
+  }
+  const majOption = (i, champ, v) => setLignesOptions(l => l.map((x, j) => (j === i ? { ...x, [champ]: v } : x)))
+
+  // Montants : hébergement (calculé ou saisi) + options = total de la réservation
+  const estJournee = form.mode_sejour === 'journee'
+  const totalOptions = lignesOptions.reduce((t, l) => t + (parseInt(l.prix) || 0) * (parseInt(l.qte) || 0), 0)
+  const montantTotal = (parseInt(form.montant_hebergement) || 0) + totalOptions
+  const aMontant = montantTotal > 0
 
   // Commission prévisionnelle affichée dans le formulaire (le calcul définitif est fait en base)
   const demarcheurNouveau = avecDemarcheur && form.demarcheur_id === NOUVEAU
   const demarcheurChoisi = demarcheurNouveau
     ? { taux_commission: Number(nouveauDem.taux) || 0 }
     : demarcheurs.find(d => d.id === form.demarcheur_id)
-  const commissionApercu = avecDemarcheur && demarcheurChoisi && form.montant_total
-    ? Math.round((parseInt(form.montant_total) || 0) * Number(demarcheurChoisi.taux_commission) / 100)
+  const commissionApercu = avecDemarcheur && demarcheurChoisi && aMontant
+    ? Math.round(montantTotal * Number(demarcheurChoisi.taux_commission) / 100)
     : null
 
   // Calcul auto montant — duplex
   useEffect(() => {
     if (typeHebergement !== 'duplex') return
-    if (!form.date_arrivee || !form.date_depart || !form.duplex_id) return
-    const nuits = (new Date(form.date_depart) - new Date(form.date_arrivee)) / 86400000
+    if (!form.date_arrivee || !form.duplex_id) return
+    if (!estJournee && !form.date_depart) return
+    const nuits = estJournee ? 1 : (new Date(form.date_depart) - new Date(form.date_arrivee)) / 86400000
     if (nuits <= 0) return
     const dup = duplexes.find(d => d.code === form.duplex_id)
-    if (dup?.tarif_nuit) setForm(p => ({ ...p, montant_total: String(dup.tarif_nuit * nuits) }))
-  }, [form.date_arrivee, form.date_depart, form.duplex_id, duplexes, typeHebergement])
+    const tarif = estJournee ? dup?.tarif_journee : dup?.tarif_nuit
+    if (tarif) setForm(p => ({ ...p, montant_hebergement: String(tarif * nuits) }))
+  }, [form.date_arrivee, form.date_depart, form.duplex_id, duplexes, typeHebergement, estJournee])
 
   // Calcul auto montant — chambre
   useEffect(() => {
     if (typeHebergement !== 'chambre') return
-    if (!form.date_arrivee || !form.date_depart || !chambreId) return
-    const nuits = (new Date(form.date_depart) - new Date(form.date_arrivee)) / 86400000
+    if (!form.date_arrivee || !chambreId) return
+    if (!estJournee && !form.date_depart) return
+    const nuits = estJournee ? 1 : (new Date(form.date_depart) - new Date(form.date_arrivee)) / 86400000
     if (nuits <= 0) return
     const ch = chambres.find(c => String(c.id) === String(chambreId))
-    if (ch?.tarif_nuit) setForm(p => ({ ...p, montant_total: String(ch.tarif_nuit * nuits) }))
-  }, [form.date_arrivee, form.date_depart, chambreId, chambres, typeHebergement])
+    const tarif = estJournee ? ch?.tarif_journee : ch?.tarif_nuit
+    if (tarif) setForm(p => ({ ...p, montant_hebergement: String(tarif * nuits) }))
+  }, [form.date_arrivee, form.date_depart, chambreId, chambres, typeHebergement, estJournee])
 
   function resetApport() {
     setAvecDemarcheur(false); setAvecEntreprise(false)
     setNouveauDem(EMPTY_DEM); setNouvelleEnt(EMPTY_ENT)
-    setErreur(''); setOrigine({ entreprise: false, avance: false, demarcheur: false })
+    setErreur(''); setOrigine({ entreprise: false, avance: false, demarcheur: false, journee: false, options: false }); setLignesOptions([])
   }
 
   function openNew() {
@@ -124,7 +167,9 @@ export default function Reservations() {
   function openEdit(r) {
     resetApport()
     setAvecDemarcheur(!!r.demarcheur_id); setAvecEntreprise(!!r.entreprise_id)
-    setOrigine({ entreprise: !!r.entreprise_id, avance: (r.avance || 0) > 0, demarcheur: !!r.demarcheur_id })
+    const optsEdit = Array.isArray(r.options) ? r.options : []
+    setOrigine({ entreprise: !!r.entreprise_id, avance: (r.avance || 0) > 0, demarcheur: !!r.demarcheur_id, journee: r.mode_sejour === 'journee', options: optsEdit.length > 0 })
+    setLignesOptions(optsEdit.map(o => ({ nom: o.nom || '', prix: String(o.prix ?? ''), qte: String(o.qte ?? 1) })))
     const isChambre = r.type === 'chambre'
     // Extraire l'id chambre depuis les notes si dispo
     let parsedChambreId = ''
@@ -141,7 +186,9 @@ export default function Reservations() {
       email: r.email || '', duplex_id: r.duplex_id || '',
       date_arrivee: r.date_arrivee || '', date_depart: r.date_depart || '',
       nb_personnes: r.nb_personnes ? String(r.nb_personnes) : '',
-      montant_total: r.montant_total ? String(r.montant_total) : '',
+      montant_hebergement: r.montant_total ? String(Math.max(0, r.montant_total - optsEdit.reduce((t, o) => t + (o.prix || 0) * (o.qte || 0), 0))) : '',
+      mode_sejour: r.mode_sejour || 'nuit',
+      heure_arrivee: hhmm(r.heure_arrivee) || '09:00', heure_depart: hhmm(r.heure_depart) || '18:00',
       avance: r.avance ? String(r.avance) : '',
       notes: r.notes || '', statut: r.statut, source: r.source, type: r.type,
       demarcheur_id: r.demarcheur_id || '', entreprise_id: r.entreprise_id || '',
@@ -154,6 +201,30 @@ export default function Reservations() {
   async function checkConflict() {
     // Chambre : pas de vérification de conflit
     if (typeHebergement === 'chambre') return false
+
+    // Journée : bloquée par un séjour de nuit qui occupe la villa ce jour-là, ou par une autre journée aux heures qui se chevauchent
+    if (estJournee) {
+      if (!form.duplex_id || !form.date_arrivee) return false
+      const d = form.date_arrivee
+      let qNuit = supabase.from('reservations').select('id, nom_client, date_arrivee, date_depart')
+        .eq('duplex_id', form.duplex_id).not('statut', 'in', '("annule","cloture")')
+        .lte('date_arrivee', d).gt('date_depart', d)
+      if (editId) qNuit = qNuit.neq('id', editId)
+      const { data: nuit } = await qNuit.limit(1)
+      if (nuit?.length > 0) { setConflict(nuit[0]); return true }
+      let qJour = supabase.from('reservations').select('id, nom_client, date_arrivee, date_depart, heure_arrivee, heure_depart')
+        .eq('duplex_id', form.duplex_id).eq('mode_sejour', 'journee').eq('date_arrivee', d)
+        .not('statut', 'in', '("annule","cloture")')
+      if (editId) qJour = qJour.neq('id', editId)
+      const { data: jours, error: errJour } = await qJour
+      if (!errJour) {
+        const deb = form.heure_arrivee || '00:00', fin = form.heure_depart || '23:59'
+        const autre = (jours || []).find(x => (hhmm(x.heure_arrivee) || '00:00') < fin && (hhmm(x.heure_depart) || '23:59') > deb)
+        if (autre) { setConflict(autre); return true }
+      }
+      setConflict(null)
+      return false
+    }
     // Duplex non renseigné ou dates manquantes : on laisse passer (pas de conflit possible)
     if (!form.duplex_id || !form.date_arrivee || !form.date_depart) return false
     if (form.date_arrivee >= form.date_depart) return false
@@ -180,7 +251,7 @@ export default function Reservations() {
   function messageErreur(error) {
     const m = error?.message || String(error)
     if (/reservations_type_check/.test(m)) return "La base refuse ce type d'hébergement (chambre). Exécutez le SQL « 20261109_reservations_correctifs » dans Supabase > SQL Editor, puis réessayez."
-    if (/column .*(avance|entreprise_id)/i.test(m) || /(avance|entreprise_id).*(does not exist|schema cache)/i.test(m)) return "La base n'est pas à jour (avance / entreprise). Exécutez le SQL « 20261109_reservations_correctifs » dans Supabase > SQL Editor, puis réessayez."
+    if (/column .*(avance|entreprise_id|mode_sejour|heure_arrivee|heure_depart|options)/i.test(m) || /(avance|entreprise_id|mode_sejour|heure_arrivee|heure_depart|options).*(does not exist|schema cache)/i.test(m)) return "La base n'est pas à jour (journée / options / avance / entreprise). Exécutez les SQL « 20261109_reservations_correctifs » puis « 20261110_reservations_journee_options » dans Supabase > SQL Editor, puis réessayez."
     if (/row-level security|permission denied/i.test(m)) return "Droits insuffisants pour enregistrer (reconnectez-vous, puis réessayez)."
     return m
   }
@@ -189,9 +260,13 @@ export default function Reservations() {
     setErreur('')
     if (!form.nom_client.trim()) { setErreur('Le nom du client est obligatoire.'); return }
     if (!form.telephone.trim()) { setErreur('Le téléphone du client est obligatoire.'); return }
-    if (form.montant_total && (parseInt(form.avance) || 0) > parseInt(form.montant_total)) {
+    if (aMontant && (parseInt(form.avance) || 0) > montantTotal) {
       setErreur("L'avance ne peut pas dépasser le montant total.")
       return
+    }
+    if (estJournee) {
+      if (!form.date_arrivee) { setErreur('Indiquez la date de la journée.'); return }
+      if (!form.heure_arrivee || !form.heure_depart || form.heure_depart <= form.heure_arrivee) { setErreur("L'heure de départ doit être après l'heure d'arrivée."); return }
     }
     if (avecDemarcheur && !form.demarcheur_id) { setErreur('Choisissez le démarcheur ou ajoutez-en un nouveau.'); return }
     if (avecDemarcheur && demarcheurNouveau && !nouveauDem.nom.trim()) { setErreur('Indiquez le nom du nouveau démarcheur.'); return }
@@ -248,19 +323,26 @@ export default function Reservations() {
         telephone: form.telephone.trim(),
         email: form.email.trim() || null,
         date_arrivee: form.date_arrivee || null,
-        date_depart: form.date_depart || null,
+        date_depart: (estJournee ? form.date_arrivee : form.date_depart) || null,
         statut: form.statut,
         source: form.source,
         type,
         duplex_id,
         notes: notes || null,
         nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
-        montant_total: form.montant_total ? parseInt(form.montant_total) : null,
+        montant_total: aMontant ? montantTotal : null,
         updated_at: new Date().toISOString(),
       }
       // Démarcheur, avance et entreprise sont facultatifs : ces colonnes ne sont envoyées que si elles servent,
       // une réservation ordinaire s'enregistre donc même si la base n'a pas encore ces colonnes.
       if (demarcheur_id || origine.demarcheur) payload.demarcheur_id = demarcheur_id || null
+      if (estJournee || origine.journee) {
+        payload.mode_sejour = estJournee ? 'journee' : 'nuit'
+        payload.heure_arrivee = estJournee ? form.heure_arrivee : null
+        payload.heure_depart = estJournee ? form.heure_depart : null
+      }
+      const optionsEnregistrees = lignesOptions.filter(l => l.nom.trim()).map(l => ({ nom: l.nom.trim(), prix: parseInt(l.prix) || 0, qte: parseInt(l.qte) || 1 }))
+      if (optionsEnregistrees.length > 0 || origine.options) payload.options = optionsEnregistrees
       if (avance > 0 || origine.avance) payload.avance = avance
       if (entreprise_id || origine.entreprise) payload.entreprise_id = entreprise_id || null
 
@@ -405,11 +487,19 @@ export default function Reservations() {
                         </span>
                       : dupNom(r.duplex_id)
                     }
+                    {r.mode_sejour === 'journee' && (
+                      <p className="text-xs mt-1" style={{ color: 'var(--primary)' }}>☀️ Journée {hhmm(r.heure_arrivee)}–{hhmm(r.heure_depart)}</p>
+                    )}
                   </td>
                   <td className="table-td">{formatDate(r.date_arrivee)}</td>
                   <td className="table-td">{formatDate(r.date_depart)}</td>
                   <td className="table-td">
                     {formatFCFA(r.montant_total)}
+                    {Array.isArray(r.options) && r.options.length > 0 && (
+                      <p className="text-xs" style={{ color: 'var(--text-3)' }}>
+                        dont {r.options.length} option{r.options.length > 1 ? 's' : ''} : {r.options.map(o => `${o.nom}${o.qte > 1 ? ' ×' + o.qte : ''}`).join(', ')}
+                      </p>
+                    )}
                     {r.montant_total > 0 && (
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
                         <span style={{ color: 'var(--text-2)' }}>Avance {formatFCFA(r.avance || 0)}</span>
@@ -527,9 +617,9 @@ export default function Reservations() {
               <div>
                 <label className="label">Type d'hébergement</label>
                 <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
-                  {[['duplex', 'Duplex'], ['chambre', 'Chambre à la nuit']].map(([val, label]) => (
+                  {[['duplex', 'Duplex'], ['chambre', 'Chambre']].map(([val, label]) => (
                     <button key={val} type="button"
-                      onClick={() => { setTypeHebergement(val); setChambreId(''); setConflict(null); setForm(p => ({ ...p, montant_total: '' })) }}
+                      onClick={() => { setTypeHebergement(val); setChambreId(''); setConflict(null); setForm(p => ({ ...p, montant_hebergement: '' })) }}
                       className="flex-1 py-2 text-sm font-medium transition-colors"
                       style={typeHebergement === val
                         ? { backgroundColor: 'var(--primary)', color: '#fff' }
@@ -579,33 +669,108 @@ export default function Reservations() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">Arrivée</label>
-                  <input className="input" type="date" value={form.date_arrivee}
-                    onChange={e => setForm(p => ({ ...p, date_arrivee: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="label">Départ</label>
-                  <input className="input" type="date" value={form.date_depart}
-                    min={form.date_arrivee || undefined}
-                    onChange={e => setForm(p => ({ ...p, date_depart: e.target.value }))} />
+              {/* Durée : nuitée ou journée */}
+              <div>
+                <label className="label">Durée</label>
+                <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+                  {[['nuit', '🌙 À la nuit'], ['journee', '☀️ À la journée']].map(([val, label]) => (
+                    <button key={val} type="button"
+                      onClick={() => { setConflict(null); setForm(p => ({ ...p, mode_sejour: val, montant_hebergement: '' })) }}
+                      className="flex-1 py-2 text-sm font-medium transition-colors"
+                      style={form.mode_sejour === val
+                        ? { backgroundColor: 'var(--primary)', color: '#fff' }
+                        : { backgroundColor: 'var(--bg)', color: 'var(--text-2)' }}>
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Montant calculé automatiquement */}
+              {estJournee ? (
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="label">Date</label>
+                    <input className="input" type="date" value={form.date_arrivee}
+                      onChange={e => setForm(p => ({ ...p, date_arrivee: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="label">Arrivée à</label>
+                    <input className="input" type="time" value={form.heure_arrivee}
+                      onChange={e => setForm(p => ({ ...p, heure_arrivee: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="label">Départ à</label>
+                    <input className="input" type="time" value={form.heure_depart}
+                      onChange={e => setForm(p => ({ ...p, heure_depart: e.target.value }))} />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label">Arrivée</label>
+                    <input className="input" type="date" value={form.date_arrivee}
+                      onChange={e => setForm(p => ({ ...p, date_arrivee: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="label">Départ</label>
+                    <input className="input" type="date" value={form.date_depart}
+                      min={form.date_arrivee || undefined}
+                      onChange={e => setForm(p => ({ ...p, date_depart: e.target.value }))} />
+                  </div>
+                </div>
+              )}
+
+              {/* Hébergement : tarif calculé automatiquement, modifiable */}
               <div>
                 <label className="label">
-                  Montant total (FCFA)
-                  {((typeHebergement === 'duplex' && form.duplex_id) || (typeHebergement === 'chambre' && chambreId)) && form.date_arrivee && form.date_depart && (
+                  {estJournee ? 'Tarif de la journée (FCFA)' : 'Montant hébergement (FCFA)'}
+                  {((typeHebergement === 'duplex' && form.duplex_id) || (typeHebergement === 'chambre' && chambreId)) && form.date_arrivee && (estJournee || form.date_depart) && (
                     <span className="ml-1 text-xs font-normal" style={{ color: 'var(--primary)' }}>
                       — calculé automatiquement
                     </span>
                   )}
                 </label>
-                <input className="input" type="number" value={form.montant_total}
-                  onChange={e => setForm(p => ({ ...p, montant_total: e.target.value }))}
+                <input className="input" type="number" min="0" value={form.montant_hebergement}
+                  onChange={e => setForm(p => ({ ...p, montant_hebergement: e.target.value }))}
                   placeholder="Sélectionnez hébergement + dates pour calcul auto" />
+              </div>
+
+              {/* Options (extras) ajoutées au montant */}
+              <div className="rounded-xl p-3 space-y-2" style={{ backgroundColor: 'var(--bg-2)' }}>
+                <div className="flex items-center justify-between">
+                  <p className="label !mb-0">Options <span className="font-normal" style={{ color: 'var(--text-3)' }}>(optionnel)</span></p>
+                  <button type="button" onClick={() => { setErreurCatalogue(''); setShowCatalogue(true) }}
+                    className="text-xs font-semibold hover:underline" style={{ color: 'var(--primary)' }}>
+                    Gérer le catalogue
+                  </button>
+                </div>
+                {lignesOptions.map((l, i) => (
+                  <div key={i} className="grid grid-cols-[1fr_6rem_3.5rem_auto] gap-2 items-center">
+                    <input className="input" placeholder="Option" value={l.nom} onChange={e => majOption(i, 'nom', e.target.value)} />
+                    <input className="input" type="number" min="0" placeholder="Prix" value={l.prix} onChange={e => majOption(i, 'prix', e.target.value)} />
+                    <input className="input" type="number" min="1" placeholder="Qté" value={l.qte} onChange={e => majOption(i, 'qte', e.target.value)} />
+                    <button type="button" onClick={() => setLignesOptions(x => x.filter((_, j) => j !== i))}
+                      className="text-lg px-1" style={{ color: '#C7391E' }} title="Retirer">×</button>
+                  </div>
+                ))}
+                <select className="input" value="" onChange={e => ajouterOption(e.target.value)}>
+                  <option value="">➕ Ajouter une option…</option>
+                  {catalogue.map(o => <option key={o.id} value={o.id}>{o.nom} — {formatFCFA(o.prix)}</option>)}
+                  <option value={LIBRE}>✏️ Autre (saisie libre)</option>
+                </select>
+              </div>
+
+              {/* Total = hébergement + options */}
+              <div className="flex items-center justify-between rounded-xl px-4 py-3 border" style={{ borderColor: 'var(--border)' }}>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Montant total</p>
+                  {totalOptions > 0 && (
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
+                      Hébergement {formatFCFA(parseInt(form.montant_hebergement) || 0)} + options {formatFCFA(totalOptions)}
+                    </p>
+                  )}
+                </div>
+                <p className="text-lg font-bold" style={{ color: 'var(--text)' }}>{formatFCFA(montantTotal)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -617,12 +782,12 @@ export default function Reservations() {
                 <div>
                   <label className="label">Reste à payer (FCFA)</label>
                   <div className="input flex items-center font-semibold"
-                    style={{ color: (parseInt(form.montant_total) || 0) - (parseInt(form.avance) || 0) > 0 ? '#b45309' : '#15803d' }}>
-                    {formatFCFA(Math.max(0, (parseInt(form.montant_total) || 0) - (parseInt(form.avance) || 0)))}
+                    style={{ color: montantTotal - (parseInt(form.avance) || 0) > 0 ? '#b45309' : '#15803d' }}>
+                    {formatFCFA(Math.max(0, montantTotal - (parseInt(form.avance) || 0)))}
                   </div>
                 </div>
               </div>
-              {(parseInt(form.avance) || 0) > (parseInt(form.montant_total) || 0) && form.montant_total && (
+              {aMontant && (parseInt(form.avance) || 0) > montantTotal && (
                 <p className="text-xs text-red-600">L'avance dépasse le montant total.</p>
               )}
 
@@ -740,6 +905,42 @@ export default function Reservations() {
                 className="btn-primary flex-1">
                 {saving ? 'Vérification…' : editId ? 'Enregistrer' : 'Créer la réservation'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Catalogue des options */}
+      {showCatalogue && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[85vh] overflow-y-auto" style={{ backgroundColor: 'var(--bg)' }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>Catalogue des options</h2>
+              <button onClick={() => setShowCatalogue(false)} className="text-xl" style={{ color: 'var(--text-3)' }}>×</button>
+            </div>
+            <div className="space-y-2 mb-4">
+              {catalogue.length === 0 ? (
+                <p className="text-sm" style={{ color: 'var(--text-3)' }}>Aucune option. Ajoutez par exemple Petit-déjeuner, Piscine, Transfert aéroport…</p>
+              ) : catalogue.map(o => (
+                <div key={o.id} className="flex items-center justify-between rounded-lg border px-3 py-2" style={{ borderColor: 'var(--border)' }}>
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>{o.nom}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="text-sm font-semibold" style={{ color: 'var(--text-2)' }}>{formatFCFA(o.prix)}</span>
+                    <button onClick={() => retirerDuCatalogue(o.id)} style={{ color: '#C7391E' }} title="Supprimer">🗑</button>
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-[1fr_7rem] gap-2">
+              <input className="input" placeholder="Nom de l'option" value={nouvelleOpt.nom}
+                onChange={e => setNouvelleOpt(p => ({ ...p, nom: e.target.value }))} />
+              <input className="input" type="number" min="0" placeholder="Prix FCFA" value={nouvelleOpt.prix}
+                onChange={e => setNouvelleOpt(p => ({ ...p, prix: e.target.value }))} />
+            </div>
+            {erreurCatalogue && <p className="text-xs text-red-600 mt-2">{erreurCatalogue}</p>}
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setShowCatalogue(false)} className="btn-secondary flex-1">Fermer</button>
+              <button onClick={ajouterAuCatalogue} className="btn-primary flex-1">Ajouter</button>
             </div>
           </div>
         </div>
