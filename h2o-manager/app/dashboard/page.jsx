@@ -2,7 +2,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatFCFA, formatDateShort, STATUT_COLORS, STATUT_LABELS } from '@/lib/utils'
-import { chargerFinances, bornesPeriode, ymd, SOURCES as SOURCES_CA } from '@/lib/finance'
+import { chargerFinances, chargerTresorerie, bornesPeriode, ymd, SOURCES as SOURCES_CA } from '@/lib/finance'
+import { useRole, estGestion } from '@/lib/useRole'
 import Link from 'next/link'
 
 // Raccourcis : une seule ligne compacte sous l'en-tête
@@ -88,6 +89,9 @@ export default function Dashboard() {
   const [cmdResto, setCmdResto] = useState([])
   const [ventes, setVentes] = useState([])
   const [fin, setFin] = useState(null)
+  const [treso, setTreso] = useState(null)   // dépenses / recettes (admin et gérance uniquement)
+  const role = useRole()
+  const gestion = estGestion(role)
   const [sourceCmd, setSourceCmd] = useState('tous')
   const [toutVoir, setToutVoir] = useState(false)
   const [chargement, setChargement] = useState(true)
@@ -153,11 +157,15 @@ export default function Dashboard() {
       if (finPeriode) q = q.lt('created_at', finPeriode.toISOString())
       return q
     }
-    const [resto, boutique, finances] = await Promise.all([charger('commandes_restaurant'), charger('ventes'), chargerFinances(supabase, periode)])
+    const [resto, boutique, finances, tresorerie] = await Promise.all([
+      charger('commandes_restaurant'), charger('ventes'), chargerFinances(supabase, periode),
+      gestion ? chargerTresorerie(supabase, periode) : Promise.resolve(null),
+    ])
     setCmdResto(resto.data || [])
     setVentes(boutique.data || [])
     setFin(finances)
-  }, [periode])
+    setTreso(tresorerie)
+  }, [periode, gestion])
 
   useEffect(() => { chargerActivite() }, [chargerActivite])
   useEffect(() => { chargerPeriode() }, [chargerPeriode])
@@ -166,7 +174,7 @@ export default function Dashboard() {
   useEffect(() => {
     const maj = () => { chargerActivite(); chargerPeriode() }
     let channel = supabase.channel('dashboard_direct')
-    for (const table of ['commandes_restaurant', 'ventes', 'reservations', 'factures', 'demandes_assistance']) {
+    for (const table of ['commandes_restaurant', 'ventes', 'reservations', 'factures', 'demandes_assistance', 'tresorerie']) {
       channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, maj)
     }
     channel.subscribe()
@@ -368,6 +376,79 @@ export default function Dashboard() {
           <p className="text-xs mt-3" style={texte3}>Nombre de séjours présents chaque jour</p>
         </div>
       </div>
+
+      {/* Dépenses et résultat (admin et gérance) */}
+      {gestion && (
+        <div className="grid lg:grid-cols-5 gap-5">
+          <div className="card p-5 lg:col-span-2 min-w-0">
+            <div className="flex items-baseline justify-between mb-4">
+              <h2 className="font-semibold" style={titreSection}>Dépenses et résultat</h2>
+              <span className="text-xs" style={texte3}>{LIBELLE_PERIODE[periode]}</span>
+            </div>
+            {!treso || !fin ? (
+              <p className="text-sm" style={texte3}>Calcul en cours…</p>
+            ) : (() => {
+              const resultat = fin.total.encaisse + treso.recettes - treso.depenses
+              const ligneRes = (label, valeur, couleur, signe) => (
+                <div className="flex items-baseline justify-between text-sm">
+                  <span style={{ color: 'var(--text-2)' }}>{label}</span>
+                  <span className="font-semibold whitespace-nowrap" style={{ color: couleur }}>{signe}{formatFCFA(valeur)}</span>
+                </div>
+              )
+              return (
+                <div className="space-y-2.5">
+                  {treso.erreur && <p className="text-xs text-red-600">Dépenses non lues : {treso.erreur}</p>}
+                  {ligneRes('Encaissé clients', fin.total.encaisse, 'var(--success)', '+ ')}
+                  {ligneRes('Autres recettes', treso.recettes, 'var(--success)', '+ ')}
+                  {ligneRes('Dépenses', treso.depenses, '#DC2626', '− ')}
+                  <div className="flex items-baseline justify-between pt-3 mt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                    <span className="font-semibold" style={titreSection}>Résultat</span>
+                    <span className="text-xl font-bold whitespace-nowrap" style={{ color: resultat < 0 ? '#DC2626' : 'var(--success)' }}>{formatFCFA(resultat)}</span>
+                  </div>
+                  <p className="text-xs" style={texte3}>Encaissements − dépenses de la période (salaires inclus dès qu'une fiche de paie est payée).</p>
+                </div>
+              )
+            })()}
+          </div>
+
+          <div className="card p-5 lg:col-span-3 min-w-0">
+            <div className="flex items-baseline justify-between mb-4">
+              <h2 className="font-semibold" style={titreSection}>Dépenses par catégorie</h2>
+              <Link href="/dashboard/tresorerie" className="text-sm hover:underline" style={{ color: 'var(--primary)' }}>Trésorerie →</Link>
+            </div>
+            {!treso ? (
+              <p className="text-sm" style={texte3}>Calcul en cours…</p>
+            ) : treso.parCategorie.length === 0 ? (
+              <div className="text-sm" style={texte3}>
+                Aucune dépense enregistrée {LIBELLE_PERIODE[periode]}.{' '}
+                <Link href="/dashboard/tresorerie" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>Ajouter une dépense →</Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {treso.parCategorie.slice(0, 6).map(([categorie, montant]) => {
+                  const part = treso.depenses > 0 ? (montant / treso.depenses) * 100 : 0
+                  return (
+                    <div key={categorie}>
+                      <div className="flex items-baseline justify-between text-sm">
+                        <span className="truncate pr-2" style={{ color: 'var(--text-2)' }}>{categorie}</span>
+                        <span className="font-semibold whitespace-nowrap" style={{ color: 'var(--text)' }}>
+                          {formatFCFA(montant)} <span className="text-xs font-normal" style={texte3}>({Math.round(part)} %)</span>
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full mt-1.5 overflow-hidden" style={{ backgroundColor: 'var(--bg-2)' }}>
+                        <div className="h-full rounded-full" style={{ width: `${part}%`, backgroundColor: '#DC2626' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+                {treso.parCategorie.length > 6 && (
+                  <p className="text-xs" style={texte3}>+ {treso.parCategorie.length - 6} autre{treso.parCategorie.length - 6 > 1 ? 's' : ''} catégorie{treso.parCategorie.length - 6 > 1 ? 's' : ''} · {treso.nbDepenses} dépense{treso.nbDepenses > 1 ? 's' : ''} au total</p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Commandes : les dernières, la liste complète au clic */}
       <div className="card">

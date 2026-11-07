@@ -108,3 +108,23 @@ export async function chargerFinances(supabase, periode) {
   })
   return { ...res, erreur }
 }
+
+// Dépenses et autres recettes de la période (table tresorerie, réservée admin / gérance).
+// Les salaires y figurent dès qu'une fiche de paie est payée. Même découpage de période que le reste.
+export async function chargerTresorerie(supabase, periode) {
+  const { debut, fin } = bornesPeriode(periode)
+  let q = supabase.from('tresorerie').select('type, categorie, montant, date').limit(5000)
+  if (debut) q = q.gte('date', ymd(debut))
+  if (fin) q = q.lt('date', ymd(fin))
+  const { data, error } = await q
+  const lignes = data || []
+  const depenses = lignes.filter(m => m.type === 'depense')
+  const recettes = lignes.filter(m => m.type === 'recette')
+  const somme = (arr) => arr.reduce((t, m) => t + num(m.montant), 0)
+  const parCategorie = Object.entries(depenses.reduce((acc, m) => {
+    const cle = m.categorie || 'Autre'
+    acc[cle] = (acc[cle] || 0) + num(m.montant)
+    return acc
+  }, {})).sort((a, b) => b[1] - a[1])
+  return { depenses: somme(depenses), recettes: somme(recettes), nbDepenses: depenses.length, parCategorie, erreur: error?.message || null }
+}
