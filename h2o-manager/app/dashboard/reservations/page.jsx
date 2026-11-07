@@ -33,7 +33,7 @@ export default function Reservations() {
   const [nouveauDem,       setNouveauDem]       = useState(EMPTY_DEM)
   const [nouvelleEnt,      setNouvelleEnt]      = useState(EMPTY_ENT)
   const [erreur,           setErreur]           = useState('')
-  const [origine,          setOrigine]          = useState({ entreprise: false, avance: false })
+  const [origine,          setOrigine]          = useState({ entreprise: false, avance: false, demarcheur: false })
   const [typeHebergement,  setTypeHebergement]  = useState('duplex')
   const [chambreId,        setChambreId]        = useState('')
   const [filter,           setFilter]           = useState('tous')
@@ -54,11 +54,14 @@ export default function Reservations() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    let q = supabase.from('reservations')
-      .select('*, demarcheur:demarcheurs(id, nom, prenom, taux_commission)')
-      .order('date_arrivee', { ascending: false })
-    if (filter !== 'tous') q = q.eq('statut', filter)
-    const { data } = await q
+    const requete = (cols) => {
+      let q = supabase.from('reservations').select(cols).order('date_arrivee', { ascending: false })
+      if (filter !== 'tous') q = q.eq('statut', filter)
+      return q
+    }
+    let { data, error } = await requete('*, demarcheur:demarcheurs(id, nom, prenom, taux_commission)')
+    // Sans la colonne démarcheur (base pas à jour), la liste reste affichée
+    if (error) ({ data } = await requete('*'))
     setReservations(data || [])
     setLoading(false)
   }, [filter])
@@ -108,7 +111,7 @@ export default function Reservations() {
   function resetApport() {
     setAvecDemarcheur(false); setAvecEntreprise(false)
     setNouveauDem(EMPTY_DEM); setNouvelleEnt(EMPTY_ENT)
-    setErreur(''); setOrigine({ entreprise: false, avance: false })
+    setErreur(''); setOrigine({ entreprise: false, avance: false, demarcheur: false })
   }
 
   function openNew() {
@@ -121,7 +124,7 @@ export default function Reservations() {
   function openEdit(r) {
     resetApport()
     setAvecDemarcheur(!!r.demarcheur_id); setAvecEntreprise(!!r.entreprise_id)
-    setOrigine({ entreprise: !!r.entreprise_id, avance: (r.avance || 0) > 0 })
+    setOrigine({ entreprise: !!r.entreprise_id, avance: (r.avance || 0) > 0, demarcheur: !!r.demarcheur_id })
     const isChambre = r.type === 'chambre'
     // Extraire l'id chambre depuis les notes si dispo
     let parsedChambreId = ''
@@ -251,11 +254,13 @@ export default function Reservations() {
         type,
         duplex_id,
         notes: notes || null,
-        demarcheur_id: demarcheur_id || null,
         nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
         montant_total: form.montant_total ? parseInt(form.montant_total) : null,
         updated_at: new Date().toISOString(),
       }
+      // Démarcheur, avance et entreprise sont facultatifs : ces colonnes ne sont envoyées que si elles servent,
+      // une réservation ordinaire s'enregistre donc même si la base n'a pas encore ces colonnes.
+      if (demarcheur_id || origine.demarcheur) payload.demarcheur_id = demarcheur_id || null
       if (avance > 0 || origine.avance) payload.avance = avance
       if (entreprise_id || origine.entreprise) payload.entreprise_id = entreprise_id || null
 
