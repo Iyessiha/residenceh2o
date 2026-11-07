@@ -12,8 +12,11 @@ const EMPTY = {
   nom_client: '', telephone: '', email: '', duplex_id: '',
   date_arrivee: '', date_depart: '', nb_personnes: '',
   montant_total: '', avance: '', notes: '', statut: 'en_attente',
-  source: 'manuel', type: 'sejour', demarcheur_id: '',
+  source: 'manuel', type: 'sejour', demarcheur_id: '', entreprise_id: '',
 }
+const NOUVEAU = '__nouveau__'
+const EMPTY_DEM = { prenom: '', nom: '', telephone: '', taux: '10' }
+const EMPTY_ENT = { nom: '', contact: '', adresse: '' }
 const EMPTY_CHAMBRE = { ...EMPTY, type: 'chambre', duplex_id: '' }
 
 export default function Reservations() {
@@ -24,6 +27,13 @@ export default function Reservations() {
   const [duplexes,         setDuplexes]         = useState([])
   const [chambres,         setChambres]         = useState([])
   const [demarcheurs,      setDemarcheurs]      = useState([])
+  const [entreprises,      setEntreprises]      = useState([])
+  const [avecDemarcheur,   setAvecDemarcheur]   = useState(false)
+  const [avecEntreprise,   setAvecEntreprise]   = useState(false)
+  const [nouveauDem,       setNouveauDem]       = useState(EMPTY_DEM)
+  const [nouvelleEnt,      setNouvelleEnt]      = useState(EMPTY_ENT)
+  const [erreur,           setErreur]           = useState('')
+  const [origine,          setOrigine]          = useState({ entreprise: false, avance: false })
   const [typeHebergement,  setTypeHebergement]  = useState('duplex')
   const [chambreId,        setChambreId]        = useState('')
   const [filter,           setFilter]           = useState('tous')
@@ -39,7 +49,7 @@ export default function Reservations() {
 
   // Ouvrir le formulaire si ?new=1 dans l'URL
   useEffect(() => {
-    if (searchParams.get('new') === '1') { setForm(EMPTY); setEditId(null); setShowForm(true) }
+    if (searchParams.get('new') === '1') { resetApport(); setForm(EMPTY); setEditId(null); setShowForm(true) }
   }, [searchParams])
 
   const load = useCallback(async () => {
@@ -62,11 +72,16 @@ export default function Reservations() {
       .then(({ data }) => setChambres(data || []))
     supabase.from('demarcheurs').select('id, nom, prenom, taux_commission').order('nom')
       .then(({ data }) => setDemarcheurs(data || []))
+    supabase.from('entreprises').select('id, nom, contact, adresse').order('nom')
+      .then(({ data }) => setEntreprises(data || []))
   }, [])
 
   // Commission prévisionnelle affichée dans le formulaire (le calcul définitif est fait en base)
-  const demarcheurChoisi = demarcheurs.find(d => d.id === form.demarcheur_id)
-  const commissionApercu = demarcheurChoisi && form.montant_total
+  const demarcheurNouveau = avecDemarcheur && form.demarcheur_id === NOUVEAU
+  const demarcheurChoisi = demarcheurNouveau
+    ? { taux_commission: Number(nouveauDem.taux) || 0 }
+    : demarcheurs.find(d => d.id === form.demarcheur_id)
+  const commissionApercu = avecDemarcheur && demarcheurChoisi && form.montant_total
     ? Math.round((parseInt(form.montant_total) || 0) * Number(demarcheurChoisi.taux_commission) / 100)
     : null
 
@@ -90,13 +105,23 @@ export default function Reservations() {
     if (ch?.tarif_nuit) setForm(p => ({ ...p, montant_total: String(ch.tarif_nuit * nuits) }))
   }, [form.date_arrivee, form.date_depart, chambreId, chambres, typeHebergement])
 
+  function resetApport() {
+    setAvecDemarcheur(false); setAvecEntreprise(false)
+    setNouveauDem(EMPTY_DEM); setNouvelleEnt(EMPTY_ENT)
+    setErreur(''); setOrigine({ entreprise: false, avance: false })
+  }
+
   function openNew() {
+    resetApport()
     setForm(EMPTY); setEditId(null); setConflict(null)
     setTypeHebergement('duplex'); setChambreId('')
     setShowForm(true)
   }
 
   function openEdit(r) {
+    resetApport()
+    setAvecDemarcheur(!!r.demarcheur_id); setAvecEntreprise(!!r.entreprise_id)
+    setOrigine({ entreprise: !!r.entreprise_id, avance: (r.avance || 0) > 0 })
     const isChambre = r.type === 'chambre'
     // Extraire l'id chambre depuis les notes si dispo
     let parsedChambreId = ''
@@ -116,7 +141,7 @@ export default function Reservations() {
       montant_total: r.montant_total ? String(r.montant_total) : '',
       avance: r.avance ? String(r.avance) : '',
       notes: r.notes || '', statut: r.statut, source: r.source, type: r.type,
-      demarcheur_id: r.demarcheur_id || '',
+      demarcheur_id: r.demarcheur_id || '', entreprise_id: r.entreprise_id || '',
     })
     setTypeHebergement(isChambre ? 'chambre' : 'duplex')
     setChambreId(parsedChambreId)
@@ -148,58 +173,111 @@ export default function Reservations() {
     return false
   }
 
+  // Traduit une erreur de la base en message compréhensible
+  function messageErreur(error) {
+    const m = error?.message || String(error)
+    if (/reservations_type_check/.test(m)) return "La base refuse ce type d'hébergement (chambre). Exécutez le SQL « 20261109_reservations_correctifs » dans Supabase > SQL Editor, puis réessayez."
+    if (/column .*(avance|entreprise_id)/i.test(m) || /(avance|entreprise_id).*(does not exist|schema cache)/i.test(m)) return "La base n'est pas à jour (avance / entreprise). Exécutez le SQL « 20261109_reservations_correctifs » dans Supabase > SQL Editor, puis réessayez."
+    if (/row-level security|permission denied/i.test(m)) return "Droits insuffisants pour enregistrer (reconnectez-vous, puis réessayez)."
+    return m
+  }
+
   async function save() {
+    setErreur('')
+    if (!form.nom_client.trim()) { setErreur('Le nom du client est obligatoire.'); return }
+    if (!form.telephone.trim()) { setErreur('Le téléphone du client est obligatoire.'); return }
     if (form.montant_total && (parseInt(form.avance) || 0) > parseInt(form.montant_total)) {
-      alert("L'avance ne peut pas dépasser le montant total.")
+      setErreur("L'avance ne peut pas dépasser le montant total.")
       return
     }
+    if (avecDemarcheur && !form.demarcheur_id) { setErreur('Choisissez le démarcheur ou ajoutez-en un nouveau.'); return }
+    if (avecDemarcheur && demarcheurNouveau && !nouveauDem.nom.trim()) { setErreur('Indiquez le nom du nouveau démarcheur.'); return }
+    if (avecEntreprise && !form.entreprise_id) { setErreur("Choisissez l'entreprise ou ajoutez-en une nouvelle."); return }
+    if (avecEntreprise && form.entreprise_id === NOUVEAU && !nouvelleEnt.nom.trim()) { setErreur("Indiquez le nom de la nouvelle entreprise."); return }
+
     setSaving(true)
     try {
-    const hasConflict = await checkConflict()
-    if (hasConflict) return
+      const hasConflict = await checkConflict()
+      if (hasConflict) return
 
-    let notes = form.notes
-    let type = form.type
-    let duplex_id = form.duplex_id || null
+      let notes = form.notes
+      let type = form.type
+      let duplex_id = form.duplex_id || null
 
-    if (typeHebergement === 'chambre') {
-      const ch = chambres.find(c => String(c.id) === String(chambreId))
-      const chambreNom = ch ? ch.nom : chambreId
-      const notesBase = form.notes.replace(/^Chambre souhait[ée]e? : .+?(\n|$)/i, '').trim()
-      notes = chambreNom ? `Chambre souhaitée : ${chambreNom}${notesBase ? '\n' + notesBase : ''}` : notesBase
-      type = 'chambre'
-      duplex_id = null
-    }
-
-    // La commission (montant × taux / 100) est calculée par le trigger en base : on n'envoie que le démarcheur
-    const payload = {
-      ...form,
-      type,
-      duplex_id,
-      notes,
-      demarcheur_id: form.demarcheur_id || null,
-      nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
-      montant_total: form.montant_total ? parseInt(form.montant_total) : null,
-      avance: form.avance ? parseInt(form.avance) : 0,
-      updated_at: new Date().toISOString(),
-    }
-
-    if (editId) {
-      await supabase.from('reservations').update(payload).eq('id', editId)
-      setShowForm(false); setForm(EMPTY); setEditId(null)
-      setTypeHebergement('duplex'); setChambreId('')
-    } else {
-      const { data: inserted } = await supabase.from('reservations').insert([payload]).select('id, nom_client, date_arrivee, date_depart, duplex_id').single()
-      setShowForm(false); setForm(EMPTY); setEditId(null)
-      setTypeHebergement('duplex'); setChambreId('')
-      if (inserted) {
-        const dupUuid = duplexes.find(d => d.code === inserted.duplex_id)?.id || null
-        setQrReservation({ ...inserted, duplex_uuid: dupUuid })
+      if (typeHebergement === 'chambre') {
+        const ch = chambres.find(c => String(c.id) === String(chambreId))
+        const chambreNom = ch ? ch.nom : chambreId
+        const notesBase = form.notes.replace(/^Chambre souhait[ée]e? : .+?(\n|$)/i, '').trim()
+        notes = chambreNom ? `Chambre souhaitée : ${chambreNom}${notesBase ? '\n' + notesBase : ''}` : notesBase
+        type = 'chambre'
+        duplex_id = null
+      } else if (type === 'chambre') {
+        type = 'sejour'
       }
-    }
-    load()
+
+      // Démarcheur / entreprise saisis directement dans la réservation : créés ici, puis rattachés
+      let demarcheur_id = avecDemarcheur ? form.demarcheur_id : ''
+      let entreprise_id = avecEntreprise ? form.entreprise_id : ''
+      if (demarcheur_id === NOUVEAU) {
+        const taux = Number(String(nouveauDem.taux).replace(',', '.'))
+        const { data, error } = await supabase.from('demarcheurs').insert([{
+          nom: nouveauDem.nom.trim(), prenom: nouveauDem.prenom.trim(), telephone: nouveauDem.telephone.trim(),
+          taux_commission: Number.isFinite(taux) ? taux : 10,
+        }]).select('id, nom, prenom, taux_commission').single()
+        if (error) { setErreur('Démarcheur non enregistré : ' + messageErreur(error)); return }
+        setDemarcheurs(l => [...l, data]); demarcheur_id = data.id
+        setForm(p => ({ ...p, demarcheur_id: data.id })); setNouveauDem(EMPTY_DEM)
+      }
+      if (entreprise_id === NOUVEAU) {
+        const { data, error } = await supabase.from('entreprises').insert([{
+          nom: nouvelleEnt.nom.trim(), contact: nouvelleEnt.contact.trim(), adresse: nouvelleEnt.adresse.trim(),
+        }]).select('id, nom, contact, adresse').single()
+        if (error) { setErreur('Entreprise non enregistrée : ' + messageErreur(error)); return }
+        setEntreprises(l => [...l, data]); entreprise_id = data.id
+        setForm(p => ({ ...p, entreprise_id: data.id })); setNouvelleEnt(EMPTY_ENT)
+      }
+
+      // La commission (montant × taux / 100) est calculée par le trigger en base : on n'envoie que le démarcheur.
+      // Les colonnes « avance » et « entreprise_id » ne sont envoyées que si elles servent (ou servaient).
+      const avance = parseInt(form.avance) || 0
+      const payload = {
+        nom_client: form.nom_client.trim(),
+        telephone: form.telephone.trim(),
+        email: form.email.trim() || null,
+        date_arrivee: form.date_arrivee || null,
+        date_depart: form.date_depart || null,
+        statut: form.statut,
+        source: form.source,
+        type,
+        duplex_id,
+        notes: notes || null,
+        demarcheur_id: demarcheur_id || null,
+        nb_personnes: form.nb_personnes ? parseInt(form.nb_personnes) : null,
+        montant_total: form.montant_total ? parseInt(form.montant_total) : null,
+        updated_at: new Date().toISOString(),
+      }
+      if (avance > 0 || origine.avance) payload.avance = avance
+      if (entreprise_id || origine.entreprise) payload.entreprise_id = entreprise_id || null
+
+      if (editId) {
+        const { error } = await supabase.from('reservations').update(payload).eq('id', editId)
+        if (error) { setErreur(messageErreur(error)); return }
+        setShowForm(false); setForm(EMPTY); setEditId(null)
+        setTypeHebergement('duplex'); setChambreId(''); resetApport()
+      } else {
+        const { data: inserted, error } = await supabase.from('reservations').insert([payload]).select('id, nom_client, date_arrivee, date_depart, duplex_id').single()
+        if (error) { setErreur(messageErreur(error)); return }
+        setShowForm(false); setForm(EMPTY); setEditId(null)
+        setTypeHebergement('duplex'); setChambreId(''); resetApport()
+        if (inserted) {
+          const dupUuid = duplexes.find(d => d.code === inserted.duplex_id)?.id || null
+          setQrReservation({ ...inserted, duplex_uuid: dupUuid })
+        }
+      }
+      load()
     } catch (err) {
       console.error('save error', err)
+      setErreur(messageErreur(err))
     } finally {
       setSaving(false)
     }
@@ -305,6 +383,9 @@ export default function Reservations() {
                     <p className="text-xs" style={{ color: 'var(--text-3)' }}>{r.telephone}</p>
                     {r.demarcheur && (
                       <p className="text-xs" style={{ color: 'var(--primary)' }}>Apporté par {nomDemarcheur(r.demarcheur)}</p>
+                    )}
+                    {r.entreprise_id && entreprises.find(en => en.id === r.entreprise_id) && (
+                      <p className="text-xs" style={{ color: 'var(--primary)' }}>🏢 {entreprises.find(en => en.id === r.entreprise_id).nom}</p>
                     )}
                   </td>
                   <td className="table-td">
@@ -535,21 +616,78 @@ export default function Reservations() {
                 <p className="text-xs text-red-600">L'avance dépasse le montant total.</p>
               )}
 
-              <div>
-                <label className="label">
-                  Démarcheur <span className="font-normal" style={{ color: 'var(--text-3)' }}>(optionnel)</span>
-                </label>
-                <select className="input" value={form.demarcheur_id}
-                  onChange={e => setForm(p => ({ ...p, demarcheur_id: e.target.value }))}>
-                  <option value="">Aucun</option>
-                  {demarcheurs.map(d => (
-                    <option key={d.id} value={d.id}>{nomDemarcheur(d)} ({Number(d.taux_commission)} %)</option>
+              {/* Client apporté par un démarcheur et/ou une entreprise */}
+              <div className="rounded-xl p-3 space-y-3" style={{ backgroundColor: 'var(--bg-2)' }}>
+                <p className="label !mb-0">Client apporté par <span className="font-normal" style={{ color: 'var(--text-3)' }}>(optionnel)</span></p>
+                <div className="flex gap-2">
+                  {[
+                    ['dem', '🤝 Un démarcheur', avecDemarcheur, v => { setAvecDemarcheur(v); if (!v) setForm(p => ({ ...p, demarcheur_id: '' })) }],
+                    ['ent', '🏢 Une entreprise', avecEntreprise, v => { setAvecEntreprise(v); if (!v) setForm(p => ({ ...p, entreprise_id: '' })) }],
+                  ].map(([k, label, actif, set]) => (
+                    <button key={k} type="button" onClick={() => set(!actif)}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${actif ? 'text-white' : ''}`}
+                      style={actif
+                        ? { backgroundColor: 'var(--primary)', borderColor: 'var(--primary)' }
+                        : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
+                      {actif ? '✓ ' : ''}{label}
+                    </button>
                   ))}
-                </select>
-                {commissionApercu !== null && (
-                  <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>
-                    Commission : {formatFCFA(commissionApercu)} ({Number(demarcheurChoisi.taux_commission)} % du montant) — à payer après versement
-                  </p>
+                </div>
+
+                {avecDemarcheur && (
+                  <div className="space-y-2">
+                    <label className="label">Démarcheur</label>
+                    <select className="input" value={form.demarcheur_id}
+                      onChange={e => setForm(p => ({ ...p, demarcheur_id: e.target.value }))}>
+                      <option value="">— Choisir —</option>
+                      {demarcheurs.map(d => (
+                        <option key={d.id} value={d.id}>{nomDemarcheur(d)} ({Number(d.taux_commission)} %)</option>
+                      ))}
+                      <option value={NOUVEAU}>➕ Nouveau démarcheur…</option>
+                    </select>
+                    {demarcheurNouveau && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <input className="input" placeholder="Prénom" value={nouveauDem.prenom}
+                          onChange={e => setNouveauDem(p => ({ ...p, prenom: e.target.value }))} />
+                        <input className="input" placeholder="Nom *" value={nouveauDem.nom}
+                          onChange={e => setNouveauDem(p => ({ ...p, nom: e.target.value }))} />
+                        <input className="input" placeholder="Téléphone" value={nouveauDem.telephone}
+                          onChange={e => setNouveauDem(p => ({ ...p, telephone: e.target.value }))} />
+                        <div className="relative">
+                          <input className="input pr-8" type="number" min="0" max="100" step="0.5" placeholder="Commission"
+                            value={nouveauDem.taux} onChange={e => setNouveauDem(p => ({ ...p, taux: e.target.value }))} />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--text-3)' }}>%</span>
+                        </div>
+                      </div>
+                    )}
+                    {commissionApercu !== null && (
+                      <p className="text-xs" style={{ color: 'var(--text-2)' }}>
+                        Commission : {formatFCFA(commissionApercu)} ({Number(demarcheurChoisi.taux_commission)} % du montant) — à payer après versement
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {avecEntreprise && (
+                  <div className="space-y-2">
+                    <label className="label">Entreprise</label>
+                    <select className="input" value={form.entreprise_id}
+                      onChange={e => setForm(p => ({ ...p, entreprise_id: e.target.value }))}>
+                      <option value="">— Choisir —</option>
+                      {entreprises.map(en => <option key={en.id} value={en.id}>{en.nom}</option>)}
+                      <option value={NOUVEAU}>➕ Nouvelle entreprise…</option>
+                    </select>
+                    {form.entreprise_id === NOUVEAU && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <input className="input col-span-2" placeholder="Nom de l'entreprise *" value={nouvelleEnt.nom}
+                          onChange={e => setNouvelleEnt(p => ({ ...p, nom: e.target.value }))} />
+                        <input className="input" placeholder="Contact (nom, téléphone)" value={nouvelleEnt.contact}
+                          onChange={e => setNouvelleEnt(p => ({ ...p, contact: e.target.value }))} />
+                        <input className="input" placeholder="Adresse" value={nouvelleEnt.adresse}
+                          onChange={e => setNouvelleEnt(p => ({ ...p, adresse: e.target.value }))} />
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
@@ -580,11 +718,15 @@ export default function Reservations() {
               </div>
             </div>
 
+            {erreur && (
+              <div className="mt-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">{erreur}</div>
+            )}
+
             <div className="flex gap-3 mt-5">
               <button onClick={() => { setShowForm(false); setConflict(null) }} className="btn-secondary flex-1">
                 Annuler
               </button>
-              <button onClick={save} disabled={saving || !form.nom_client || !form.telephone}
+              <button onClick={save} disabled={saving}
                 className="btn-primary flex-1">
                 {saving ? 'Vérification…' : editId ? 'Enregistrer' : 'Créer la réservation'}
               </button>

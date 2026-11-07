@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatFCFA, formatDate } from '@/lib/utils'
 import { useRole, estGestion } from '@/lib/useRole'
+import { chargerFinances, SOURCES as SOURCES_CA } from '@/lib/finance'
 
 const CAT_DEPENSES = [
   'Salaires', 'Achats restaurant & bar', 'Boutique (achat marchandises)', 'Électricité', 'Eau', 'Internet & téléphone',
@@ -35,7 +36,7 @@ export default function Tresorerie() {
   const [periode, setPeriode] = useState('mois')
   const [typeFiltre, setTypeFiltre] = useState('tous')
   const [mouvements, setMouvements] = useState([])
-  const [encaisse, setEncaisse] = useState({ factures: 0, boutique: 0 })
+  const [encaisse, setEncaisse] = useState(null)   // résultat de lib/finance (mêmes chiffres que le tableau de bord)
   const [loading, setLoading] = useState(true)
   const [erreur, setErreur] = useState('')
   const [form, setForm] = useState(null)
@@ -50,18 +51,12 @@ export default function Tresorerie() {
     let q = supabase.from('tresorerie').select('*').order('date', { ascending: false }).order('created_at', { ascending: false }).limit(2000)
     if (du) q = q.gte('date', du)
     if (au) q = q.lte('date', au)
-    // Encaissements clients : montants réglés des factures et ventes boutique payées de la période
-    let qf = supabase.from('factures').select('montant_paye').neq('statut', 'brouillon').limit(5000)
-    let qv = supabase.from('ventes').select('montant_total').eq('statut', 'payee').limit(5000)
-    if (du) { qf = qf.gte('created_at', `${du}T00:00:00`); qv = qv.gte('created_at', `${du}T00:00:00`) }
-    if (au) { const lendemain = iso(new Date(new Date(`${au}T00:00:00Z`).getTime() + 86400000)); qf = qf.lt('created_at', `${lendemain}T00:00:00`); qv = qv.lt('created_at', `${lendemain}T00:00:00`) }
-    const [m, f, v] = await Promise.all([q, qf, qv])
+    // Encaissements clients : même calcul que le tableau de bord et les rapports (lib/finance)
+    const [m, fin] = await Promise.all([q, chargerFinances(supabase, periode)])
     if (m.error) setErreur(m.error.message)
+    else if (fin.erreur) setErreur(fin.erreur)
     setMouvements(m.data || [])
-    setEncaisse({
-      factures: (f.data || []).reduce((s, x) => s + (x.montant_paye || 0), 0),
-      boutique: (v.data || []).reduce((s, x) => s + (x.montant_total || 0), 0),
-    })
+    setEncaisse(fin)
     setLoading(false)
   }
 
@@ -69,7 +64,7 @@ export default function Tresorerie() {
   const recettes = mouvements.filter(m => m.type === 'recette')
   const totalDepenses = depenses.reduce((s, m) => s + m.montant, 0)
   const totalRecettes = recettes.reduce((s, m) => s + m.montant, 0)
-  const totalEncaisse = encaisse.factures + encaisse.boutique
+  const totalEncaisse = encaisse?.total.encaisse || 0
   const solde = totalEncaisse + totalRecettes - totalDepenses
 
   const parCategorie = useMemo(() => {
@@ -156,7 +151,7 @@ export default function Tresorerie() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
         <div className="card p-4"><p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Encaissements clients</p>
           <p className="text-xl font-bold text-green-600">{formatFCFA(totalEncaisse)}</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>Factures {formatFCFA(encaisse.factures)} · Boutique {formatFCFA(encaisse.boutique)}</p></div>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>{encaisse ? SOURCES_CA.filter(src => encaisse.parSource[src.cle].encaisse > 0).map(src => `${src.label} ${formatFCFA(encaisse.parSource[src.cle].encaisse)}`).join(' · ') || 'Aucun encaissement' : '…'}</p></div>
         <div className="card p-4"><p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Autres recettes</p>
           <p className="text-xl font-bold text-green-600">{formatFCFA(totalRecettes)}</p></div>
         <div className="card p-4"><p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Dépenses</p>
@@ -165,7 +160,7 @@ export default function Tresorerie() {
           <p className="text-xl font-bold" style={{ color: solde < 0 ? '#DC2626' : 'var(--primary)' }}>{formatFCFA(solde)}</p></div>
       </div>
       <p className="text-xs mb-6" style={{ color: 'var(--text-3)' }}>
-        Les encaissements clients sont calculés à la date des factures et des ventes boutique payées. Les salaires apparaissent en dépenses dès qu'une fiche de paie est payée.
+        Les encaissements clients sont les mêmes que sur le tableau de bord : commandes et ventes payées, avances de séjour, acomptes d'événements, autres factures réglées. Les salaires apparaissent en dépenses dès qu'une fiche de paie est payée.
       </p>
 
       {erreur && !form && <p className="text-sm mb-3" style={{ color: '#DC2626' }}>{erreur}</p>}

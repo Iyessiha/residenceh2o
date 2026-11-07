@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatFCFA } from '@/lib/utils'
+import { chargerFinances, bornesPeriode, SOURCES as SOURCES_CA } from '@/lib/finance'
 
 export default function Rapports() {
   const supabase = createClient()
@@ -13,33 +14,24 @@ export default function Rapports() {
 
   async function load() {
     setLoading(true)
-    const now = new Date()
-    let from
+    const from = bornesPeriode(periode).debut.toISOString()
 
-    if (periode === 'mois') {
-      from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    } else if (periode === 'trimestre') {
-      const q = Math.floor(now.getMonth() / 3)
-      from = new Date(now.getFullYear(), q * 3, 1).toISOString()
-    } else {
-      from = new Date(now.getFullYear(), 0, 1).toISOString()
-    }
-
-    const [resvRes, factRes, duplexRes, evtRes] = await Promise.all([
+    const [resvRes, duplexRes, evtRes, fin] = await Promise.all([
       supabase.from('reservations').select('statut, montant_total, date_arrivee, date_depart, duplex_id, demarcheur_id, commission_montant, commission_statut').gte('created_at', from),
-      supabase.from('factures').select('statut, montant_total, type_prestation').gte('created_at', from),
       supabase.from('duplexes').select('code, statut'),
       supabase.from('evenements').select('statut, montant_devis').gte('date_evenement', from),
+      chargerFinances(supabase, periode),
     ])
 
     const reservations = resvRes.data || []
-    const factures = factRes.data || []
     const duplexes = duplexRes.data || []
     const evenements = evtRes.data || []
 
-    const revenuTotal = factures.filter(f => f.statut === 'paye').reduce((s, f) => s + (f.montant_total || 0), 0)
-    const revenuSejour = factures.filter(f => f.statut === 'paye' && f.type_prestation === 'sejour').reduce((s, f) => s + (f.montant_total || 0), 0)
-    const revenuEvenement = factures.filter(f => f.statut === 'paye' && f.type_prestation === 'evenement').reduce((s, f) => s + (f.montant_total || 0), 0)
+    // Chiffre d'affaires et encaissements : mêmes règles que le tableau de bord (lib/finance)
+    const revenuTotal = fin.total.ca
+    const encaisseTotal = fin.total.encaisse
+    const revenuSejour = fin.parSource.hebergement.ca
+    const revenuEvenement = fin.parSource.evenements.ca
     const totalDuplexes = duplexes.length || 1
     const occupes = duplexes.filter(d => d.statut === 'occupe').length
 
@@ -68,14 +60,14 @@ export default function Rapports() {
       versees: commissionsVersees,
       dues: commissionsTotal - commissionsVersees,
       nb: avecDemarcheur.length,
-      net: revenuTotal - commissionsTotal,
+      net: encaisseTotal - commissionsTotal,
     }
 
-    setData({ revenuTotal, revenuSejour, revenuEvenement, totalDuplexes, occupes, nbSejours, nbEvenements, avgDuration, byDuplex, commissions })
+    setData({ fin, revenuTotal, encaisseTotal, revenuSejour, revenuEvenement, totalDuplexes, occupes, nbSejours, nbEvenements, avgDuration, byDuplex, commissions })
     setLoading(false)
   }
 
-  const PERIODE_LABELS = { mois: 'Ce mois', trimestre: 'Ce trimestre', annee: 'Cette année' }
+  const PERIODE_LABELS = { mois: 'Ce mois', trimestre: '3 mois', annee: 'Cette année' }
 
   return (
     <div>
@@ -98,9 +90,9 @@ export default function Rapports() {
           {/* KPI grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div className="card p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Revenus totaux</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Chiffre d'affaires</p>
               <p className="text-2xl font-bold text-green-600">{formatFCFA(data.revenuTotal)}</p>
-              <p className="text-xs text-gray-400 mt-1">{PERIODE_LABELS[periode]}</p>
+              <p className="text-xs text-gray-400 mt-1">{PERIODE_LABELS[periode]} · encaissé {formatFCFA(data.encaisseTotal)}</p>
             </div>
             <div className="card p-5">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Taux d'occupation</p>
@@ -122,12 +114,14 @@ export default function Rapports() {
           {/* Revenue breakdown */}
           <div className="grid lg:grid-cols-2 gap-6 mb-6">
             <div className="card p-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Répartition des revenus</h3>
+              <h3 className="font-semibold text-gray-800 mb-4">Répartition du chiffre d'affaires</h3>
               <div className="space-y-3">
                 {[
-                  { label: 'Séjours duplexes', value: data.revenuSejour, color: 'bg-teal-500' },
-                  { label: 'Événements', value: data.revenuEvenement, color: 'bg-purple-500' },
-                  { label: 'Autres', value: data.revenuTotal - data.revenuSejour - data.revenuEvenement, color: 'bg-gray-300' },
+                  ...SOURCES_CA.map((src, i) => ({
+                    label: `${src.icone} ${src.label}`,
+                    value: data.fin.parSource[src.cle].ca,
+                    color: ['bg-orange-400', 'bg-pink-400', 'bg-teal-500', 'bg-purple-500', 'bg-gray-300'][i],
+                  })),
                 ].map(item => {
                   const pct = data.revenuTotal ? Math.round((item.value / data.revenuTotal) * 100) : 0
                   return (
@@ -194,7 +188,7 @@ export default function Rapports() {
                 <p className="text-lg font-bold text-gray-900">{formatFCFA(data.commissions.net)}</p>
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-4">Le revenu net = revenus encaissés (factures payées) − commissions des réservations créées sur la période.</p>
+            <p className="text-xs text-gray-400 mt-4">Le revenu net = montants encaissés sur la période (mêmes chiffres que le tableau de bord) − commissions des réservations créées sur la période.</p>
           </div>
 
           {/* Export note */}

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatFCFA, formatDateShort, STATUT_COLORS, STATUT_LABELS } from '@/lib/utils'
 import Link from 'next/link'
+import { chargerFinances, bornesPeriode, SOURCES as SOURCES_CA } from '@/lib/finance'
 
 // Raccourcis affichés en haut du tableau de bord
 const ACTIONS_RAPIDES = [
@@ -18,7 +19,9 @@ const ACTIONS_RAPIDES = [
 
 export default function Dashboard() {
   const supabase = createClient()
-  const [stats,    setStats]    = useState({ occupation: 0, sejours: 0, revenu: 0, totalDuplexes: 0 })
+  const [stats,    setStats]    = useState({ occupation: 0, sejours: 0, totalDuplexes: 0 })
+  const [finMois,  setFinMois]  = useState(null)   // CA / encaissé du mois en cours (lib/finance)
+  const [finPeriode, setFinPeriode] = useState(null) // CA / encaissé de la période choisie (lib/finance)
   const [today,    setToday]    = useState({ arrivals: [], departures: [] })
   const [upcoming, setUpcoming] = useState([])
   const [weekData, setWeekData] = useState([])
@@ -32,21 +35,23 @@ export default function Dashboard() {
 
   // Commandes Restaurant & Bar et ventes Boutique de la période choisie (heure locale)
   async function loadCommandesResto() {
-    const debut = new Date(); debut.setHours(0, 0, 0, 0)
-    if (periodeResto === 'semaine') debut.setDate(debut.getDate() - 6)
-    if (periodeResto === 'mois')    debut.setDate(1)
+    const { debut, fin } = bornesPeriode(periodeResto)
     const charger = (table) => {
       let q = supabase
         .from(table)
         .select('id, nom_client, telephone, lignes, montant_total, statut, created_at' + (table === 'commandes_restaurant' ? ', table_num' : ''))
         .order('created_at', { ascending: false })
         .limit(2000)
-      if (periodeResto !== 'tout') q = q.gte('created_at', debut.toISOString())
+      if (debut) q = q.gte('created_at', debut.toISOString())
+      if (fin) q = q.lt('created_at', fin.toISOString())
       return q
     }
     const [resto, boutique] = await Promise.all([charger('commandes_restaurant'), charger('ventes')])
     setCmdResto(resto.data || [])
     setVentesBoutique(boutique.data || [])
+    // Même période, mêmes règles : le chiffre d'affaires global et le détail des commandes concordent
+    chargerFinances(supabase, periodeResto).then(setFinPeriode)
+    chargerFinances(supabase, 'mois').then(setFinMois)
   }
 
   // Mise à jour en direct : nouvelle commande ou vente, modification, suppression
@@ -56,6 +61,8 @@ export default function Dashboard() {
       .channel('dashboard_commandes_ventes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'commandes_restaurant' }, () => loadCommandesResto())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ventes' }, () => loadCommandesResto())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations' }, () => loadCommandesResto())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'factures' }, () => loadCommandesResto())
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [periodeResto])
@@ -88,14 +95,6 @@ export default function Dashboard() {
     const occupied    = duplexes.filter(d => d.statut === 'occupe').length
     const enSejour    = reservations.filter(r => r.statut === 'en_sejour').length
 
-    const startOfMonth = new Date(); startOfMonth.setDate(1)
-    const { data: monthRevenu } = await supabase
-      .from('factures')
-      .select('montant_total')
-      .eq('statut', 'paye')
-      .gte('created_at', startOfMonth.toISOString())
-    const revenu = (monthRevenu || []).reduce((s, f) => s + (f.montant_total || 0), 0)
-
     // Données 7 derniers jours pour le mini-graphique
     const days = []
     for (let i = 6; i >= 0; i--) {
@@ -107,7 +106,7 @@ export default function Dashboard() {
       days.push({ label: d.toLocaleDateString('fr-FR', { weekday: 'short' }), count, isToday: i === 0 })
     }
 
-    setStats({ occupation: Math.round((occupied / total) * 100), sejours: enSejour, revenu, totalDuplexes: total })
+    setStats({ occupation: Math.round((occupied / total) * 100), sejours: enSejour, totalDuplexes: total })
     setToday({ arrivals: todayArrRes.data || [], departures: todayDepRes.data || [] })
     setUpcoming(reservations.slice(0, 6))
     setWeekData(days)
@@ -185,9 +184,11 @@ export default function Dashboard() {
           <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>Clients présents aujourd'hui</p>
         </div>
         <div className="card p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Revenus du mois</p>
-          <p className="text-3xl font-bold" style={{ color: 'var(--success)' }}>{formatFCFA(stats.revenu)}</p>
-          <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>Factures encaissées</p>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Encaissé ce mois</p>
+          <p className="text-3xl font-bold" style={{ color: 'var(--success)' }}>{finMois ? formatFCFA(finMois.total.encaisse) : '…'}</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-3)' }}>
+            {finMois ? `Chiffre d'affaires ${formatFCFA(finMois.total.ca)} · reste ${formatFCFA(finMois.total.reste)}` : 'Calcul en cours'}
+          </p>
         </div>
       </div>
 
@@ -275,7 +276,90 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Commandes (Restaurant & Bar + Boutique) et chiffre d'affaires, par période */}
+      {/* Chiffre d'affaires et encaissements de toute l'activité (règles : lib/finance.js) */}
+      <div className="card mb-6">
+        <div className="px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-semibold" style={{ color: 'var(--text)' }}>💰 Chiffre d'affaires et encaissements</h2>
+              <p className="text-xs mt-0.5 capitalize" style={{ color: 'var(--text-3)' }}>Toute l'activité, {libellePeriode}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {PERIODES.map(([key, label]) => (
+                <button key={key} onClick={() => setPeriodeResto(key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${periodeResto === key ? 'text-white' : 'border hover:opacity-80'}`}
+                  style={periodeResto === key
+                    ? { backgroundColor: 'var(--primary)' }
+                    : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {!finPeriode ? (
+            <p className="text-sm mt-4" style={{ color: 'var(--text-3)' }}>Calcul en cours…</p>
+          ) : (
+            <>
+              {finPeriode.erreur && (
+                <p className="text-xs mt-3 text-red-600">Certaines données n'ont pas pu être lues : {finPeriode.erreur}</p>
+              )}
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Chiffre d'affaires</p>
+                  <p className="text-xl font-bold mt-1" style={{ color: 'var(--text)' }}>{formatFCFA(finPeriode.total.ca)}</p>
+                </div>
+                <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Encaissé</p>
+                  <p className="text-xl font-bold mt-1 text-green-600">{formatFCFA(finPeriode.total.encaisse)}</p>
+                </div>
+                <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--bg-2)' }}>
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Reste à encaisser</p>
+                  <p className="text-xl font-bold mt-1 text-yellow-600">{formatFCFA(finPeriode.total.reste)}</p>
+                </div>
+              </div>
+              <div className="overflow-x-auto mt-4">
+                <table className="w-full">
+                  <thead style={{ backgroundColor: 'var(--bg-2)' }}>
+                    <tr>
+                      <th className="table-th">Activité</th>
+                      <th className="table-th text-right">Nb</th>
+                      <th className="table-th text-right">Chiffre d'affaires</th>
+                      <th className="table-th text-right">Encaissé</th>
+                      <th className="table-th text-right">Reste</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {SOURCES_CA.map(src => {
+                      const l = finPeriode.parSource[src.cle]
+                      return (
+                        <tr key={src.cle} className="border-t" style={{ borderColor: 'var(--border-2)' }}>
+                          <td className="table-td">{src.icone} {src.label}</td>
+                          <td className="table-td text-right">{l.nb}</td>
+                          <td className="table-td text-right font-medium whitespace-nowrap">{formatFCFA(l.ca)}</td>
+                          <td className="table-td text-right text-green-600 whitespace-nowrap">{formatFCFA(l.encaisse)}</td>
+                          <td className="table-td text-right text-yellow-600 whitespace-nowrap">{formatFCFA(l.reste)}</td>
+                        </tr>
+                      )
+                    })}
+                    <tr className="border-t-2 font-bold" style={{ borderColor: 'var(--border)' }}>
+                      <td className="table-td">Total</td>
+                      <td className="table-td text-right">{finPeriode.total.nb}</td>
+                      <td className="table-td text-right whitespace-nowrap">{formatFCFA(finPeriode.total.ca)}</td>
+                      <td className="table-td text-right text-green-600 whitespace-nowrap">{formatFCFA(finPeriode.total.encaisse)}</td>
+                      <td className="table-td text-right text-yellow-600 whitespace-nowrap">{formatFCFA(finPeriode.total.reste)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs mt-3" style={{ color: 'var(--text-3)' }}>
+                Commandes, ventes et séjours sont comptés une seule fois (leurs factures ne s'ajoutent pas). Hébergement : date d'arrivée, encaissé = avances. Événements : encaissé = acomptes. Annulations exclues.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Commandes (Restaurant & Bar + Boutique) : détail du chiffre d'affaires ci-dessus */}
       <div className="card mb-6">
         <div className="px-5 py-4 border-b" style={{ borderColor: 'var(--border-2)' }}>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -292,16 +376,6 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 mt-3">
-            {PERIODES.map(([key, label]) => (
-              <button key={key} onClick={() => setPeriodeResto(key)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${periodeResto === key ? 'text-white' : 'border hover:opacity-80'}`}
-                style={periodeResto === key
-                  ? { backgroundColor: 'var(--primary)' }
-                  : { backgroundColor: 'var(--bg)', color: 'var(--text-2)', borderColor: 'var(--border)' }}>
-                {label}
-              </button>
-            ))}
-            <span className="w-px mx-1" style={{ backgroundColor: 'var(--border)' }} />
             {SOURCES.map(([key, label]) => (
               <button key={key} onClick={() => setSourceCmd(key)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${sourceCmd === key ? 'text-white' : 'border hover:opacity-80'}`}
