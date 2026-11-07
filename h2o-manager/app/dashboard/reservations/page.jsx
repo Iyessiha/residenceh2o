@@ -270,7 +270,7 @@ export default function Reservations() {
         setShowForm(false); setForm(EMPTY); setEditId(null)
         setTypeHebergement('duplex'); setChambreId(''); resetApport()
       } else {
-        const { data: inserted, error } = await supabase.from('reservations').insert([payload]).select('id, nom_client, date_arrivee, date_depart, duplex_id').single()
+        const { data: inserted, error } = await supabase.from('reservations').insert([payload]).select('id, nom_client, date_arrivee, date_depart, duplex_id, notes').single()
         if (error) { setErreur(messageErreur(error)); return }
         setShowForm(false); setForm(EMPTY); setEditId(null)
         setTypeHebergement('duplex'); setChambreId(''); resetApport()
@@ -320,7 +320,12 @@ export default function Reservations() {
   const dupNom = (code) => duplexes.find(d => d.code === code)?.nom || code || '—'
 
   function buildGuestUrl(r) {
-    const dupUuid = duplexes.find(d => d.code === r.duplex_id)?.id
+    // Villa : identifiant du duplex ; chambre à la nuit : identifiant de la chambre (retrouvée par son nom dans les notes)
+    let dupUuid = duplexes.find(d => d.code === r.duplex_id)?.id
+    if (!dupUuid && r.notes) {
+      const nomCh = r.notes.match(/^Chambre souhait[ée]e? : (.+?)(\n|$)/i)?.[1]?.trim()
+      dupUuid = chambres.find(c => c.nom === nomCh)?.id
+    }
     if (!dupUuid) return null
     const base = typeof window !== 'undefined' ? window.location.origin : ''
     const p = new URLSearchParams({
@@ -769,7 +774,7 @@ export default function Reservations() {
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-red-500">Ce duplex n'est pas encore configuré pour le portail guest.</p>
+                <p className="text-sm text-red-500">Ce logement n'est pas encore configuré pour le portail guest.</p>
               )}
             </div>
           </div>

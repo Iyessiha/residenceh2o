@@ -254,7 +254,7 @@ function ProlongerView({ duplex, resDepart, resId, onBack }) {
   async function submit() {
     setSending(true)
     await sb.from('demandes_assistance').insert([{
-      duplex_id: duplex.id,
+      duplex_id: duplex.estChambre ? null : duplex.id,
       duplex_code: duplex.code,
       duplex_nom: duplex.nom,
       message: `Demande de prolongation de séjour : ${nbNuits} nuit(s) supplémentaire(s) à partir du ${resDepart}.${note ? ' Note : ' + note : ''}`,
@@ -367,14 +367,20 @@ export default function GuestPortal({ params }) {
         sb.from('menu_restaurant').select('*').eq('disponible', true).order('categorie').order('nom'),
         sb.from('articles').select('*').eq('actif', true).order('nom'),
       ])
-      if (!duplexRes.data) { setNotFound(true); setLoading(false); return }
-      setDuplex(duplexRes.data)
+      let lieu = duplexRes.data
+      if (!lieu) {
+        // Réservation d'une chambre à la nuit : le lien porte l'identifiant de la chambre
+        const { data: ch } = await sb.from('chambres').select('id, nom').eq('id', id).single()
+        if (ch) lieu = { id: ch.id, nom: ch.nom, code: ch.nom, estChambre: true }
+      }
+      if (!lieu) { setNotFound(true); setLoading(false); return }
+      setDuplex(lieu)
       setMenu(menuRes.data || [])
       setArticles(articlesRes.data || [])
       setLoading(false)
       // Restaure la commande en cours depuis localStorage
       try {
-        const saved = localStorage.getItem(`h2o_order_${duplexRes.data.id}`)
+        const saved = localStorage.getItem(`h2o_order_${lieu.id}`)
         if (saved) {
           const { id: oid, type } = JSON.parse(saved)
           setLastOrderId(oid)
@@ -411,7 +417,7 @@ export default function GuestPortal({ params }) {
   async function confirmOrder({ nom, note }) {
     const lignes = cart.map(i => ({ nom: i.nom, qte: i.qte, prix: i.prix }))
     const montant_total = cart.reduce((s, i) => s + i.prix * i.qte, 0)
-    const nom_client = nom || `Duplex ${duplex.code}`
+    const nom_client = nom || (duplex.estChambre ? `Chambre ${duplex.code}` : `Duplex ${duplex.code}`)
 
     if (view === 'restaurant') {
       const { data, error } = await sb.from('commandes_restaurant').insert([{
@@ -441,7 +447,7 @@ export default function GuestPortal({ params }) {
     if (!assistMsg.trim()) return
     setAssistSending(true)
     await sb.from('demandes_assistance').insert([{
-      duplex_id: duplex.id,
+      duplex_id: duplex.estChambre ? null : duplex.id,
       duplex_code: duplex.code,
       duplex_nom: duplex.nom,
       message: assistMsg.trim(),
