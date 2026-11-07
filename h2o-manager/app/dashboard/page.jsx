@@ -238,7 +238,7 @@ export default function Dashboard() {
       </div>
 
       {/* Chiffres clés */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className={`grid grid-cols-2 gap-3 ${gestion ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}>
         <Kpi titre="Chiffre d'affaires" valeur={total ? formatFCFA(total.ca) : '…'}
           detail={total ? `${total.nb} opération${total.nb > 1 ? 's' : ''} ${LIBELLE_PERIODE[periode]}` : null} />
         <Kpi titre="Encaissé" valeur={total ? formatFCFA(total.encaisse) : '…'} couleur="var(--success)"
@@ -247,7 +247,13 @@ export default function Dashboard() {
           detail="Avances, commandes non payées, acomptes" />
         <Kpi titre="Occupation" valeur={`${tauxOccupation} %`} couleur="var(--primary-dk)"
           detail={`${stats.occupees} / ${stats.total} villa${stats.total > 1 ? 's' : ''} occupée${stats.occupees > 1 ? 's' : ''}`} />
-        <Kpi titre="Séjours en cours" valeur={stats.sejours} couleur="#2563EB" detail="Clients présents" className="col-span-2 lg:col-span-1" />
+        <Kpi titre="Séjours en cours" valeur={stats.sejours} couleur="#2563EB" detail="Clients présents" className={gestion ? '' : 'col-span-2 lg:col-span-1'} />
+        {gestion && (
+          <Link href="/dashboard/tresorerie" className="block col-span-2 lg:col-span-1 min-w-0">
+            <Kpi titre="Dépenses" valeur={treso ? formatFCFA(treso.depenses) : '…'} couleur="#DC2626" className="h-full"
+              detail={treso ? (treso.nbDepenses > 0 ? `${treso.nbDepenses} dépense${treso.nbDepenses > 1 ? 's' : ''} ${LIBELLE_PERIODE[periode]}` : `Aucune dépense ${LIBELLE_PERIODE[periode]}`) : null} />
+          </Link>
+        )}
       </div>
 
       {/* Aujourd'hui + répartition du chiffre d'affaires */}
