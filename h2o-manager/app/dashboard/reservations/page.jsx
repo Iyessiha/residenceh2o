@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { formatDate, formatFCFA, STATUT_COLORS, STATUT_LABELS } from '@/lib/utils'
 import { nomDemarcheur } from '@/lib/demarcheurs'
@@ -21,6 +22,8 @@ const LIBRE = '__libre__'
 const hhmm = (t) => (t || '').slice(0, 5)
 const EMPTY_DEM = { prenom: '', nom: '', telephone: '', taux: '10' }
 const EMPTY_ENT = { nom: '', contact: '', adresse: '' }
+const EVT_VIDE = { type_evenement: 'mariage', espace: 'pergola', date_evenement: '', heure_debut: '17:00', nb_invites: '', montant_devis: '', acompte: '', statut: 'en_attente', notes: '' }
+const TYPES_EVENEMENT = { mariage: '💍 Mariage', anniversaire: '🎂 Anniversaire', bapteme: '🍼 Baptême', seminaire: '💼 Séminaire', fete_privee: '🎉 Fête privée', autre: '🎪 Autre' }
 const EMPTY_CHAMBRE = { ...EMPTY, type: 'chambre', duplex_id: '' }
 
 export default function Reservations() {
@@ -44,6 +47,9 @@ export default function Reservations() {
   const [nouvelleOpt,      setNouvelleOpt]      = useState(EMPTY_OPT)
   const [erreurCatalogue,  setErreurCatalogue]  = useState('')
   const [typeHebergement,  setTypeHebergement]  = useState('duplex')
+  const [evt, setEvt] = useState(EVT_VIDE)   // réservation de l'espace événementiel (table evenements)
+  const [infoEvt, setInfoEvt] = useState('')
+  const majEvt = (cle, valeur) => setEvt(p => ({ ...p, [cle]: valeur }))
   const [chambreId,        setChambreId]        = useState('')
   const [filter,           setFilter]           = useState('tous')
   const [loading,          setLoading]          = useState(true)
@@ -114,6 +120,7 @@ export default function Reservations() {
 
   // Montants : hébergement (calculé ou saisi) + options = total de la réservation
   const estJournee = form.mode_sejour === 'journee'
+  const estEvenement = typeHebergement === 'evenement'
   const totalOptions = lignesOptions.reduce((t, l) => t + (parseInt(l.prix) || 0) * (parseInt(l.qte) || 0), 0)
   const montantTotal = (parseInt(form.montant_hebergement) || 0) + totalOptions
   const aMontant = montantTotal > 0
@@ -160,7 +167,7 @@ export default function Reservations() {
   function openNew() {
     resetApport()
     setForm(EMPTY); setEditId(null); setConflict(null)
-    setTypeHebergement('duplex'); setChambreId('')
+    setTypeHebergement('duplex'); setChambreId(''); setEvt(EVT_VIDE)
     setShowForm(true)
   }
 
@@ -271,6 +278,23 @@ export default function Reservations() {
     setErreur('')
     if (!form.nom_client.trim()) { setErreur('Le nom du client est obligatoire.'); return }
     if (!form.telephone.trim()) { setErreur('Le téléphone du client est obligatoire.'); return }
+    if (estEvenement) {
+      if (!evt.date_evenement) { setErreur("Indiquez la date de l'événement."); return }
+      const devis = parseInt(evt.montant_devis) || 0, acompte = parseInt(evt.acompte) || 0
+      if (acompte > devis) { setErreur("L'acompte ne peut pas dépasser le montant du devis."); return }
+      setSaving(true)
+      const { error } = await supabase.from('evenements').insert([{
+        nom_client: form.nom_client.trim(), telephone: form.telephone.trim(), email: form.email.trim() || null,
+        type_evenement: evt.type_evenement, espace: evt.espace, date_evenement: evt.date_evenement,
+        heure_debut: evt.heure_debut || null, nb_invites: evt.nb_invites ? parseInt(evt.nb_invites) : null,
+        montant_devis: devis || null, acompte: acompte || null, statut: evt.statut, notes: evt.notes.trim() || null,
+      }])
+      setSaving(false)
+      if (error) { setErreur(/row-level security|permission denied/i.test(error.message) ? 'Droits insuffisants pour enregistrer (reconnectez-vous, puis réessayez).' : error.message); return }
+      setShowForm(false); setForm(EMPTY); setEvt(EVT_VIDE); setTypeHebergement('duplex'); resetApport()
+      setInfoEvt(`Événement de ${form.nom_client.trim()} enregistré pour le ${evt.date_evenement.split('-').reverse().join('/')}.`)
+      return
+    }
     if (aMontant && (parseInt(form.avance) || 0) > montantTotal) {
       setErreur("L'avance ne peut pas dépasser le montant total.")
       return
@@ -445,6 +469,13 @@ export default function Reservations() {
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Réservations</h1>
         <button onClick={openNew} className="btn-primary">+ Nouvelle réservation</button>
       </div>
+
+      {infoEvt && (
+        <div className="mb-4 rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3 border" style={{ backgroundColor: 'var(--bg-2)', borderColor: 'var(--border)', color: 'var(--text)' }}>
+          <span>✅ {infoEvt} <Link href="/dashboard/evenements" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>Voir les événements →</Link></span>
+          <button onClick={() => setInfoEvt('')} className="text-lg leading-none" style={{ color: 'var(--text-3)' }}>×</button>
+        </div>
+      )}
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-2 mb-4">
@@ -630,9 +661,9 @@ export default function Reservations() {
 
               {/* Toggle Duplex / Chambre */}
               <div>
-                <label className="label">Type d'hébergement</label>
+                <label className="label">{estEvenement ? 'Type de réservation' : "Type d'hébergement"}</label>
                 <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
-                  {[['duplex', 'Duplex'], ['chambre', 'Chambre']].map(([val, label]) => (
+                  {[['duplex', 'Duplex'], ['chambre', 'Chambre'], ...(editId ? [] : [['evenement', 'Espace événementiel']])].map(([val, label]) => (
                     <button key={val} type="button"
                       onClick={() => { setTypeHebergement(val); setChambreId(''); setConflict(null); setForm(p => ({ ...p, montant_hebergement: '' })) }}
                       className="flex-1 py-2 text-sm font-medium transition-colors"
@@ -645,6 +676,8 @@ export default function Reservations() {
                 </div>
               </div>
 
+              {!estEvenement && (
+              <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   {typeHebergement === 'duplex' ? (
@@ -906,6 +939,70 @@ export default function Reservations() {
                 <textarea className="input" rows={2} value={form.notes}
                   onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
               </div>
+              </>
+              )}
+
+              {estEvenement && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Type d'événement</label>
+                      <select className="input" value={evt.type_evenement} onChange={e => majEvt('type_evenement', e.target.value)}>
+                        {Object.entries(TYPES_EVENEMENT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Espace</label>
+                      <select className="input" value={evt.espace} onChange={e => majEvt('espace', e.target.value)}>
+                        <option value="pergola">Espace événementiel</option>
+                        <option value="jardins">Jardins</option>
+                        <option value="full_site">Site complet</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Date *</label>
+                      <input className="input" type="date" value={evt.date_evenement} onChange={e => majEvt('date_evenement', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="label">Heure de début</label>
+                      <input className="input" type="time" value={evt.heure_debut} onChange={e => majEvt('heure_debut', e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Nombre d'invités</label>
+                      <input className="input" type="number" min="0" value={evt.nb_invites} onChange={e => majEvt('nb_invites', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="label">Statut</label>
+                      <select className="input" value={evt.statut} onChange={e => majEvt('statut', e.target.value)}>
+                        <option value="en_attente">En attente</option>
+                        <option value="confirme">Confirmé</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="label">Montant du devis (FCFA)</label>
+                      <input className="input" type="number" min="0" value={evt.montant_devis} onChange={e => majEvt('montant_devis', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="label">Acompte versé (FCFA)</label>
+                      <input className="input" type="number" min="0" value={evt.acompte} onChange={e => majEvt('acompte', e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between rounded-xl px-4 py-3 border" style={{ borderColor: 'var(--border)' }}>
+                    <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-3)' }}>Reste à payer</p>
+                    <p className="text-lg font-bold" style={{ color: 'var(--text)' }}>{formatFCFA(Math.max(0, (parseInt(evt.montant_devis) || 0) - (parseInt(evt.acompte) || 0)))}</p>
+                  </div>
+                  <div>
+                    <label className="label">Notes</label>
+                    <textarea className="input" rows={2} value={evt.notes} onChange={e => majEvt('notes', e.target.value)} />
+                  </div>
+                </>
+              )}
             </div>
 
             {erreur && (
@@ -918,7 +1015,7 @@ export default function Reservations() {
               </button>
               <button onClick={save} disabled={saving}
                 className="btn-primary flex-1">
-                {saving ? 'Vérification…' : editId ? 'Enregistrer' : 'Créer la réservation'}
+                {saving ? 'Enregistrement…' : editId ? 'Enregistrer' : estEvenement ? "Créer l'événement" : 'Créer la réservation'}
               </button>
             </div>
           </div>
