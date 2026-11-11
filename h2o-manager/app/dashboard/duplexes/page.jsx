@@ -65,7 +65,6 @@ export default function Duplexes() {
       tarif_journee: form.tarif_journee ? parseInt(form.tarif_journee) : null,
       surface_m2: form.surface_m2 ? parseInt(form.surface_m2) : null,
       features:   form.features.split('\n').map(f => f.trim()).filter(Boolean),
-      updated_at: new Date().toISOString(),
     }
 
     if (editId) {
