@@ -207,8 +207,10 @@ export default function Restaurant() {
   async function saveCmd() {
     setSavingCmd(true)
     const payload = { ...formCmd, montant_total: totalLignes(formCmd.lignes) }
-    if (editIdCmd) await supabase.from('commandes_restaurant').update(payload).eq('id', editIdCmd)
-    else           await supabase.from('commandes_restaurant').insert([payload])
+    const { error } = editIdCmd
+      ? await supabase.from('commandes_restaurant').update(payload).eq('id', editIdCmd)
+      : await supabase.from('commandes_restaurant').insert([payload])
+    if (error) { setSavingCmd(false); window.alert("Enregistrement impossible : " + error.message); return }
     setShowFormCmd(false); setFormCmd(EMPTY_CMD); setEditIdCmd(null); loadCommandes()
     setSavingCmd(false)
   }
@@ -305,14 +307,18 @@ export default function Restaurant() {
     if (!error) {
       const { data: { publicUrl } } = supabase.storage.from('restaurant').getPublicUrl(nom)
       setFormMenu(p => ({ ...p, photo: publicUrl }))
+    } else {
+      window.alert("Photo non envoyée : " + error.message + " (formats acceptés : JPG, PNG, WebP, GIF — 5 Mo maximum)")
     }
     setUploadingPhoto(false)
   }
   async function saveMenu() {
     setSavingMenu(true)
     const payload = { ...formMenu, prix: parseInt(formMenu.prix) || 0 }
-    if (editIdMenu) await supabase.from('menu_restaurant').update(payload).eq('id', editIdMenu)
-    else            await supabase.from('menu_restaurant').insert([payload])
+    const { error } = editIdMenu
+      ? await supabase.from('menu_restaurant').update(payload).eq('id', editIdMenu)
+      : await supabase.from('menu_restaurant').insert([payload])
+    if (error) { setSavingMenu(false); window.alert("Enregistrement impossible : " + error.message); return }
     setShowFormMenu(false); setFormMenu(EMPTY_MENU); setEditIdMenu(null); loadMenu()
     setSavingMenu(false)
   }

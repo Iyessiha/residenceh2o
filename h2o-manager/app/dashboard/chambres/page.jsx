@@ -83,8 +83,10 @@ export default function Chambres() {
       features:    form.features.split('\n').map(f => f.trim()).filter(Boolean),
       updated_at:  new Date().toISOString(),
     }
-    if (editId) await supabase.from('chambres').update(payload).eq('id', editId)
-    else        await supabase.from('chambres').insert([payload])
+    const { error } = editId
+      ? await supabase.from('chambres').update(payload).eq('id', editId)
+      : await supabase.from('chambres').insert([payload])
+    if (error) { setSaving(false); window.alert("Enregistrement impossible : " + error.message); return }
     setShowForm(false); setForm(EMPTY); setEditId(null); load()
     setSaving(false)
   }

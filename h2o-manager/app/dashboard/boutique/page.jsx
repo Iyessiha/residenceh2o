@@ -176,8 +176,10 @@ export default function Boutique() {
     setSavingV(true)
     const montant_total = totalLignes(formV.lignes)
     const payload = { ...formV, montant_total }
-    if (editIdV) await supabase.from('ventes').update(payload).eq('id', editIdV)
-    else         await supabase.from('ventes').insert([payload])
+    const { error } = editIdV
+      ? await supabase.from('ventes').update(payload).eq('id', editIdV)
+      : await supabase.from('ventes').insert([payload])
+    if (error) { setSavingV(false); window.alert("Enregistrement impossible : " + error.message); return }
     setShowFormV(false); setFormV(EMPTY_V); setEditIdV(null)
     loadVentes(); loadArticles()
     setSavingV(false)
@@ -197,8 +199,10 @@ export default function Boutique() {
   async function saveArticle() {
     setSavingA(true)
     const payload = { ...formA, prix: parseInt(formA.prix) || 0, stock: parseInt(formA.stock) || 0 }
-    if (editIdA) await supabase.from('articles').update(payload).eq('id', editIdA)
-    else         await supabase.from('articles').insert([payload])
+    const { error } = editIdA
+      ? await supabase.from('articles').update(payload).eq('id', editIdA)
+      : await supabase.from('articles').insert([payload])
+    if (error) { setSavingA(false); window.alert("Enregistrement impossible : " + error.message); return }
     setShowFormA(false); setFormA(EMPTY_A); setEditIdA(null); loadArticles()
     setSavingA(false)
   }
