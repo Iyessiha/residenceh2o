@@ -12,7 +12,7 @@ import { Star, ArrowRight, Quote, Shield, Compass, Sparkles } from 'lucide-react
 import Link from 'next/link'
 import { getDuplexes, getPhotos, getChambres } from '@/lib/data'
 
-export const revalidate = 300
+export const revalidate = 60
 
 export default async function Home() {
   const [duplexes, photos, chambres] = await Promise.all([getDuplexes(), getPhotos(), getChambres()])

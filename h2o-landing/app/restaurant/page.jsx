@@ -10,7 +10,7 @@ export const metadata = {
   description: 'Restaurant et bar des Résidences H₂O à Villa Poton : petit déjeuner inclus, volailles, poissons, boissons et accès à la grande piscine.',
 }
 
-export const revalidate = 300
+export const revalidate = 60
 
 // Regroupe les plats par section, dans l'ordre de la fiche. Les sections inconnues vont à la fin.
 function grouperParSection(plats) {

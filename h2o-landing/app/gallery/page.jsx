@@ -3,7 +3,7 @@ import Footer from '@/components/Footer'
 import ImageGallery from '@/components/ImageGallery'
 import { getPhotos } from '@/lib/data'
 
-export const revalidate = 300
+export const revalidate = 60
 
 export const metadata = {
   title: 'Galerie Photos | Les Résidences H₂O',

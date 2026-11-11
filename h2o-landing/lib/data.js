@@ -13,7 +13,7 @@ async function lire(table, query) {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-      next: { revalidate: 300 },
+      next: { revalidate: 60 },
     })
     if (!res.ok) return null
     return await res.json()

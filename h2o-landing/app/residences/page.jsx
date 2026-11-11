@@ -12,7 +12,7 @@ export const metadata = {
   description: 'Deux villas duplex entières avec piscine privée, jardin et toit-terrasse, à Villa Poton, ancienne route de Bassam, au lac.',
 }
 
-export const revalidate = 300
+export const revalidate = 60
 
 export default async function ResidencesPage() {
   const residences = await getDuplexes()

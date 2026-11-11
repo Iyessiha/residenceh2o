@@ -8,7 +8,7 @@ export const metadata = {
   description: 'Toutes les chambres des Résidences H₂O à Villa Poton : VVIP, VIP, standard et non autonomes, à la nuit ou à la journée, petit déjeuner inclus.',
 }
 
-export const revalidate = 300
+export const revalidate = 60
 
 export default async function ChambresPage() {
   const chambres = await getChambres()

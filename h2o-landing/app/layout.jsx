@@ -3,7 +3,7 @@ import InstallPWA from '@/components/InstallPWA'
 import TagManager from '@/components/TagManager'
 import { getBalises } from '@/lib/data'
 
-export const revalidate = 300
+export const revalidate = 60
 
 export const metadata = {
   metadataBase: new URL('https://residencesh2o.com'),

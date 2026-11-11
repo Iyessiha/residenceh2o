@@ -6,7 +6,7 @@ import Nav from '@/components/Nav'
 import Footer from '@/components/Footer'
 import { Users, MapPin } from 'lucide-react'
 
-export const revalidate = 300
+export const revalidate = 60
 
 export async function generateStaticParams() {
   const residences = await getDuplexes()
