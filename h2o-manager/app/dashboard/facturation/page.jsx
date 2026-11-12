@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatDate, formatFCFA } from '@/lib/utils'
+import { pdfIntegreSupporte, AIDE_IMPRESSION_TACTILE } from '@/lib/pdfSupport'
 
 const STATUTS = { brouillon: 'Brouillon', envoye: 'Envoyé', paye: 'Payé', partiel: 'Partiel', impaye: 'Impayé' }
 const STATUT_COLORS = { brouillon: 'bg-gray-100 text-gray-600', envoye: 'bg-blue-100 text-blue-700', paye: 'bg-green-100 text-green-800', partiel: 'bg-yellow-100 text-yellow-800', impaye: 'bg-red-100 text-red-700' }
@@ -17,6 +18,8 @@ export default function Facturation() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [pdfLoading, setPdfLoading] = useState(null)
+  const [integre, setIntegre] = useState(true)   // faux sur tablette / téléphone : pas d'aperçu intégré
+  useEffect(() => { setIntegre(pdfIntegreSupporte()) }, [])
   const [apercu, setApercu] = useState(null)   // { facture, url } : facture ouverte en aperçu
   const iframeRef = useRef(null)
   const [reservations, setReservations] = useState([])
@@ -136,7 +139,10 @@ export default function Facturation() {
   }
 
   function imprimerApercu() {
-    iframeRef.current?.contentWindow?.print()
+    if (integre && iframeRef.current?.contentWindow) {
+      try { iframeRef.current.contentWindow.print(); return } catch {}
+    }
+    window.open(apercu.url, '_blank')   // lecteur PDF du système : Partager / ⋮ → Imprimer
   }
 
   const totalPaye = factures.filter(f => f.statut === 'paye').reduce((s, f) => s + (f.montant_total || 0), 0)
@@ -151,10 +157,19 @@ export default function Facturation() {
               <p className="font-semibold text-gray-900">Facture {apercu.facture.numero}</p>
               <button onClick={fermerApercu} className="text-2xl leading-none text-gray-500 hover:text-gray-900" aria-label="Fermer l'aperçu">×</button>
             </div>
-            <iframe ref={iframeRef} src={apercu.url} title={`Aperçu de la facture ${apercu.facture.numero}`} className="flex-1 w-full" />
+            {integre ? (
+              <iframe ref={iframeRef} src={apercu.url} title={`Aperçu de la facture ${apercu.facture.numero}`} className="flex-1 w-full" />
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6 text-center">
+                <p className="text-5xl">📄</p>
+                <p className="font-semibold text-gray-900">Facture {apercu.facture.numero} prête</p>
+                <button onClick={() => window.open(apercu.url, '_blank')} className="btn-primary text-base px-6 py-3">Ouvrir la facture</button>
+                <p className="text-xs text-gray-500 max-w-xs">{AIDE_IMPRESSION_TACTILE}</p>
+              </div>
+            )}
             <div className="flex justify-end gap-3 px-5 py-3 border-t border-gray-200">
               <button onClick={telechargerApercu} className="btn-secondary">Télécharger</button>
-              <button onClick={imprimerApercu} className="btn-primary">Imprimer</button>
+              <button onClick={imprimerApercu} className="btn-primary">{integre ? 'Imprimer' : 'Imprimer / Partager'}</button>
             </div>
           </div>
         </div>

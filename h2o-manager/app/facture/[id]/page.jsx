@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { pdfIntegreSupporte, AIDE_IMPRESSION_TACTILE } from '@/lib/pdfSupport'
 
 // Client Supabase anon : seule la fonction facture_publique est appelée (voir la migration)
 const sb = createClient(
@@ -18,6 +19,8 @@ export default function FacturePublique() {
   const [url, setUrl] = useState(null)
   const [detail, setDetail] = useState('')   // cause technique, affichée en petit en cas d'erreur
   const iframeRef = useRef(null)
+  const [integre, setIntegre] = useState(true)
+  useEffect(() => { setIntegre(pdfIntegreSupporte()) }, [])
 
   useEffect(() => {
     let blobUrl = null
@@ -78,13 +81,16 @@ export default function FacturePublique() {
           <>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
               <button onClick={telecharger} style={{ ...bouton, background: '#0C3A3D', color: '#fff' }}>Télécharger le PDF</button>
-              <button onClick={() => iframeRef.current?.contentWindow?.print()} style={{ ...bouton, background: '#fff', color: '#0C3A3D', border: '1px solid #0C3A3D' }}>Imprimer</button>
-              <a href={url} target="_blank" rel="noreferrer" style={{ ...bouton, background: '#fff', color: '#0C3A3D', border: '1px solid #D8D3C8', textDecoration: 'none' }}>Ouvrir en plein écran</a>
+              {integre
+                ? <button onClick={() => iframeRef.current?.contentWindow?.print()} style={{ ...bouton, background: '#fff', color: '#0C3A3D', border: '1px solid #0C3A3D' }}>Imprimer</button>
+                : <a href={url} target="_blank" rel="noreferrer" style={{ ...bouton, background: '#fff', color: '#0C3A3D', border: '1px solid #0C3A3D', textDecoration: 'none' }}>Ouvrir / Imprimer</a>}
+              {integre && <a href={url} target="_blank" rel="noreferrer" style={{ ...bouton, background: '#fff', color: '#0C3A3D', border: '1px solid #D8D3C8', textDecoration: 'none' }}>Ouvrir en plein écran</a>}
             </div>
-            <iframe ref={iframeRef} src={url} title={`Facture ${facture.numero || ''}`} style={{ width: '100%', height: '75vh', border: '1px solid #D8D3C8', borderRadius: 10, background: '#fff' }} />
-            <p style={{ fontSize: 12, color: '#6B7678', marginTop: 10 }}>
-              Si la facture ne s'affiche pas sur votre téléphone, utilisez « Télécharger le PDF ».
-            </p>
+            {integre ? (
+              <iframe ref={iframeRef} src={url} title={`Facture ${facture.numero || ''}`} style={{ width: '100%', height: '75vh', border: '1px solid #D8D3C8', borderRadius: 10, background: '#fff' }} />
+            ) : (
+              <p style={{ fontSize: 14, color: '#4B5658', lineHeight: 1.5 }}>{AIDE_IMPRESSION_TACTILE}</p>
+            )}
           </>
         )}
       </div>
