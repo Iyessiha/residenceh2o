@@ -15,6 +15,27 @@ function versChemin(fichier) {
   return encodeURI(decodeURI(fichier))
 }
 
+// Réduit la photo avant l'envoi (appareil photo : 3 à 7 Mo → environ 300 Ko), ce qui accélère
+// l'envoi, l'affichage dans le manager et le chargement du site public.
+async function reduire(fichier, cote = 1920, qualite = 0.82) {
+  if (!fichier.type.startsWith('image/') || fichier.type === 'image/gif' || fichier.type === 'image/svg+xml') return fichier
+  try {
+    const bitmap = await createImageBitmap(fichier, { imageOrientation: 'from-image' })
+    const echelle = Math.min(1, cote / Math.max(bitmap.width, bitmap.height))
+    if (echelle === 1 && fichier.size < 600 * 1024) { bitmap.close?.(); return fichier }
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(bitmap.width * echelle)
+    canvas.height = Math.round(bitmap.height * echelle)
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    bitmap.close?.()
+    const blob = await new Promise((ok) => canvas.toBlob(ok, 'image/jpeg', qualite))
+    if (!blob || blob.size >= fichier.size) return fichier
+    return new File([blob], fichier.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' })
+  } catch {
+    return fichier   // format non lisible par le navigateur : envoi tel quel
+  }
+}
+
 const BUCKET = 'galerie'
 const MARQUEUR = `/storage/v1/object/public/${BUCKET}/`
 
@@ -26,6 +47,7 @@ export default function PhotosEditeur({ table, id, photos = [], onChange }) {
   const [message, setMessage] = useState('')
   const [galerie, setGalerie] = useState(null)   // photos déjà stockées, null = sélecteur fermé
   const [selection, setSelection] = useState([])
+  const [progression, setProgression] = useState('')
 
   async function enregistrer(liste) {
     const { error } = await supabase.from(table).update({ photos: liste }).eq('id', id)
@@ -44,18 +66,29 @@ export default function PhotosEditeur({ table, id, photos = [], onChange }) {
 
     setEnvoi(true)
     setMessage('')
-    let liste = photos
-    for (const fichier of fichiers) {
-      const nom = `${table}/${id}/${Date.now()}-${fichier.name.replace(/[^a-z0-9.]/gi, '-')}`
-      const { error } = await supabase.storage.from(BUCKET).upload(nom, fichier, { cacheControl: '31536000' })
-      if (error) {
-        setMessage(`Erreur : ${error.message}`)
-        break
+    const ajoutees = []
+    const echecs = []
+    let fait = 0
+    setProgression(`0/${fichiers.length}`)
+    // 3 envois en parallèle : bien plus rapide qu'une photo après l'autre
+    let suivant = 0
+    async function travailleur() {
+      while (suivant < fichiers.length) {
+        const i = suivant++
+        const original = fichiers[i]
+        const fichier = await reduire(original)
+        const nom = `${table}/${id}/${Date.now()}-${i}-${fichier.name.replace(/[^a-z0-9.]/gi, '-')}`
+        const { error } = await supabase.storage.from(BUCKET).upload(nom, fichier, { cacheControl: '31536000', contentType: fichier.type || undefined })
+        if (error) echecs.push(`${original.name} (${error.message})`)
+        else ajoutees[i] = supabase.storage.from(BUCKET).getPublicUrl(nom).data.publicUrl
+        setProgression(`${++fait}/${fichiers.length}`)
       }
-      const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(nom)
-      liste = [...liste, publicUrl]
     }
-    if (liste !== photos) await enregistrer(liste)
+    await Promise.all([travailleur(), travailleur(), travailleur()])
+    const nouvelles = ajoutees.filter(Boolean)
+    if (nouvelles.length) await enregistrer([...photos, ...nouvelles])
+    if (echecs.length) setMessage(`Non envoyées : ${echecs.join(', ')}`)
+    setProgression('')
     setEnvoi(false)
   }
 
@@ -89,9 +122,19 @@ export default function PhotosEditeur({ table, id, photos = [], onChange }) {
   async function retirer(url) {
     if (!window.confirm('Supprimer cette photo du site ?')) return
     if (!(await enregistrer(photos.filter((p) => p !== url)))) return
-    if (url.includes(MARQUEUR)) {
+    // On ne supprime le fichier que s'il a été envoyé pour cet élément : une photo choisie dans la galerie
+    // du site ou utilisée ailleurs doit rester disponible.
+    if (url.includes(`${MARQUEUR}${table}/${id}/`)) {
       await supabase.storage.from(BUCKET).remove([decodeURIComponent(url.split(MARQUEUR)[1])])
     }
+  }
+
+  function deplacer(index, sens) {
+    const liste = [...photos]
+    const cible = index + sens
+    if (cible < 0 || cible >= liste.length) return
+    ;[liste[index], liste[cible]] = [liste[cible], liste[index]]
+    enregistrer(liste)
   }
 
   function mettreEnPremier(index) {
@@ -109,14 +152,20 @@ export default function PhotosEditeur({ table, id, photos = [], onChange }) {
           {photos.map((url, i) => (
             <div key={url} className="relative rounded-lg overflow-hidden border border-gray-200">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={versUrlAffichable(url)} alt="" className="w-full h-24 object-cover" loading="lazy" />
+              <img src={versUrlAffichable(url)} alt="" className="w-full h-24 object-cover" loading="lazy" decoding="async" />
               {i === 0 && (
                 <span className="absolute top-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">Couverture</span>
               )}
               <div className="absolute bottom-1 right-1 flex gap-1">
                 {i > 0 && (
+                  <button type="button" onClick={() => deplacer(i, -1)} className="text-xs bg-white/90 px-1.5 py-0.5 rounded" aria-label="Déplacer avant">←</button>
+                )}
+                {i < photos.length - 1 && (
+                  <button type="button" onClick={() => deplacer(i, 1)} className="text-xs bg-white/90 px-1.5 py-0.5 rounded" aria-label="Déplacer après">→</button>
+                )}
+                {i > 0 && (
                   <button type="button" onClick={() => mettreEnPremier(i)} className="text-[10px] bg-white/90 px-1.5 py-0.5 rounded">
-                    Couverture
+                    1ère
                   </button>
                 )}
                 <button type="button" onClick={() => retirer(url)} className="bg-white/90 p-1 rounded text-red-600" aria-label="Supprimer la photo">
@@ -129,7 +178,7 @@ export default function PhotosEditeur({ table, id, photos = [], onChange }) {
       )}
       <div className="flex flex-wrap gap-2">
         <label className={`btn-secondary inline-flex cursor-pointer ${envoi ? 'opacity-50 pointer-events-none' : ''}`}>
-          {envoi ? 'Envoi…' : '+ Téléverser des photos'}
+          {envoi ? `Envoi ${progression}…` : '+ Téléverser des photos'}
           <input type="file" accept="image/*" multiple className="hidden" onChange={ajouter} />
         </label>
         <button type="button" onClick={() => (galerie ? setGalerie(null) : ouvrirGalerie())} className="btn-secondary inline-flex items-center gap-2">

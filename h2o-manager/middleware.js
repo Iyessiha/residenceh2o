@@ -21,7 +21,16 @@ export async function middleware(request) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getClaims vérifie la session localement quand c'est possible (plus d'aller-retour vers Supabase
+  // à chaque page) ; à défaut il retombe sur la vérification serveur. Les données restent protégées par RLS.
+  let user = null
+  try {
+    const { data } = await supabase.auth.getClaims()
+    user = data?.claims?.sub ? { id: data.claims.sub } : null
+  } catch {
+    const { data } = await supabase.auth.getUser()
+    user = data?.user || null
+  }
 
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone()

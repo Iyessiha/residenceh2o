@@ -172,13 +172,15 @@ export default function Dashboard() {
 
   // Mise à jour en direct dès qu'une réservation, commande, vente, facture ou demande change
   useEffect(() => {
-    const maj = () => { chargerActivite(); chargerPeriode() }
+    // Plusieurs changements d'affilée (facture + commande + notification…) ne relancent qu'un seul rechargement
+    let minuteur
+    const maj = () => { clearTimeout(minuteur); minuteur = setTimeout(() => { chargerActivite(); chargerPeriode() }, 700) }
     let channel = supabase.channel('dashboard_direct')
     for (const table of ['commandes_restaurant', 'ventes', 'reservations', 'factures', 'demandes_assistance', 'tresorerie']) {
       channel = channel.on('postgres_changes', { event: '*', schema: 'public', table }, maj)
     }
     channel.subscribe()
-    return () => { supabase.removeChannel(channel) }
+    return () => { clearTimeout(minuteur); supabase.removeChannel(channel) }
   }, [chargerActivite, chargerPeriode])
 
   if (chargement) return (
