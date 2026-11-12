@@ -17,6 +17,7 @@ export default function Evenements() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
+  const [editId, setEditId] = useState(null)   // null = création, sinon modification de cet événement
   const [selected, setSelected] = useState(null)
 
   useEffect(() => { load() }, [])
@@ -30,10 +31,26 @@ export default function Evenements() {
 
   async function save() {
     setSaving(true)
-    const payload = { ...form, nb_invites: form.nb_invites ? parseInt(form.nb_invites) : null, montant_devis: form.montant_devis ? parseInt(form.montant_devis) : null, acompte: form.acompte ? parseInt(form.acompte) : null }
-    { const { error: erreurEcriture } = await supabase.from('evenements').insert([payload]); if (erreurEcriture) { setSaving(false); window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
-    setShowForm(false); setForm(EMPTY); load()
+    const { id: _i, created_at: _c, client_id: _cl, ...champs } = form
+    const payload = { ...champs, nom_client: form.nom_client.trim(), nb_invites: form.nb_invites ? parseInt(form.nb_invites) : null, montant_devis: form.montant_devis ? parseInt(form.montant_devis) : null, acompte: form.acompte ? parseInt(form.acompte) : null }
+    if ((payload.acompte || 0) > (payload.montant_devis || 0)) { setSaving(false); window.alert("L'acompte ne peut pas dépasser le montant du devis."); return }
+    const { error: erreurEcriture } = editId
+      ? await supabase.from('evenements').update(payload).eq('id', editId)
+      : await supabase.from('evenements').insert([payload])
+    if (erreurEcriture) { setSaving(false); window.alert("Enregistrement impossible : " + erreurEcriture.message); return }
+    setShowForm(false); setForm(EMPTY); setEditId(null); setSelected(null); load()
     setSaving(false)
+  }
+
+  function ouvrirModification(ev) {
+    setForm({
+      nom_client: ev.nom_client || '', telephone: ev.telephone || '', email: ev.email || '',
+      type_evenement: ev.type_evenement || 'mariage', espace: ev.espace || 'pergola',
+      date_evenement: ev.date_evenement || '', heure_debut: (ev.heure_debut || '').slice(0, 5),
+      nb_invites: ev.nb_invites ?? '', montant_devis: ev.montant_devis ?? '', acompte: ev.acompte ?? '',
+      notes: ev.notes || '', statut: ev.statut || 'en_attente',
+    })
+    setEditId(ev.id); setSelected(null); setShowForm(true)
   }
 
   async function updateStatut(id, statut) {
@@ -41,8 +58,10 @@ export default function Evenements() {
     load()
   }
 
-  const upcoming = events.filter(e => new Date(e.date_evenement) >= new Date())
-  const past = events.filter(e => new Date(e.date_evenement) < new Date())
+  // Un événement d'aujourd'hui reste « à venir » toute la journée
+  const aujourdhui = new Date().toLocaleDateString('en-CA')
+  const upcoming = events.filter(e => e.date_evenement >= aujourdhui)
+  const past = events.filter(e => e.date_evenement < aujourdhui)
 
   return (
     <div>
@@ -51,7 +70,7 @@ export default function Evenements() {
           <h1 className="text-2xl font-bold text-gray-900">Événements</h1>
           <p className="text-gray-500 text-sm">Espace événementiel — Mariages, Anniversaires, Séminaires...</p>
         </div>
-        <button onClick={() => { setForm(EMPTY); setShowForm(true) }} className="btn-primary">+ Nouvel événement</button>
+        <button onClick={() => { setForm(EMPTY); setEditId(null); setShowForm(true) }} className="btn-primary">+ Nouvel événement</button>
       </div>
 
       {loading ? (
@@ -86,6 +105,7 @@ export default function Evenements() {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setSelected(ev)} className="btn-secondary text-xs">Détails</button>
+                  <button onClick={() => ouvrirModification(ev)} className="btn-secondary text-xs">✏️ Modifier</button>
                   <select value={ev.statut} onChange={e => updateStatut(ev.id, e.target.value)}
                     className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-teal-500">
                     {Object.entries(STATUTS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -109,6 +129,7 @@ export default function Evenements() {
                       <th className="table-th">Invités</th>
                       <th className="table-th">Montant</th>
                       <th className="table-th">Statut</th>
+                      <th className="table-th"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -120,6 +141,7 @@ export default function Evenements() {
                         <td className="table-td">{ev.nb_invites || '—'}</td>
                         <td className="table-td">{formatFCFA(ev.montant_devis)}</td>
                         <td className="table-td"><span className={`badge ${STATUT_COLORS[ev.statut]}`}>{STATUTS[ev.statut]}</span></td>
+                        <td className="table-td"><button onClick={() => ouvrirModification(ev)} className="text-xs hover:underline" style={{ color: 'var(--primary)' }}>✏️ Modifier</button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -180,6 +202,7 @@ export default function Evenements() {
                 className="flex-1 btn bg-green-600 hover:bg-green-700 text-white text-center">
                 💬 WhatsApp
               </a>
+              <button onClick={() => ouvrirModification(selected)} className="flex-1 btn-secondary">✏️ Modifier</button>
               <button onClick={() => setSelected(null)} className="flex-1 btn-secondary">Fermer</button>
             </div>
           </div>
@@ -191,8 +214,8 @@ export default function Evenements() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold">Nouvel événement</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 text-xl">×</button>
+              <h2 className="text-lg font-bold">{editId ? "Modifier l'événement" : 'Nouvel événement'}</h2>
+              <button onClick={() => { setShowForm(false); setEditId(null) }} className="text-gray-400 text-xl">×</button>
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
@@ -215,7 +238,7 @@ export default function Evenements() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="label">Date</label><input className="input" type="date" value={form.date_evenement} onChange={e => setForm(p => ({...p, date_evenement: e.target.value}))} /></div>
+                <div><label className="label">Date *</label><input className="input" type="date" value={form.date_evenement} onChange={e => setForm(p => ({...p, date_evenement: e.target.value}))} /></div>
                 <div><label className="label">Heure début</label><input className="input" type="time" value={form.heure_debut} onChange={e => setForm(p => ({...p, heure_debut: e.target.value}))} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -233,8 +256,8 @@ export default function Evenements() {
               <div><label className="label">Notes</label><textarea className="input" rows={2} value={form.notes} onChange={e => setForm(p => ({...p, notes: e.target.value}))} /></div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowForm(false)} className="btn-secondary flex-1">Annuler</button>
-              <button onClick={save} disabled={saving || !form.nom_client} className="btn-primary flex-1">{saving ? '...' : 'Créer'}</button>
+              <button onClick={() => { setShowForm(false); setEditId(null) }} className="btn-secondary flex-1">Annuler</button>
+              <button onClick={save} disabled={saving || !form.nom_client.trim() || !form.date_evenement} className="btn-primary flex-1">{saving ? '...' : editId ? 'Enregistrer' : 'Créer'}</button>
             </div>
           </div>
         </div>
