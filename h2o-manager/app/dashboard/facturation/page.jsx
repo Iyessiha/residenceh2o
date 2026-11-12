@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatDate, formatFCFA } from '@/lib/utils'
+import { chargerFinances } from '@/lib/finance'
 import { pdfIntegreSupporte, AIDE_IMPRESSION_TACTILE } from '@/lib/pdfSupport'
 
 const STATUTS = { brouillon: 'Brouillon', envoye: 'Envoyé', paye: 'Payé', partiel: 'Partiel', impaye: 'Impayé' }
@@ -25,6 +26,14 @@ export default function Facturation() {
   const [reservations, setReservations] = useState([])
 
   useEffect(() => { load() }, [filterStatut])
+
+  // Mêmes chiffres que le tableau de bord, la trésorerie et les rapports (lib/finance)
+  const [finMois, setFinMois] = useState(null)
+  const [finTout, setFinTout] = useState(null)
+  useEffect(() => {
+    chargerFinances(supabase, 'mois').then(setFinMois).catch(() => {})
+    chargerFinances(supabase, 'tout').then(setFinTout).catch(() => {})
+  }, [factures])
 
   useEffect(() => {
     supabase.from('reservations').select('id, nom_client, duplex_id, date_arrivee').order('created_at', { ascending: false }).limit(50).then(({ data }) => setReservations(data || []))
@@ -145,8 +154,8 @@ export default function Facturation() {
     window.open(apercu.url, '_blank')   // lecteur PDF du système : Partager / ⋮ → Imprimer
   }
 
-  const totalPaye = factures.filter(f => f.statut === 'paye').reduce((s, f) => s + (f.montant_total || 0), 0)
-  const totalImpaye = factures.filter(f => ['impaye', 'partiel', 'envoye'].includes(f.statut)).reduce((s, f) => s + ((f.montant_total || 0) - (f.montant_paye || 0)), 0)
+  const totalPaye = finMois?.total.encaisse
+  const totalImpaye = finTout?.total.reste
 
   return (
     <div>
@@ -183,11 +192,11 @@ export default function Facturation() {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="card p-4">
           <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Encaissé ce mois</p>
-          <p className="text-2xl font-bold text-green-600">{formatFCFA(totalPaye)}</p>
+          <p className="text-2xl font-bold text-green-600">{totalPaye == null ? '…' : formatFCFA(totalPaye)}</p>
         </div>
         <div className="card p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Impayés en attente</p>
-          <p className="text-2xl font-bold text-red-600">{formatFCFA(totalImpaye)}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-3)' }}>Reste à encaisser (total)</p>
+          <p className="text-2xl font-bold text-red-600">{totalImpaye == null ? '…' : formatFCFA(totalImpaye)}</p>
         </div>
       </div>
 
