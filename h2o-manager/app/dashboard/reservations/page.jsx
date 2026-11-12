@@ -292,7 +292,7 @@ export default function Reservations() {
       setSaving(false)
       if (error) { setErreur(/row-level security|permission denied/i.test(error.message) ? 'Droits insuffisants pour enregistrer (reconnectez-vous, puis réessayez).' : error.message); return }
       setShowForm(false); setForm(EMPTY); setEvt(EVT_VIDE); setTypeHebergement('duplex'); resetApport()
-      setInfoEvt(`Événement de ${form.nom_client.trim()} enregistré pour le ${evt.date_evenement.split('-').reverse().join('/')}.`)
+      setInfoEvt(`Événement de ${form.nom_client.trim()} enregistré pour le ${evt.date_evenement.split('-').reverse().join('/')}${devis > 0 ? ' — facture créée automatiquement.' : '. Ajoutez un devis pour générer la facture.'}`)
       return
     }
     if (aMontant && (parseInt(form.avance) || 0) > montantTotal) {
@@ -472,7 +472,7 @@ export default function Reservations() {
 
       {infoEvt && (
         <div className="mb-4 rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3 border" style={{ backgroundColor: 'var(--bg-2)', borderColor: 'var(--border)', color: 'var(--text)' }}>
-          <span>✅ {infoEvt} <Link href="/dashboard/evenements" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>Voir les événements →</Link></span>
+          <span>✅ {infoEvt} <Link href="/dashboard/evenements" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>Voir les événements →</Link>{' '}<Link href="/dashboard/facturation" className="font-semibold hover:underline" style={{ color: 'var(--primary)' }}>Facture et QR code →</Link></span>
           <button onClick={() => setInfoEvt('')} className="text-lg leading-none" style={{ color: 'var(--text-3)' }}>×</button>
         </div>
       )}
