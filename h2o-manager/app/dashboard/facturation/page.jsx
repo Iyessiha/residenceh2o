@@ -154,6 +154,16 @@ export default function Facturation() {
     window.open(apercu.url, '_blank')   // lecteur PDF du système : Partager / ⋮ → Imprimer
   }
 
+  // Arrivée depuis une réservation (?facture=id) : ouvre directement la facture
+  const ouvertureAuto = useRef(false)
+  useEffect(() => {
+    if (ouvertureAuto.current || loading) return
+    const id = new URLSearchParams(window.location.search).get('facture')
+    if (!id) return
+    const f = factures.find(x => x.id === id)
+    if (f) { ouvertureAuto.current = true; ouvrirApercu(f) }
+  }, [factures, loading])
+
   const totalPaye = finMois?.total.encaisse
   const totalImpaye = finTout?.total.reste
 

@@ -40,6 +40,7 @@ export default function Reservations() {
   const [nouveauDem,       setNouveauDem]       = useState(EMPTY_DEM)
   const [nouvelleEnt,      setNouvelleEnt]      = useState(EMPTY_ENT)
   const [erreur,           setErreur]           = useState('')
+  const [factureEnCours, setFactureEnCours] = useState(null)
   const [origine,          setOrigine]          = useState({ entreprise: false, avance: false, demarcheur: false, journee: false, options: false })
   const [lignesOptions,    setLignesOptions]    = useState([])   // [{ nom, prix, qte }]
   const [catalogue,        setCatalogue]        = useState([])
@@ -428,6 +429,31 @@ export default function Reservations() {
     load()
   }
 
+  // Ouvre la facture de la réservation (la crée si elle n'existe pas encore)
+  async function ouvrirFacture(r) {
+    if (!(r.montant_total > 0)) { window.alert("Renseignez d'abord un montant pour cette réservation (✏️ Modifier)."); return }
+    setFactureEnCours(r.id)
+    try {
+      let { data: f } = await supabase.from('factures').select('id').eq('reservation_id', r.id).limit(1).maybeSingle()
+      if (!f) {
+        const res = await fetch('/api/factures/next-numero')
+        const numero = (await res.json().catch(() => ({}))).numero || null
+        const avance = Math.min(r.avance || 0, r.montant_total)
+        const fd = d => d ? new Date(d).toLocaleDateString('fr-FR') : '?'
+        const { data: cree, error } = await supabase.from('factures').insert([{
+          numero, nom_client: r.nom_client, telephone: r.telephone || null, client_id: r.client_id || null,
+          reservation_id: r.id, type_prestation: 'sejour',
+          description: `Séjour du ${fd(r.date_arrivee)} au ${fd(r.date_depart)}` + (r.nb_personnes ? ` — ${r.nb_personnes} pers.` : ''),
+          montant_total: r.montant_total, montant_paye: avance,
+          statut: avance >= r.montant_total ? 'paye' : avance > 0 ? 'partiel' : 'envoye',
+        }]).select('id').single()
+        if (error) { window.alert("Création de la facture impossible : " + error.message); return }
+        f = cree
+      }
+      window.location.href = `/dashboard/facturation?facture=${f.id}`
+    } finally { setFactureEnCours(null) }
+  }
+
   async function confirmDelete() {
     if (!deleteId) return
     { const { error: erreurEcriture } = await supabase.from('reservations').delete().eq('id', deleteId); if (erreurEcriture) { window.alert("Enregistrement impossible : " + erreurEcriture.message); return } }
@@ -593,6 +619,10 @@ export default function Reservations() {
                         style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
                         {Object.entries(STATUT_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
+                      <button onClick={() => ouvrirFacture(r)} disabled={factureEnCours === r.id}
+                        className="text-xs px-2 py-1 rounded border transition-colors hover:opacity-70"
+                        style={{ borderColor: 'var(--border)', color: 'var(--primary)' }}
+                        title="Générer / ouvrir la facture">{factureEnCours === r.id ? '…' : '🧾 Facture'}</button>
                       <button onClick={() => openEdit(r)}
                         className="text-xs px-2 py-1 rounded border transition-colors hover:opacity-70"
                         style={{ borderColor: 'var(--border)', color: 'var(--text-2)' }}
